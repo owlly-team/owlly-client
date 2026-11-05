@@ -57,7 +57,7 @@ import iconStepFlag from "./assets/icons/step-flag.svg";
 function Section({ title, children }) {
   return (
     <section className="flex w-full max-w-[390px] flex-col gap-3">
-      <h2 className="text-label2 font-bold tracking-wide text-label-alternative">
+      <h2 className="text-label2 text-label-alternative font-bold tracking-wide">
         {title}
       </h2>
       {children}
@@ -71,8 +71,8 @@ function App() {
   const [selectedOption, setSelectedOption] = useState("shuttle");
 
   return (
-    <div className="flex min-h-screen flex-col items-center gap-10 bg-background-alternative px-4 py-10">
-      <h1 className="text-title3 font-bold text-label-normal">
+    <div className="bg-background-alternative flex min-h-screen flex-col items-center gap-10 px-4 py-10">
+      <h1 className="text-title3 text-label-normal font-bold">
         아울리 컴포넌트 미리보기
       </h1>
 
@@ -122,9 +122,9 @@ function App() {
       </Section>
 
       <Section title="토글 행">
-        <div className="flex w-full items-center justify-between rounded-12 bg-background-normal px-4 py-3 shadow-[0_0_0_1px_var(--color-fill-alternative)]">
+        <div className="rounded-12 bg-background-normal flex w-full items-center justify-between px-4 py-3 shadow-[0_0_0_1px_var(--color-fill-alternative)]">
           <div>
-            <p className="text-body1 font-semibold text-label-normal">
+            <p className="text-body1 text-label-normal font-semibold">
               동성끼리만 매칭
             </p>
             <p className="text-label2 text-label-alternative">
@@ -167,7 +167,11 @@ function App() {
           defaultValue="32211234@dankook.ac.kr"
           helperText="강남대 · 경희대 · 단국대 · 명지대 · 한국외대 메일만 돼요"
           trailing={
-            <Button variant="secondary" size="sm" className="h-10 shrink-0 rounded-12 px-4">
+            <Button
+              variant="secondary"
+              size="sm"
+              className="rounded-12 h-10 shrink-0 px-4"
+            >
               다시 보내기
             </Button>
           }
@@ -201,7 +205,7 @@ function App() {
       </Section>
 
       <Section title="권한 행">
-        <div className="w-full rounded-12 bg-background-normal px-4 shadow-[0_0_0_1px_var(--color-fill-alternative)]">
+        <div className="rounded-12 bg-background-normal w-full px-4 shadow-[0_0_0_1px_var(--color-fill-alternative)]">
           <PermissionRow
             title="위치"
             status="선택"
@@ -221,11 +225,11 @@ function App() {
       <Section title="바텀시트">
         <BottomSheet>
           <div className="flex w-full items-center gap-3">
-            <div className="flex size-11 items-center justify-center rounded-12 bg-primary-tint text-title3">
+            <div className="rounded-12 bg-primary-tint text-title3 flex size-11 items-center justify-center">
               📍
             </div>
             <div>
-              <p className="text-heading2 font-bold tracking-tight text-label-normal">
+              <p className="text-heading2 text-label-normal font-bold tracking-tight">
                 단국대 정문
               </p>
               <p className="text-label2 text-label-neutral">
@@ -239,7 +243,9 @@ function App() {
         </BottomSheet>
       </Section>
 
-      <h1 className="pt-6 text-title3 font-bold text-label-normal">정보 표시 · 귀가 결정</h1>
+      <h1 className="text-title3 text-label-normal pt-6 font-bold">
+        정보 표시 · 귀가 결정
+      </h1>
 
       <Section title="배지 / 안내 상자">
         <div className="flex flex-wrap gap-2">
@@ -277,13 +283,20 @@ function App() {
           ]}
         />
         <MetricRow title="동승 등록" subtitle="서비스 귀가 기록" value="86건" />
-        <div className="w-full rounded-12 bg-background-normal shadow-[0_0_0_1px_var(--color-fill-alternative)]">
-          <PlaceRow title="하차 지점 · 영통2동 큰길 쪽" subtitle="오늘만 바꾸기" />
+        <div className="rounded-12 bg-background-normal w-full shadow-[0_0_0_1px_var(--color-fill-alternative)]">
+          <PlaceRow
+            title="하차 지점 · 영통2동 큰길 쪽"
+            subtitle="오늘만 바꾸기"
+          />
         </div>
       </Section>
 
       <Section title="마지막 출발 / 귀가 방법">
-        <LastDepartureCard time="22:58" place="정문 정류장 · 도보 4분" note="22:49까지 출발해야 해요" />
+        <LastDepartureCard
+          time="22:58"
+          place="정문 정류장 · 도보 4분"
+          note="22:49까지 출발해야 해요"
+        />
         <TransportOptionCard
           icon={iconTransportBus}
           title="막차"
@@ -312,8 +325,19 @@ function App() {
       <Section title="경로 단계 / 홈 동승 카드">
         <RouteSteps
           steps={[
-            { time: "22:49", icon: iconStepWalk, title: "정문 정류장까지 걷기", description: "도보 4분 · 300m" },
-            { time: "22:58", icon: iconStepBus, title: "정문 정류장에서 버스 타기", description: "마지막 버스 · 31분", active: true },
+            {
+              time: "22:49",
+              icon: iconStepWalk,
+              title: "정문 정류장까지 걷기",
+              description: "도보 4분 · 300m",
+            },
+            {
+              time: "22:58",
+              icon: iconStepBus,
+              title: "정문 정류장에서 버스 타기",
+              description: "마지막 버스 · 31분",
+              active: true,
+            },
             { time: "23:41", icon: iconStepFlag, title: "영통2동 도착" },
           ]}
         />
@@ -327,23 +351,48 @@ function App() {
         />
       </Section>
 
-      <h1 className="pt-6 text-title3 font-bold text-label-normal">매칭 · 채팅 · 정산</h1>
+      <h1 className="text-title3 text-label-normal pt-6 font-bold">
+        매칭 · 채팅 · 정산
+      </h1>
 
       <Section title="요금 비교 / 멤버 / 집결">
-        <FareCompare shareLabel="예상 1인 분담액" sharePrice="7,900원" aloneLabel="혼자 택시" alonePrice="27,400원" />
-        <MemberRow order={1} name="김*연" school="단국대" gender="여성" note="영통1동에서 내려요" />
-        <GatherInfoCard place="단국대 정문 · 23:30" note="집결까지 10분 · 3명" code="4821" caller="대표 이*준님이 택시 앱으로 불러요" />
+        <FareCompare
+          shareLabel="예상 1인 분담액"
+          sharePrice="7,900원"
+          aloneLabel="혼자 택시"
+          alonePrice="27,400원"
+        />
+        <MemberRow
+          order={1}
+          name="김*연"
+          school="단국대"
+          gender="여성"
+          note="영통1동에서 내려요"
+        />
+        <GatherInfoCard
+          place="단국대 정문 · 23:30"
+          note="집결까지 10분 · 3명"
+          code="4821"
+          caller="대표 이*준님이 택시 앱으로 불러요"
+        />
       </Section>
 
       <Section title="채팅 / 탑승 확인 / 신고">
-        <div className="flex w-full flex-col gap-2 rounded-12 bg-background-normal p-3 shadow-[0_0_0_1px_var(--color-fill-alternative)]">
-          <ChatBubble variant="incoming" sender="이*준" message="저 도서관에서 나가는 중이에요" />
-          <ChatBubble variant="outgoing" message="정문 오른쪽 편의점 앞이에요" />
+        <div className="rounded-12 bg-background-normal flex w-full flex-col gap-2 p-3 shadow-[0_0_0_1px_var(--color-fill-alternative)]">
+          <ChatBubble
+            variant="incoming"
+            sender="이*준"
+            message="저 도서관에서 나가는 중이에요"
+          />
+          <ChatBubble
+            variant="outgoing"
+            message="정문 오른쪽 편의점 앞이에요"
+          />
           <ChatBubble variant="system" message="매칭이 확정됐어요 · 3명" />
           <ChatInput />
         </div>
         <RideConfirmButtons />
-        <div className="w-full rounded-12 bg-background-normal shadow-[0_0_0_1px_var(--color-fill-alternative)]">
+        <div className="rounded-12 bg-background-normal w-full shadow-[0_0_0_1px_var(--color-fill-alternative)]">
           <ReportReasonButton label="불쾌한 말이나 행동을 했어요" />
         </div>
       </Section>
@@ -358,18 +407,46 @@ function App() {
         />
         <SettleTable
           rows={[
-            { name: "김*연", note: "8km 구간", confirmed: "5,000원", received: "5,400원", refund: "400원" },
-            { name: "나", note: "12km 구간", confirmed: "8,750원", received: "9,500원", refund: "750원" },
+            {
+              name: "김*연",
+              note: "8km 구간",
+              confirmed: "5,000원",
+              received: "5,400원",
+              refund: "400원",
+            },
+            {
+              name: "나",
+              note: "12km 구간",
+              confirmed: "8,750원",
+              received: "9,500원",
+              refund: "750원",
+            },
           ]}
         />
-        <PaymentReceiptCard title="결제 화면을 첨부했어요" description="멤버들이 금액을 확인할 수 있게 같이 보여 줘요" />
-        <TransferRow name="김*연" account="신한은행 110-482-•••331" amount="400원" received />
+        <PaymentReceiptCard
+          title="결제 화면을 첨부했어요"
+          description="멤버들이 금액을 확인할 수 있게 같이 보여 줘요"
+        />
+        <TransferRow
+          name="김*연"
+          account="신한은행 110-482-•••331"
+          amount="400원"
+          received
+        />
       </Section>
 
-      <h1 className="pt-6 text-title3 font-bold text-label-normal">지도 · 수요</h1>
+      <h1 className="text-title3 text-label-normal pt-6 font-bold">
+        지도 · 수요
+      </h1>
 
       <Section title="노선 후보 / 지도 / 리포트">
-        <RouteCandidateCard rank={1} title="단국대 정문 → 처인구" subtitle="기존 N1 하루 1회" demand="주 142회" progress={72} />
+        <RouteCandidateCard
+          rank={1}
+          title="단국대 정문 → 처인구"
+          subtitle="기존 N1 하루 1회"
+          demand="주 142회"
+          progress={72}
+        />
         <RouteCandidateCard
           rank={3}
           title="단국대 정문 → 영통구"
@@ -391,8 +468,20 @@ function App() {
             { value: "4개 구간", label: "노선 후보" },
           ]}
           rows={[
-            { rank: 1, section: "단국대 정문 → 처인구", demand: "주 142회", supply: "N1 하루 1회", action: "셔틀 연장 검토" },
-            { rank: 2, section: "죽전역 → 처인구", demand: "주 104회", supply: "없음", action: "시 노선 건의" },
+            {
+              rank: 1,
+              section: "단국대 정문 → 처인구",
+              demand: "주 142회",
+              supply: "N1 하루 1회",
+              action: "셔틀 연장 검토",
+            },
+            {
+              rank: 2,
+              section: "죽전역 → 처인구",
+              demand: "주 104회",
+              supply: "없음",
+              action: "시 노선 건의",
+            },
           ]}
           note="매칭 실패와 혼자 택시 선택이 많은 구간일수록 동승으로 풀리지 않는 귀가 수요가 커요."
         />
