@@ -1,4 +1,4 @@
-import IconButton from "../ui/IconButton";
+import IconButton from "./IconButton";
 import iconChevronLeft from "../../assets/icons/chevron-left.svg";
 import iconClose from "../../assets/icons/close.svg";
 

@@ -1,4 +1,4 @@
-import Badge from "../ui/Badge";
+import Badge from "../../../shared/components/Badge";
 
 export default function MemberRow({ order, name, school, gender, note, className = "" }) {
   return (

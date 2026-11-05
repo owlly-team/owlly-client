@@ -1,4 +1,4 @@
-import Button from "../ui/Button";
+import Button from "../../../shared/components/Button";
 
 export default function PaymentReceiptCard({ title, description, reattachLabel = "다시 첨부", onReattach, onOpen, className = "" }) {
   return (

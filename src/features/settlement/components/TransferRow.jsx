@@ -1,5 +1,5 @@
-import Button from "../ui/Button";
-import Badge from "../ui/Badge";
+import Button from "../../../shared/components/Button";
+import Badge from "../../../shared/components/Badge";
 
 export default function TransferRow({ name, account, amount, received = false, onCopy, className = "" }) {
   return (

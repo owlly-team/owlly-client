@@ -1,4 +1,4 @@
-import iconSend from "../../assets/icons/send.svg";
+import iconSend from "../../../assets/icons/send.svg";
 
 export default function ChatInput({ placeholder = "메시지 보내기", value, onChange, onSend, className = "" }) {
   return (

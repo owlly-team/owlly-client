@@ -1,4 +1,4 @@
-import iconLocation from "../assets/icons/location.svg";
+import iconLocation from "../../../assets/icons/location.svg";
 
 export default function PermissionRow({
   icon = iconLocation,

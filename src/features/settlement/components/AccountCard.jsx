@@ -1,4 +1,4 @@
-import Button from "../ui/Button";
+import Button from "../../../shared/components/Button";
 
 function AmountRow({ title, subtitle, copyLabel, onCopy, accentCopy = false }) {
   return (

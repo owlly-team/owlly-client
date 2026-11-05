@@ -1,5 +1,5 @@
-import iconCheck from "../../assets/icons/check-circle.svg";
-import Button from "../ui/Button";
+import iconCheck from "../../../assets/icons/check-circle.svg";
+import Button from "../../../shared/components/Button";
 
 export default function RideConfirmButtons({ onBoarded, onMissed, className = "" }) {
   return (

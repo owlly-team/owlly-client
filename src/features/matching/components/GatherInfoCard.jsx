@@ -1,4 +1,4 @@
-import iconTaxiCall from "../../assets/icons/taxi-call.svg";
+import iconTaxiCall from "../../../assets/icons/taxi-call.svg";
 
 export default function GatherInfoCard({ place, note, code, caller, className = "" }) {
   return (

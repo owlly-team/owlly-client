@@ -1,4 +1,4 @@
-import iconAppLogo from "../assets/icons/app-logo.svg";
+import iconAppLogo from "../../../assets/icons/app-logo.svg";
 
 export default function PushNotificationCard({ time = "지금", title, body }) {
   return (

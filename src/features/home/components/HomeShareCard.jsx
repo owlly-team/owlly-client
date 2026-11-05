@@ -1,6 +1,6 @@
-import iconChevronRight from "../../assets/icons/chevron-right-sm.svg";
-import iconAlert from "../../assets/icons/alert-white.svg";
-import iconChat from "../../assets/icons/chat-bubble.svg";
+import iconChevronRight from "../../../assets/icons/chevron-right-sm.svg";
+import iconAlert from "../../../assets/icons/alert-white.svg";
+import iconChat from "../../../assets/icons/chat-bubble.svg";
 
 const STATUS_STYLES = {
   waiting: {

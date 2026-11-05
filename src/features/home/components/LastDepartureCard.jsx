@@ -1,4 +1,4 @@
-import Badge from "../ui/Badge";
+import Badge from "../../../shared/components/Badge";
 
 export default function LastDepartureCard({ time, place, note, className = "" }) {
   return (

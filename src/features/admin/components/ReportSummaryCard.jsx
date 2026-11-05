@@ -1,4 +1,4 @@
-import StatGrid from "../ui/StatGrid";
+import StatGrid from "../../../shared/components/StatGrid";
 
 /**
  * Simplified stand-in for the Figma "리포트 양식" print template.
