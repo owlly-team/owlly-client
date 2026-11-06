@@ -42,11 +42,6 @@ import ReportSummaryCard from "./features/admin/components/ReportSummaryCard";
 import MapPlaceholder from "./features/demand/components/MapPlaceholder";
 
 import iconKebab from "./assets/icons/kebab.svg";
-import iconNavHome from "./assets/icons/nav-home.svg";
-import iconNavReturn from "./assets/icons/nav-return.svg";
-import iconNavMap from "./assets/icons/nav-map.svg";
-import iconNavMapActive from "./assets/icons/nav-map-active.svg";
-import iconNavProfile from "./assets/icons/nav-profile.svg";
 import iconTransportBus from "./assets/icons/transport-bus.svg";
 import iconTransportCarpool from "./assets/icons/transport-carpool.svg";
 import iconTransportTaxi from "./assets/icons/transport-taxi.svg";
@@ -69,6 +64,7 @@ function App() {
   const [matchToggle, setMatchToggle] = useState(true);
   const [selectedTime, setSelectedTime] = useState("23:30");
   const [selectedOption, setSelectedOption] = useState("shuttle");
+  const [selectedTab, setSelectedTab] = useState("home");
 
   return (
     <div className="bg-background-alternative flex min-h-screen flex-col items-center gap-10 px-4 py-10">
@@ -86,25 +82,8 @@ function App() {
 
       <Section title="하단 탭 바">
         <BottomTabBar
-          items={[
-            { key: "home", label: "홈", icon: iconNavHome, active: true },
-            { key: "return", label: "귀가", icon: iconNavReturn },
-            { key: "map", label: "수요 지도", icon: iconNavMap },
-            { key: "profile", label: "내 정보", icon: iconNavProfile },
-          ]}
-        />
-        <BottomTabBar
-          items={[
-            {
-              key: "map",
-              label: "수요 지도",
-              icon: iconNavMap,
-              activeIcon: iconNavMapActive,
-              active: true,
-            },
-            { key: "routes", label: "노선 후보", icon: iconNavReturn },
-            { key: "report", label: "리포트", icon: iconNavProfile },
-          ]}
+          activeTab={selectedTab}
+          onTabChange={setSelectedTab}
         />
       </Section>
 
@@ -315,6 +294,7 @@ function App() {
         />
         <TransportOptionCard
           icon={iconTransportTaxi}
+          iconTone="neutral"
           title="혼자 택시"
           description="지금 출발 · 23:05 도착"
           price="27,400원"
@@ -328,17 +308,18 @@ function App() {
             {
               time: "22:49",
               icon: iconStepWalk,
+              type: "walk",
               title: "정문 정류장까지 걷기",
               description: "도보 4분 · 300m",
             },
             {
               time: "22:58",
               icon: iconStepBus,
+              type: "transit",
               title: "정문 정류장에서 버스 타기",
               description: "마지막 버스 · 31분",
-              active: true,
             },
-            { time: "23:41", icon: iconStepFlag, title: "영통2동 도착" },
+            { time: "23:41", type: "home", icon: iconStepFlag, title: "영통2동 도착" },
           ]}
         />
         <HomeShareCard

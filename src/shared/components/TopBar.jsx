@@ -18,7 +18,7 @@ export default function TopBar({
 
   return (
     <div
-      className={`flex min-h-14 w-full items-center gap-1 rounded-12 bg-background-normal px-2 shadow-[0_0_0_1px_var(--color-line-alternative)] ${className}`}
+      className={`flex min-h-14 w-full items-center gap-1 bg-background-normal px-2 ${className}`}
     >
       <IconButton src={left.src} alt={left.alt} onClick={onLeftClick} />
       <p className="flex-1 truncate text-headline2 font-semibold text-label-normal">
