@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import LastDepartureCard from "../components/LastDepartureCard";
 import TransportOptionCard from "../components/TransportOptionCard";
 import iconLocation from "../../../assets/icons/location.svg";
@@ -49,6 +50,7 @@ const homeData = {
 };
 
 export default function Home() {
+  const navigate = useNavigate();
   const [selectedTransport, setSelectedTransport] = useState("carpool");
   const [selectedTab, setSelectedTab] = useState("home");
 
@@ -74,7 +76,10 @@ export default function Home() {
             key={id}
             {...option}
             selected={selectedTransport === id}
-            onClick={() => setSelectedTransport(id)}
+            onClick={() => {
+              setSelectedTransport(id);
+              if (id === "bus") navigate("/last-train");
+            }}
           />
         ))}
       </div>

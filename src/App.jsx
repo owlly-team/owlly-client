@@ -308,17 +308,18 @@ function App() {
             {
               time: "22:49",
               icon: iconStepWalk,
+              type: "walk",
               title: "정문 정류장까지 걷기",
               description: "도보 4분 · 300m",
             },
             {
               time: "22:58",
               icon: iconStepBus,
+              type: "transit",
               title: "정문 정류장에서 버스 타기",
               description: "마지막 버스 · 31분",
-              active: true,
             },
-            { time: "23:41", icon: iconStepFlag, title: "영통2동 도착" },
+            { time: "23:41", type: "home", icon: iconStepFlag, title: "영통2동 도착" },
           ]}
         />
         <HomeShareCard
