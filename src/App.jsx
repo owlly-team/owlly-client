@@ -42,11 +42,10 @@ import ReportSummaryCard from "./features/admin/components/ReportSummaryCard";
 import MapPlaceholder from "./features/demand/components/MapPlaceholder";
 
 import iconKebab from "./assets/icons/kebab.svg";
-import iconNavHome from "./assets/icons/nav-home.svg";
-import iconNavReturn from "./assets/icons/nav-return.svg";
-import iconNavMap from "./assets/icons/nav-map.svg";
-import iconNavMapActive from "./assets/icons/nav-map-active.svg";
-import iconNavProfile from "./assets/icons/nav-profile.svg";
+import iconNavHome from "./assets/icons/nav-home.svg?react";
+import iconNavReturn from "./assets/icons/nav-return.svg?react";
+import iconNavMap from "./assets/icons/nav-map.svg?react";
+import iconNavProfile from "./assets/icons/nav-profile.svg?react";
 import iconTransportBus from "./assets/icons/transport-bus.svg";
 import iconTransportCarpool from "./assets/icons/transport-carpool.svg";
 import iconTransportTaxi from "./assets/icons/transport-taxi.svg";
@@ -99,7 +98,6 @@ function App() {
               key: "map",
               label: "수요 지도",
               icon: iconNavMap,
-              activeIcon: iconNavMapActive,
               active: true,
             },
             { key: "routes", label: "노선 후보", icon: iconNavReturn },
@@ -315,6 +313,7 @@ function App() {
         />
         <TransportOptionCard
           icon={iconTransportTaxi}
+          iconTone="neutral"
           title="혼자 택시"
           description="지금 출발 · 23:05 도착"
           price="27,400원"
