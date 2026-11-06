@@ -42,10 +42,6 @@ import ReportSummaryCard from "./features/admin/components/ReportSummaryCard";
 import MapPlaceholder from "./features/demand/components/MapPlaceholder";
 
 import iconKebab from "./assets/icons/kebab.svg";
-import iconNavHome from "./assets/icons/nav-home.svg?react";
-import iconNavReturn from "./assets/icons/nav-return.svg?react";
-import iconNavMap from "./assets/icons/nav-map.svg?react";
-import iconNavProfile from "./assets/icons/nav-profile.svg?react";
 import iconTransportBus from "./assets/icons/transport-bus.svg";
 import iconTransportCarpool from "./assets/icons/transport-carpool.svg";
 import iconTransportTaxi from "./assets/icons/transport-taxi.svg";
@@ -68,6 +64,7 @@ function App() {
   const [matchToggle, setMatchToggle] = useState(true);
   const [selectedTime, setSelectedTime] = useState("23:30");
   const [selectedOption, setSelectedOption] = useState("shuttle");
+  const [selectedTab, setSelectedTab] = useState("home");
 
   return (
     <div className="bg-background-alternative flex min-h-screen flex-col items-center gap-10 px-4 py-10">
@@ -85,24 +82,8 @@ function App() {
 
       <Section title="하단 탭 바">
         <BottomTabBar
-          items={[
-            { key: "home", label: "홈", icon: iconNavHome, active: true },
-            { key: "return", label: "귀가", icon: iconNavReturn },
-            { key: "map", label: "수요 지도", icon: iconNavMap },
-            { key: "profile", label: "내 정보", icon: iconNavProfile },
-          ]}
-        />
-        <BottomTabBar
-          items={[
-            {
-              key: "map",
-              label: "수요 지도",
-              icon: iconNavMap,
-              active: true,
-            },
-            { key: "routes", label: "노선 후보", icon: iconNavReturn },
-            { key: "report", label: "리포트", icon: iconNavProfile },
-          ]}
+          activeTab={selectedTab}
+          onTabChange={setSelectedTab}
         />
       </Section>
 
