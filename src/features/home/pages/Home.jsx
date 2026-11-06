@@ -79,6 +79,7 @@ export default function Home() {
             onClick={() => {
               setSelectedTransport(id);
               if (id === "bus") navigate("/last-train");
+              if (id === "taxi") navigate("/solo-taxi");
             }}
           />
         ))}

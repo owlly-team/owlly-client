@@ -71,7 +71,7 @@ export default function LastTrain(){
                 </p>
                 <div className="flex items-center justify-between gap-4">
                     <div>
-                        <p className="text-heading2 font-bold text-label-strong">
+                        <p className="text-title3 font-bold text-label-strong">
                             {LastTrainData.timeTaken}분
                         </p>
                     </div>

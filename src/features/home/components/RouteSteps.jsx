@@ -39,7 +39,7 @@ export default function RouteSteps({ steps = [], className = "" }) {
             <div className="flex min-h-7 flex-col gap-0.5 pt-0.5 pb-4">
               <p className="text-body2 font-semibold text-label-normal">{step.title}</p>
               {step.description && (
-                <p className="text-label2 text-label-alternative">{step.description}</p>
+                <p className="text-label2 text-label-neutral">{step.description}</p>
               )}
             </div>
           </li>
