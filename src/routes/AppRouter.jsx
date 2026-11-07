@@ -3,6 +3,7 @@ import Layout from "../shared/layout/Layout";
 import Home from "../features/home/pages/Home";
 import LastTrain from "../features/home/pages/LastTrain";
 import SoloTaxi from "../features/home/pages/SoloTaxi";
+import StartTime from "../features/matching/pages/StartTime";
 
 export default function AppRouter() {
   return (
@@ -12,6 +13,7 @@ export default function AppRouter() {
           <Route index element={<Home />} />
           <Route path="last-train" element={<LastTrain />} />
           <Route path="solo-taxi" element={<SoloTaxi />} />
+          <Route path="start-time" element={<StartTime />} /> 
         </Route>
       </Routes>
     </BrowserRouter>

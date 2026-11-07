@@ -9,7 +9,9 @@ export default function TimeChip({ time, subLabel, selected = false, onClick }) 
           : "text-label-normal shadow-[inset_0_0_0_1px_var(--color-fill-strong)]"
       }`}
     >
-      <span className="text-body1 font-semibold">{time}</span>
+      <span className="text-body1 font-semibold">
+        {time}
+      </span>
       <span className={`text-caption1 ${selected ? "text-static-white" : "text-label-neutral"}`}>
         {subLabel}
       </span>
