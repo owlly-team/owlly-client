@@ -22,7 +22,13 @@ const StartTimeData = {
 }
 
 export default function StartTime() {
-        const [selectedTime, setSelectedTime] = useState(null);
+    const navigate = useNavigate();
+    const [selectedTime, setSelectedTime] = useState(null);
+
+    const handleRegistration = () => {
+        if (!selectedTime) return;
+        navigate("/carpool-registration", { state: { selectedTime } });
+    };
 
     return(
         <div className="flex flex-1 flex-col">
@@ -55,7 +61,7 @@ export default function StartTime() {
                 <DefinitionList rows={StartTimeData.definitionList} />
             </div>
             <div className="sticky bottom-0 mt-auto flex w-full shrink-0 bg-background-normal pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-                <Button className="w-full" disabled={!selectedTime}>
+                <Button className="w-full" disabled={!selectedTime} onClick={handleRegistration}>
                     {selectedTime ? `${selectedTime}으로 등록하기` : "출발 시간을 선택해 주세요"}
                 </Button>
             </div>
