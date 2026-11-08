@@ -8,6 +8,8 @@ import iconBus from "../../../assets/icons/transport-bus.svg";
 import iconCarpool from "../../../assets/icons/transport-carpool.svg";
 import iconTaxi from "../../../assets/icons/transport-taxi.svg";
 import BottomTabBar from "../../../shared/components/BottomTabBar";
+import Badge from "../../../shared/components/Badge";
+import iconChevronRight from "../../../assets/icons/chevron-right-sm.svg";
 
 const TRANSPORT_ICONS = {
   bus: iconBus,
@@ -55,8 +57,22 @@ const defaultHomeData = {
     note: "22:49까지 출발해야 해요",
   },
   matching: {
-    requestStatus: null, // RideRequest.status 원본 값, 신청이 없으면 null
-    partyStatus: null, // Party.status 원본 값, 팟이 없으면 null
+    requestStatus: "MATCHED", // 매칭 결과 화면 목업. 신청이 없으면 null
+    partyStatus: "CONFIRMING", // Party.status 원본 값, 팟이 없으면 null
+  },
+  // 화면 표시용 목업. API 연동 시 신청 출발 시각, 거점명,
+  // 별도로 확인한 구 이름과 MatchingSlot.waitingCount로 구성한다.
+  matchingDisplay: {
+    departureTime: "23:30",
+    pickupPointName: "단국대 정문",
+    directionLabel: "영통구",
+    waitingCount: 2,
+    // 결과 카드 표시용 목업. 인원은 Party.members, 금액은 본인
+    // SettlementItem.estimatedShareWon을 연결한다. 확정 기한은 정책/필드 확인 필요.
+    matchedCompanionCount: 3,
+    estimatedShareWon: 7900,
+    confirmationTimeLabel: "22:49",
+    remainingTimeLabel: "5분 남음", // 실제 타이머나 확정된 서버 TTL이 아님
   },
   // 기존 화면을 유지하기 위한 표시용 목업(API 필드명 아님).
   // 연동 시 경로/예상 시각과 matching-slots의 대기 수 등으로 표시 문구를 구성한다.
@@ -125,13 +141,80 @@ function getMatchingUiState(requestStatus, partyStatus) {
   return requestStatus === "WAITING" ? "MATCHING_WAITING" : null;
 }
 
-// 매칭 UI는 이 분기에 추가. 아직은 모든 상태에서 기존 홈을 유지
-function renderMatchingSection(uiState) {
+// 백엔드 상태와 분리된 홈 UI 분기. 동승 진행 화면은 추후 구현.
+function renderMatchingSection(uiState, display, onViewRegistration, onViewMatchingResult) {
   switch (uiState) {
     case "MATCHING_WAITING":
-      return null;
+      return (
+        <section
+          aria-labelledby="matching-waiting-title"
+          className="rounded-16 border-line-normal bg-background-normal mt-5 border p-4"
+        >
+          <Badge variant="neutral">매칭 대기 중</Badge>
+          <h2
+            id="matching-waiting-title"
+            className="text-heading2 text-label-strong mt-2 font-bold"
+          >
+            {display?.departureTime} {display?.pickupPointName} 출발
+          </h2>
+          <p className="text-label2 text-label-neutral mt-1">
+            {display?.directionLabel && `${display.directionLabel} 방향 · `}
+            {display?.waitingCount != null && `지금 ${display.waitingCount}명 대기 · `}
+            결과는 막차 전에 알려 드려요
+          </p>
+          <div className="border-line-alternative mt-3 border-t pt-2">
+            <button
+              type="button"
+              onClick={onViewRegistration}
+              className="font-semibold text-label1 text-label-neutral focus-visible:outline-primary-normal ml-auto flex min-h-7 items-center gap-1 rounded-8 focus-visible:outline-2 focus-visible:outline-offset-2"
+            >
+              등록 내용 보기
+              <img src={iconChevronRight} alt="" className="size-4" />
+            </button>
+          </div>
+        </section>
+      );
     case "MATCHING_RESULT":
-      return null;
+      return (
+        <section
+          aria-labelledby="matching-result-title"
+          className="rounded-16 bg-primary-normal text-static-white mt-5 p-4"
+        >
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-caption1 rounded-8 bg-white/20 px-2 py-1 font-semibold">
+              매칭됐어요
+            </span>
+            {display?.remainingTimeLabel && (
+              <span className="text-caption1 bg-static-white text-primary-normal rounded-full px-2 py-1 font-semibold">
+                {display.remainingTimeLabel}
+              </span>
+            )}
+          </div>
+          <h2 id="matching-result-title" className="text-heading2 mt-2 font-bold">
+            {display?.matchedCompanionCount != null
+              ? `같은 학교 ${display.matchedCompanionCount}명과 매칭됐어요`
+              : "같은 학교 동승자와 매칭됐어요"}
+          </h2>
+          <p className="text-label2 mt-1">
+            {display?.departureTime} {display?.pickupPointName} 출발 · 예상 1인{" "}
+            {formatWon(display?.estimatedShareWon)}
+          </p>
+          <div className="mt-3 border-t border-white/20 pt-2">
+            <button
+              type="button"
+              onClick={onViewMatchingResult}
+              disabled={!onViewMatchingResult}
+              title={!onViewMatchingResult ? "팟 확정 화면 연결 예정" : undefined}
+              className="text-label1 ml-auto flex min-h-7 items-center gap-1 rounded-8 font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:cursor-not-allowed"
+            >
+              {display?.confirmationTimeLabel
+                ? `${display.confirmationTimeLabel}까지 확정해 주세요`
+                : "매칭 결과 확인하기"}
+              <img src={iconChevronRight} alt="" className="size-4 brightness-0 invert" />
+            </button>
+          </div>
+        </section>
+      );
     case "RIDE_IN_PROGRESS":
       return null;
     default:
@@ -139,7 +222,7 @@ function renderMatchingSection(uiState) {
   }
 }
 
-export default function Home({ data = defaultHomeData }) {
+export default function Home({ data = defaultHomeData, onViewMatchingResult }) {
   const navigate = useNavigate();
   const [selectedTransportId, setSelectedTransportId] = useState("carpool");
   const [selectedTab, setSelectedTab] = useState("home");
@@ -149,6 +232,7 @@ export default function Home({ data = defaultHomeData }) {
     travelOptions,
     lastTransit,
     matching,
+    matchingDisplay,
     transportDisplay,
   } = data;
 
@@ -158,6 +242,8 @@ export default function Home({ data = defaultHomeData }) {
     matching?.requestStatus ?? null,
     matching?.partyStatus ?? null,
   );
+  const isMatchingWaiting = matchingUiState === "MATCHING_WAITING";
+  const isMatchingResult = matchingUiState === "MATCHING_RESULT";
   const visibleTransportOptions = toTransportOptionCards(
     travelOptions,
     transportDisplay,
@@ -189,7 +275,14 @@ export default function Home({ data = defaultHomeData }) {
           {destinationLabel}
         </p>
       </header>
-      {renderMatchingSection(matchingUiState)}
+      {renderMatchingSection(
+        matchingUiState,
+        matchingDisplay,
+        () => navigate("/carpool-registration", {
+          state: { selectedTime: matchingDisplay?.departureTime },
+        }),
+        onViewMatchingResult,
+      )}
       <div className="mt-5">
         {lastTransit && (
           <LastDepartureCard
@@ -198,18 +291,25 @@ export default function Home({ data = defaultHomeData }) {
           />
         )}
       </div>
-      <div className="mt-5 flex flex-col gap-2">
-        <h2 className="text-heading2 mb-1.4 font-bold">귀가 방법 비교</h2>
-        {visibleTransportOptions.map(({ id, ...option }) => (
-          <TransportOptionCard
-            key={id}
-            {...option}
-            icon={option.icon ?? TRANSPORT_ICONS[id]}
-            selected={activeTransport === id}
-            onClick={() => handleTransportSelect(id)}
-          />
-        ))}
-      </div>
+      {isMatchingResult && transit?.available === true && (
+        <p className="text-caption1 text-label-alternative mt-5">
+          확정하지 않으면 막차를 타도 돼요.
+        </p>
+      )}
+      {!isMatchingWaiting && !isMatchingResult && (
+        <div className="mt-5 flex flex-col gap-2">
+          <h2 className="text-heading2 mb-1.4 font-bold">귀가 방법 비교</h2>
+          {visibleTransportOptions.map(({ id, ...option }) => (
+            <TransportOptionCard
+              key={id}
+              {...option}
+              icon={option.icon ?? TRANSPORT_ICONS[id]}
+              selected={activeTransport === id}
+              onClick={() => handleTransportSelect(id)}
+            />
+          ))}
+        </div>
+      )}
       <footer className="bg-background-normal -mx-4 mt-auto">
         <BottomTabBar activeTab={selectedTab} onTabChange={setSelectedTab} />
       </footer>
