@@ -29,13 +29,13 @@ export default function useHome(data) {
 
   const { travelOptions, rideRequest, party } = data;
   const viewData = toHomeViewData(data, data.previewNow ? Date.parse(data.previewNow) : now);
-  const { matchingDisplay, transportDisplay } = viewData;
+  const { transportDisplay } = viewData;
 
   // 막차 전후와 매칭 전후를 독립적으로 판단하고 화면 표시 여부만 조합
   const transitAvailable = travelOptions?.transit?.available ?? null;
   const matchingUiState = getMatchingUiState(
     rideRequest?.status ?? null,
-    party?.status ?? null,
+    rideRequest?.status === "MATCHED" && party?.id === rideRequest.partyId ? party?.status ?? null : null,
   );
   const isMatchingWaiting = matchingUiState === "MATCHING_WAITING";
   const isMatchingResult = matchingUiState === "MATCHING_RESULT";
@@ -57,9 +57,12 @@ export default function useHome(data) {
   function handleViewRegistration() {
     navigate("/carpool-registration", {
       state: {
-        selectedTime: matchingDisplay?.departureTime,
-        requestId: rideRequest?.id,
-        waitingCount: matchingDisplay?.waitingCount,
+        rideRequest,
+        display: {
+          pickupPoint: data.pickupPoint,
+          destinationDong: { id: data.travelOptions?.destinationDongId, name: data.destinationLabel },
+        },
+        matchingSlot: data.matchingSlots?.find((slot) => slot.departureAt === rideRequest?.departureAt),
       },
     });
   }

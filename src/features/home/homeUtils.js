@@ -49,7 +49,10 @@ export function formatTime(value) {
 }
 
 export function toHomeViewData(data, now = Date.now()) {
-  const { travelOptions, rideRequest, party, matchingSlots = [], presentation = {} } = data;
+  const { travelOptions, rideRequest, matchingSlots = [], presentation = {} } = data;
+  // 이전 신청의 팟 정보가 남아 있어도 현재 신청 결과와 섞지 않는다.
+  const party = rideRequest?.status === "MATCHED" && data.party?.id === rideRequest.partyId
+    ? data.party : null;
   const transit = travelOptions?.transit;
   const legs = transit?.legs ?? [];
   const firstRide = legs.find((leg) => leg.mode === "BUS" || leg.mode === "SUBWAY");
@@ -59,9 +62,11 @@ export function toHomeViewData(data, now = Date.now()) {
     : null;
   
   //동승 출발 시간 선택
-  const slot = matchingSlots.find((item) => item.departureAt === rideRequest?.departureAt)
-    ?? matchingSlots.find((item) => item.registrationAllowed);
-  const departureAt = party?.departureAt ?? rideRequest?.departureAt ?? slot?.departureAt;
+  const isActiveRequest = ["WAITING", "MATCHED"].includes(rideRequest?.status);
+  const slot = isActiveRequest
+    ? matchingSlots.find((item) => item.departureAt === rideRequest.departureAt)
+    : matchingSlots.find((item) => item.registrationAllowed);
+  const departureAt = party?.departureAt ?? (isActiveRequest ? rideRequest.departureAt : slot?.departureAt);
   const waitingCount = slot?.waitingCount;
   const pickupPointName = party?.pickupPoint?.name ?? data.pickupPoint?.name;
   const direction = presentation.directionLabel;
@@ -80,6 +85,11 @@ export function toHomeViewData(data, now = Date.now()) {
       note: transit?.lastLeaveAt ? `${formatTime(transit.lastLeaveAt)}까지 출발해야 해요` : null,
     },
     matchingDisplay: {
+      resultDueLabel: rideRequest?.resultDueAt
+        ? (transit?.available === true && Date.parse(rideRequest.resultDueAt) <= Date.parse(transit.lastLeaveAt)
+          ? "결과는 막차 전에 알려 드려요"
+          : `${formatTime(rideRequest.resultDueAt)}까지 결과 안내 예정이에요`)
+        : "매칭 결과가 나오면 알려 드려요",
       departureTime: formatTime(departureAt),
       pickupPointName,
       directionLabel: direction,

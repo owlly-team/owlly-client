@@ -7,7 +7,7 @@ import BottomTabBar from "../../../shared/components/BottomTabBar";
 import { homeScenarios } from "../homeMockData";
 import useHome from "../useHome";
 
-export default function Home({ data = homeScenarios.beforeLastTransit, onViewMatchingResult }) {
+export default function Home({ data = homeScenarios.matched, onViewMatchingResult }) {
   const {
     viewData,
     matchingUiState,
@@ -41,7 +41,7 @@ export default function Home({ data = homeScenarios.beforeLastTransit, onViewMat
         uiState={matchingUiState}
         display={matchingDisplay}
         onViewRegistration={handleViewRegistration}
-        onViewMatchingResult={onViewMatchingResult && data.rideRequest?.partyId
+        onViewMatchingResult={onViewMatchingResult && data.rideRequest?.status === "MATCHED" && data.rideRequest?.partyId
           ? () => onViewMatchingResult(data.rideRequest.partyId)
           : undefined}
       />

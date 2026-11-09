@@ -1,9 +1,11 @@
-export default function TimeChip({ time, subLabel, selected = false, onClick }) {
+export default function TimeChip({ time, subLabel, selected = false, disabled = false, onClick }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`flex min-w-[76px] flex-col items-center justify-center gap-0.5 rounded-12 px-3 py-2 ${
+      disabled={disabled}
+      aria-pressed={selected}
+      className={`flex min-w-[76px] flex-col items-center justify-center gap-0.5 rounded-12 px-3 py-2 disabled:cursor-not-allowed disabled:opacity-40 ${
         selected
           ? "bg-label-normal text-static-white"
           : "text-label-normal shadow-[inset_0_0_0_1px_var(--color-fill-strong)]"

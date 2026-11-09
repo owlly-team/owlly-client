@@ -22,7 +22,7 @@ export default function HomeMatchingCard({ uiState, display, onViewRegistration,
           <p className="text-label2 text-label-neutral mt-1">
             {display?.directionLabel && `${display.directionLabel} 방향 · `}
             {display?.waitingCount != null && `지금 ${display.waitingCount}명 대기 · `}
-            결과는 막차 전에 알려 드려요
+            {display?.resultDueLabel}
           </p>
           <div className="border-line-alternative mt-3 border-t pt-2">
             <button
