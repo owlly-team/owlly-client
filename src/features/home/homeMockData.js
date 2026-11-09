@@ -1,72 +1,71 @@
+﻿
+const at = (time) => `2026-11-09T${time}:00+09:00`;
+const pickupPoint = {
+  id: "11", universityId: "1", name: "단국대 정문",
+  point: { latitude: 37.331, longitude: 127.271 }, meetingNote: "정문 앞",
+};
+const rideRequest = {
+  id: "301", journeyId: "201", pickupPointId: "11", districtId: "21",
+  destinationDongId: "31", departureAt: at("23:30"), sameGenderOnly: true,
+  status: "WAITING", resultDueAt: at("22:43"), partyId: null, createdAt: at("22:30"),
+};
 export const defaultHomeData = {
-  pickupPoint: { name: "단국대 정문 근처" },
+  pickupPoint,
   destinationLabel: "영통2동",
-  // POST /travel-options 응답의 data. 아래 날짜/ID/금액은 목업 값.
   travelOptions: {
     transit: {
-      available: true,
-      lastLeaveAt: "2026-11-08T22:49:00+09:00",
-      arrivalAt: "2026-11-08T23:41:00+09:00",
+      available: true, lastLeaveAt: at("22:49"), arrivalAt: at("23:41"),
       estimatedCostWon: 1550,
-      legs: [],
-      sourceLabel: "목업 추정값",
-      asOf: "2026-11-08T22:00:00+09:00",
+      legs: [
+        { mode: "WALK", routeName: null, fromName: "단국대 정문", toName: "정문 정류장", departureAt: at("22:49"), arrivalAt: at("22:53") },
+        { mode: "BUS", routeName: null, fromName: "정문 정류장", toName: "영통역 정류장", departureAt: at("22:58"), arrivalAt: at("23:29") },
+        { mode: "WALK", routeName: null, fromName: "영통역 정류장", toName: "영통2동", departureAt: at("23:29"), arrivalAt: at("23:41") },
+      ],
+      sourceLabel: "목업 추정값", asOf: at("22:30"),
     },
-    soloTaxiEstimatedWon: 27400,
-    poolEstimatedShareWon: 7900,
-    estimatedArrivalAt: "2026-11-08T23:40:00+09:00",
-    destinationDongId: "31",
-    districtId: "21",
-    asOf: "2026-11-08T22:00:00+09:00",
-    warnings: [],
+    soloTaxiEstimatedWon: 27400, poolEstimatedShareWon: 7900,
+    estimatedArrivalAt: at("23:05"), destinationDongId: "31", districtId: "21",
+    asOf: at("22:30"), warnings: [],
   },
-  // 카드 표시용 데이터. time은 교통수단 출발 시각으로 lastLeaveAt과 다름.
-  // API 연동 시 lastLeaveAt의 표시/마감 판단을 연결하며 매칭과는 독립적으로 처리.
-  lastTransit: {
-    time: "22:58",
-    place: "정문 정류장 · 도보 4분",
-    note: "22:49까지 출발해야 해요",
-  },
-  matching: {
-    requestStatus: "MATCHED", // 매칭 결과 화면 목업. 신청이 없으면 null
-    partyStatus: "CONFIRMING", // Party.status 원본 값, 팟이 없으면 null
-  },
-  // 화면 표시용 목업. API 연동 시 신청 출발 시각, 거점명,
-  // 별도로 확인한 구 이름과 MatchingSlot.waitingCount로 구성한다.
-  matchingDisplay: {
-    departureTime: "23:30",
-    pickupPointName: "단국대 정문",
-    directionLabel: "영통구",
-    waitingCount: 2,
-    // 결과 카드 표시용 목업. 인원은 Party.members, 금액은 본인
-    // SettlementItem.estimatedShareWon을 연결한다. 확정 기한은 정책/필드 확인 필요.
-    matchedCompanionCount: 3,
-    estimatedShareWon: 7900,
-    confirmationTimeLabel: "22:49",
-    remainingTimeLabel: "5분 남음", // 실제 타이머나 확정된 서버 TTL이 아님
-  },
-  // 기존 화면을 유지하기 위한 표시용 목업(API 필드명 아님).
-  // 연동 시 경로/예상 시각과 matching-slots의 대기 수 등으로 표시 문구를 구성한다.
-  transportDisplay: {
-    bus: {
-      iconTone: "cyan",
-      title: "막차",
-      description: "22:58 출발 · 23:41 도착",
-      priceLabel: "1인",
+  rideRequest: null,
+  party: null,
+  matchingSlots: [{ departureAt: at("23:30"), waitingCount: 2, registrationAllowed: true, reason: null }],
+  presentation: { originLabel: "단국대 정문 근처", directionLabel: "영통구", poolArrivalAt: "2026-11-10T00:00:00+09:00" },
+};
+const party = {
+  id: "401", status: "CONFIRMING", pickupPoint, departureAt: at("23:30"),
+  representativeMemberId: "501", myMemberId: "501",
+  members: ["501", "502", "503", "504"].map((memberId) => ({
+    memberId, maskedName: "김*연", universityName: "단국대학교", destinationDongName: "영통2동",
+    sameGenderAsMe: true, isRepresentative: memberId === "501", decision: "PENDING",
+    boardingStatus: "UNKNOWN", stopOrder: null,
+  })),
+  routeVersion: 1, taxiCalledAt: null, roomId: null, allowedActions: [],
+};
+// Home의 data prop에 넣어 네 가지 시안을 확인한다.
+export const homeScenarios = {
+  beforeLastTransit: defaultHomeData,
+  afterLastTransit: {
+    ...defaultHomeData,
+    travelOptions: {
+      ...defaultHomeData.travelOptions,
+      transit: { ...defaultHomeData.travelOptions.transit, available: false, lastLeaveAt: null, arrivalAt: null, estimatedCostWon: null, legs: [] },
+      estimatedArrivalAt: at("23:40"),
     },
-    carpool: {
-      iconTone: "primary",
-      title: "동승",
-      description: "00:00 출발 · 00:30 도착",
-      highlight: "영통구 방향 1명 대기",
-      priceLabel: "예상 1인 부담",
+    matchingSlots: [{ departureAt: "2026-11-10T00:00:00+09:00", waitingCount: 1, registrationAllowed: true, reason: null }],
+    presentation: { ...defaultHomeData.presentation, poolArrivalAt: "2026-11-10T00:30:00+09:00" },
+  },
+  waiting: { ...defaultHomeData, rideRequest },
+  matched: {
+    ...defaultHomeData,
+    rideRequest: { ...rideRequest, status: "MATCHED", partyId: party.id },
+    party,
+    mySettlementItem: {
+      id: "601", memberId: "501", estimatedShareWon: 7900, prepayDueWon: 0,
+      actualShareWon: null, refundDueWon: null, status: "ESTIMATED", transfers: [],
     },
-    taxi: {
-      iconTone: "neutral",
-      title: "혼자 택시",
-      description: "지금 출발 · 23:40 도착",
-      priceLabel: "1인",
-    },
+
+    matchedAt: at("22:44"),
+    previewNow: at("22:44"),
   },
 };
-

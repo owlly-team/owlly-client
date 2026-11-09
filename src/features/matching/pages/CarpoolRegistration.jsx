@@ -10,18 +10,22 @@ const StartTimeData = {
         { term: "출발", value: "단국대 정문 · 23:30" },
         { term: "하차 지점", value: "영통2동" },
         { term: "동성 매칭", value: "켜짐" },
-        { term: "지금 대기", value: "2명", accent: true },
+        { term: "지금 대기", value: "확인 필요", accent: true },
     ]
 }
 
 export default function CarpoolRegistration() {
     const navigate = useNavigate();
     const { state } = useLocation();
-    const rows = StartTimeData.definitionList.map((row) =>
-        row.term === "출발" && state?.selectedTime
-            ? { ...row, value: `${StartTimeData.origin} · ${state.selectedTime}` }
-            : row
-    );
+    const rows = StartTimeData.definitionList.map((row) => {
+        if (row.term === "출발" && state?.selectedTime) {
+            return { ...row, value: `${StartTimeData.origin} · ${state.selectedTime}` };
+        }
+        if (row.term === "지금 대기" && Number.isInteger(state?.waitingCount) && state.waitingCount >= 0) {
+            return { ...row, value: `${state.waitingCount}명` };
+        }
+        return row;
+    });
     const goHome = () => navigate("/");
 
     return(

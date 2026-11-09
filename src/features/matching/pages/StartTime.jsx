@@ -9,10 +9,10 @@ const StartTimeData = {
     origin: "단국대 정문",
     destination: "영통2동",
     timeOptions: [
-        { time: "23:00", subLabel: "1명 대기" },
-        { time: "23:30", subLabel: "2명 대기" },
-        { time: "00:00", subLabel: "0명" },
-        { time: "00:30", subLabel: "0명" },
+        { time: "23:00", waitingCount: 1 },
+        { time: "23:30", waitingCount: 2 },
+        { time: "00:00", waitingCount: 0 },
+        { time: "00:30", waitingCount: 0 },
     ],
     definitionList: [
         { term: "출발 거점", value: "단국대 정문" },
@@ -26,8 +26,11 @@ export default function StartTime() {
     const [selectedTime, setSelectedTime] = useState(null);
 
     const handleRegistration = () => {
-        if (!selectedTime) return;
-        navigate("/carpool-registration", { state: { selectedTime } });
+        const selectedOption = StartTimeData.timeOptions.find((option) => option.time === selectedTime);
+        if (!selectedOption) return;
+        navigate("/carpool-registration", {
+            state: { selectedTime, waitingCount: selectedOption.waitingCount },
+        });
     };
 
     return(
@@ -48,7 +51,7 @@ export default function StartTime() {
                     <TimeChip
                         key={option.time}
                         time={option.time}
-                        subLabel={option.subLabel}
+                        subLabel={option.waitingCount > 0 ? `${option.waitingCount}명 대기` : "0명"}
                         selected={selectedTime === option.time}
                         onClick={() => setSelectedTime(option.time)}
                     />

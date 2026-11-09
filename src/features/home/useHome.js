@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import iconBus from "../../assets/icons/transport-bus.svg";
 import iconCarpool from "../../assets/icons/transport-carpool.svg";
 import iconTaxi from "../../assets/icons/transport-taxi.svg";
-import { getMatchingUiState, toTransportOptionCards } from "./homeUtils";
+import { getMatchingUiState, toTransportOptionCards, toHomeViewData } from "./homeUtils";
 
 const TRANSPORT_ICONS = {
   bus: iconBus,
@@ -18,42 +18,54 @@ const TRANSPORT_ROUTES = {
 
 export default function useHome(data) {
   const navigate = useNavigate();
-  // 카드 강조용 선택 상태이며 실제 JourneyChoice를 저장하지 않는다.
-  const [selectedTransportId, setSelectedTransportId] = useState("carpool");
   const [selectedTab, setSelectedTab] = useState("home");
-  const { travelOptions, matching, matchingDisplay, transportDisplay } = data;
-  // 막차 전후와 매칭 전후를 독립적으로 판단하고 화면 표시 여부만 조합한다.
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (!data.matchedAt || data.previewNow) return;
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [data.matchedAt, data.previewNow]);
+
+  const { travelOptions, rideRequest, party } = data;
+  const viewData = toHomeViewData(data, data.previewNow ? Date.parse(data.previewNow) : now);
+  const { matchingDisplay, transportDisplay } = viewData;
+
+  // 막차 전후와 매칭 전후를 독립적으로 판단하고 화면 표시 여부만 조합
   const transitAvailable = travelOptions?.transit?.available ?? null;
   const matchingUiState = getMatchingUiState(
-    matching?.requestStatus ?? null,
-    matching?.partyStatus ?? null,
+    rideRequest?.status ?? null,
+    party?.status ?? null,
   );
   const isMatchingWaiting = matchingUiState === "MATCHING_WAITING";
   const isMatchingResult = matchingUiState === "MATCHING_RESULT";
+  //막차 끊기면 버스 카드 제외
   const visibleOptions = toTransportOptionCards(travelOptions, transportDisplay)
     .filter(({ id }) => transitAvailable !== false || id !== "bus");
-  const activeTransport = visibleOptions.some(({ id }) => id === selectedTransportId)
-    ? selectedTransportId
-    : visibleOptions[0]?.id;
   const transportOptions = visibleOptions.map((option) => ({
     ...option,
     icon: option.icon ?? TRANSPORT_ICONS[option.id],
-    selected: activeTransport === option.id,
+    selected: option.id === "carpool",
   }));
 
+  //귀가 방법 카드 눌렀을 때 처리
   function handleTransportSelect(id) {
-    setSelectedTransportId(id);
     const route = TRANSPORT_ROUTES[id];
     if (route) navigate(route);
   }
-
+  //동승 등록 내용 보기
   function handleViewRegistration() {
     navigate("/carpool-registration", {
-      state: { selectedTime: matchingDisplay?.departureTime },
+      state: {
+        selectedTime: matchingDisplay?.departureTime,
+        requestId: rideRequest?.id,
+        waitingCount: matchingDisplay?.waitingCount,
+      },
     });
   }
 
   return {
+    viewData,
     matchingUiState,
     transitAvailable,
     showTransitAlternative: isMatchingResult && transitAvailable === true,

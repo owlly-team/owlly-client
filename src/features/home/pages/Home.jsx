@@ -1,15 +1,15 @@
-import LastDepartureCard from "../components/LastDepartureCard";
+﻿import LastDepartureCard from "../components/LastDepartureCard";
 import TransportOptionCard from "../components/TransportOptionCard";
 import HomeMatchingCard from "../components/HomeMatchingCard";
 import iconLocation from "../../../assets/icons/location.svg";
 import HomeIcon from "../../../assets/icons/nav-home.svg?react";
 import BottomTabBar from "../../../shared/components/BottomTabBar";
-import { defaultHomeData } from "../homeMockData";
+import { homeScenarios } from "../homeMockData";
 import useHome from "../useHome";
 
-export default function Home({ data = defaultHomeData, onViewMatchingResult }) {
-  const { pickupPoint, destinationLabel, lastTransit, matchingDisplay } = data;
+export default function Home({ data = homeScenarios.beforeLastTransit, onViewMatchingResult }) {
   const {
+    viewData,
     matchingUiState,
     transitAvailable,
     showTransitAlternative,
@@ -20,6 +20,7 @@ export default function Home({ data = defaultHomeData, onViewMatchingResult }) {
     handleTransportSelect,
     handleViewRegistration,
   } = useHome(data);
+  const { pickupPoint, destinationLabel, lastTransit, matchingDisplay } = viewData;
 
   return (
     <div className="flex w-full flex-1 flex-col pt-1.5">
@@ -40,7 +41,9 @@ export default function Home({ data = defaultHomeData, onViewMatchingResult }) {
         uiState={matchingUiState}
         display={matchingDisplay}
         onViewRegistration={handleViewRegistration}
-        onViewMatchingResult={onViewMatchingResult}
+        onViewMatchingResult={onViewMatchingResult && data.rideRequest?.partyId
+          ? () => onViewMatchingResult(data.rideRequest.partyId)
+          : undefined}
       />
       <div className="mt-5">
         {lastTransit && (

@@ -1,10 +1,10 @@
+//서버 데이터를 화면용 값으로 변환
+
 export function formatWon(amount, approximate = false) {
   if (typeof amount !== "number" || !Number.isFinite(amount)) return "금액 미정";
   return `${approximate ? "약 " : ""}${amount.toLocaleString("ko-KR")}원`;
 }
 
-// TravelOptions 원본 금액을 기존 카드 props 배열로 변환한다.
-// bus/carpool/taxi는 UI 식별자이며 JourneyChoice.mode(BUS/SOLO)가 아니다.
 export function toTransportOptionCards(travelOptions, display = {}) {
   if (!travelOptions) return [];
   return [
@@ -18,7 +18,7 @@ export function toTransportOptionCards(travelOptions, display = {}) {
   }));
 }
 
-// 홈 표시 전용 파생 값. 백엔드 상태에 저장하거나 API로 전달하지 않음
+// requestStaus: 동승신청상태, partyStatus:팟상태(확정유무)
 // null은 일반 홈을 의미하며, 팟이 있으면 신청 상태보다 우선해서 판단
 export function getMatchingUiState(requestStatus, partyStatus) {
   if (partyStatus != null) {
@@ -37,6 +37,72 @@ export function getMatchingUiState(requestStatus, partyStatus) {
   }
 
   // FAILED, CANCELLED, EXPIRED 및 신청 없음은 일반 홈
+  if (requestStatus === "MATCHED") return "MATCHING_RESULT";
   return requestStatus === "WAITING" ? "MATCHING_WAITING" : null;
+}
+
+export function formatTime(value) {
+  if (!value || Number.isNaN(new Date(value).getTime())) return "시간 미정";
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit",
+  }).format(new Date(value)); //문자열-> 날짜객체
+}
+
+export function toHomeViewData(data, now = Date.now()) {
+  const { travelOptions, rideRequest, party, matchingSlots = [], presentation = {} } = data;
+  const transit = travelOptions?.transit;
+  const legs = transit?.legs ?? [];
+  const firstRide = legs.find((leg) => leg.mode === "BUS" || leg.mode === "SUBWAY");
+  const walk = legs[0]?.mode === "WALK" ? legs[0] : null; 
+  const walkMinutes = walk //처음 걷는 구간 시간 계산
+    ? Math.round((new Date(walk.arrivalAt) - new Date(walk.departureAt)) / 60000)
+    : null;
+  
+  //동승 출발 시간 선택
+  const slot = matchingSlots.find((item) => item.departureAt === rideRequest?.departureAt)
+    ?? matchingSlots.find((item) => item.registrationAllowed);
+  const departureAt = party?.departureAt ?? rideRequest?.departureAt ?? slot?.departureAt;
+  const waitingCount = slot?.waitingCount;
+  const pickupPointName = party?.pickupPoint?.name ?? data.pickupPoint?.name;
+  const direction = presentation.directionLabel;
+  //나를 제외한 동승 인원 계산
+  const companions = party?.members?.filter((member) =>
+    member.memberId !== party.myMemberId && !["DECLINED", "LEFT", "REMOVED_UNPAID"].includes(member.decision));
+  // matchedAt필요
+  const matchedAt = data.matchedAt ? Date.parse(data.matchedAt) : NaN;
+  const deadline = Number.isFinite(matchedAt) ? matchedAt + 5 * 60 * 1000 : null;
+  const remainingSeconds = deadline == null ? null : Math.max(0, Math.ceil((deadline - now) / 1000));
+  
+  return {
+    lastTransit: {
+      time: formatTime(firstRide?.departureAt),
+      place: firstRide ? `${firstRide.fromName}${Number.isFinite(walkMinutes) && walkMinutes >= 0 ? ` · 도보 ${walkMinutes}분` : ""}` : "경로 정보 확인 중",
+      note: transit?.lastLeaveAt ? `${formatTime(transit.lastLeaveAt)}까지 출발해야 해요` : null,
+    },
+    matchingDisplay: {
+      departureTime: formatTime(departureAt),
+      pickupPointName,
+      directionLabel: direction,
+      waitingCount,
+      matchedCompanionCount: companions?.length,
+      estimatedShareWon: data.mySettlementItem?.estimatedShareWon,
+      confirmationTimeLabel: deadline == null ? undefined : formatTime(deadline),
+      confirmationExpired: remainingSeconds === 0,
+      remainingTimeLabel: remainingSeconds == null ? undefined
+        : remainingSeconds === 0 ? "확정 기한 만료"
+        : `${Math.ceil(remainingSeconds / 60)}분 남음`,
+    },
+    transportDisplay: {
+      bus: { iconTone: "cyan", title: "막차", priceLabel: "1인",
+        description: `${formatTime(firstRide?.departureAt)} 출발 · ${formatTime(transit?.arrivalAt)} 도착` },
+      carpool: { iconTone: "primary", title: "동승", priceLabel: "예상 1인 부담",
+        description: `${formatTime(departureAt)} 출발${presentation.poolArrivalAt ? ` · ${formatTime(presentation.poolArrivalAt)} 도착` : ""}`,
+        highlight: waitingCount != null ? `${direction ? `${direction} 방향 ` : ""}${waitingCount}명 대기` : null },
+      taxi: { iconTone: "neutral", title: "혼자 택시", priceLabel: "1인",
+        description: `지금 출발 · ${formatTime(travelOptions?.estimatedArrivalAt)} 도착` },
+    },
+    pickupPoint: { ...data.pickupPoint, name: presentation.originLabel ?? data.pickupPoint?.name },
+    destinationLabel: data.destinationLabel,
+  };
 }
 

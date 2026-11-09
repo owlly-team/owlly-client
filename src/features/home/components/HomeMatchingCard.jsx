@@ -66,13 +66,15 @@ export default function HomeMatchingCard({ uiState, display, onViewRegistration,
             <button
               type="button"
               onClick={onViewMatchingResult}
-              disabled={!onViewMatchingResult}
+              disabled={!onViewMatchingResult || display?.confirmationExpired}
               title={!onViewMatchingResult ? "팟 확정 화면 연결 예정" : undefined}
               className="text-label1 ml-auto flex min-h-7 items-center gap-1 rounded-8 font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:cursor-not-allowed"
             >
-              {display?.confirmationTimeLabel
+              {display?.confirmationExpired
+                ? "확정 기한이 지났어요"
+                : display?.confirmationTimeLabel
                 ? `${display.confirmationTimeLabel}까지 확정해 주세요`
-                : "매칭 결과 확인하기"}
+                : "매칭 후 5분 이내에 확정해 주세요"}
               <img src={iconChevronRight} alt="" className="size-4 brightness-0 invert" />
             </button>
           </div>
