@@ -18,7 +18,15 @@ export default function MatchingResult({ banks, csrfToken, onOpenChat }) {
   const goHome = () => navigate("/");
   const openChat = (roomId, account) => {
     if (onOpenChat) return onOpenChat(roomId, account);
-    navigate(`/rooms/${roomId}`, { state: { account, isPreview } });
+    navigate(`/parties/${partyId}/room`, {
+      state: {
+        chatContext: {
+          party: data.party,
+          settlement: data.settlement,
+          rideRequest: state?.matchingContext?.rideRequest ?? data.rideRequest,
+        },
+      },
+    });
   };
 
   if (loading || error || !data?.party) {

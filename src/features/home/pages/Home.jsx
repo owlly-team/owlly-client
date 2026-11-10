@@ -1,13 +1,18 @@
 ﻿import LastDepartureCard from "../components/LastDepartureCard";
 import TransportOptionCard from "../components/TransportOptionCard";
+import { useLocation } from "react-router-dom";
 import HomeMatchingCard from "../components/HomeMatchingCard";
 import iconLocation from "../../../assets/icons/location.svg";
 import HomeIcon from "../../../assets/icons/nav-home.svg?react";
 import BottomTabBar from "../../../shared/components/BottomTabBar";
-import { homeScenarios } from "../homeMockData";
+import { homeScenarios } from "../mocks/homeMockData";
 import useHome from "../hooks/useHome";
 
 export default function Home({ data = homeScenarios.matched, onViewMatchingResult }) {
+  const { state } = useLocation();
+  // 목업에서 나간 팟의 신청만 취소 상태로 표시한다.
+  const currentData = state?.leftParty && state.leftParty.id === data.rideRequest?.partyId
+    ? { ...data, rideRequest: { ...data.rideRequest, status: "CANCELLED" }, party: null } : data;
   const {
     viewData,
     matchingUiState,
@@ -20,7 +25,7 @@ export default function Home({ data = homeScenarios.matched, onViewMatchingResul
     handleTransportSelect,
     handleViewRegistration,
     handleViewMatchingResult,
-  } = useHome(data);
+  } = useHome(currentData);
   const { pickupPoint, destinationLabel, lastTransit, matchingDisplay } = viewData;
 
   return (
@@ -42,8 +47,8 @@ export default function Home({ data = homeScenarios.matched, onViewMatchingResul
         uiState={matchingUiState}
         display={matchingDisplay}
         onViewRegistration={handleViewRegistration}
-        onViewMatchingResult={data.rideRequest?.status === "MATCHED" && data.rideRequest?.partyId
-          ? () => (onViewMatchingResult ?? handleViewMatchingResult)(data.rideRequest.partyId)
+        onViewMatchingResult={currentData.rideRequest?.status === "MATCHED" && currentData.rideRequest?.partyId
+          ? () => (onViewMatchingResult ?? handleViewMatchingResult)(currentData.rideRequest.partyId)
           : undefined}
       />
       <div className="mt-5">

@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import iconBus from "../../assets/icons/transport-bus.svg";
-import iconCarpool from "../../assets/icons/transport-carpool.svg";
-import iconTaxi from "../../assets/icons/transport-taxi.svg";
+import iconBus from "../../../assets/icons/transport-bus.svg";
+import iconCarpool from "../../../assets/icons/transport-carpool.svg";
+import iconTaxi from "../../../assets/icons/transport-taxi.svg";
 import { getMatchingUiState, toTransportOptionCards, toHomeViewData } from "../utils/homeUtils";
 
 const TRANSPORT_ICONS = {
