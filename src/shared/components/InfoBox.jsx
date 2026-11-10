@@ -17,12 +17,14 @@ const VARIANT_ICON = {
   negative: iconNegative,
 };
 
-export default function InfoBox({ variant = "accent", title, description, className = "" }) {
+export default function InfoBox({ variant = "accent", icon, title, description, className = "" }) {
+  const resolvedIcon = icon ?? VARIANT_ICON[variant];
+
   return (
     <div
       className={`flex w-full items-start gap-2 rounded-12 p-3 ${VARIANT_CLASSES[variant]} ${className}`}
     >
-      <img src={VARIANT_ICON[variant]} alt="" className="mt-px size-5 shrink-0" />
+      <img src={resolvedIcon} alt="" className="mt-px size-5 shrink-0" />
       <div className="flex flex-col">
         <p className="text-body2 font-semibold tracking-wide text-label-normal">{title}</p>
         {description && (
