@@ -3,6 +3,10 @@ import Layout from "../shared/layout/Layout";
 import Home from "../features/home/pages/Home";
 import LastTrain from "../features/home/pages/LastTrain";
 import SoloTaxi from "../features/home/pages/SoloTaxi";
+import AdminLogin from "../features/admin/pages/AdminLogin";
+import DemandMapAdmin from "../features/admin/pages/DemandMapAdmin";
+import RouteCandidateDetail from "../features/admin/pages/RouteCandidateDetail";
+import ReportExport from "../features/admin/pages/ReportExport";
 import MyInfo from "../features/mypage/pages/MyInfo";
 import DemandMap from "../features/demand/pages/DemandMap";
 import Start from "../features/onboarding/pages/Start";
@@ -23,6 +27,13 @@ export default function AppRouter() {
           <Route index element={<Home />} />
           <Route path="last-train" element={<LastTrain />} />
           <Route path="solo-taxi" element={<SoloTaxi />} />
+          <Route path="admin/login" element={<AdminLogin />} />
+          <Route path="admin" element={<DemandMapAdmin />} />
+          <Route
+            path="admin/routes/:routeId"
+            element={<RouteCandidateDetail />}
+          />
+          <Route path="admin/report" element={<ReportExport />} />
           <Route path="my-info" element={<MyInfo />} />
           <Route path="demand-map" element={<DemandMap />} />
           <Route path="onboarding" element={<Start />} />
