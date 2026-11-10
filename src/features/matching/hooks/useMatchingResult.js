@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { loadMatchingResult } from "./matchingResultApi";
-import { mockMatchingResult } from "./matchingMockData";
+import { loadMatchingResult } from "../matchingResultApi";
+import { mockRepresentativeMatchingResult as mockMatchingResult } from "../matchingMockData";
 
 const baseUrl = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -25,6 +25,7 @@ export default function useMatchingResult(partyId, preview) {
 
   const current = result?.partyId === partyId && result.attempt === attempt ? result : null;
   return {
+    isPreview: Boolean(mock),
     data: mock?.party?.id === partyId ? mock : current?.data,
     loading: !mock && !current,
     error: mock && mock.party?.id !== partyId ? new Error("팟 정보가 없어요.") : current?.error,

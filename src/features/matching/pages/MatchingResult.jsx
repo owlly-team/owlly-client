@@ -5,16 +5,21 @@ import Button from "../../../shared/components/Button";
 import FareCompare from "../components/FareCompare";
 import MemberRow from "../components/MemberRow";
 import { formatTime, formatWon } from "../../home/homeUtils";
-import useMatchingResult from "../useMatchingResult";
-import { toMatchingResultView } from "../matchingResultUtils";
+import useMatchingResult from "../hooks/useMatchingResult";
+import { toMatchingResultView } from "../utils/matchingResultUtils";
+import RepresentativeMatchingResult from "./RepresentativeMatchingResult";
 
-export default function MatchingResult() {
+export default function MatchingResult({ banks, csrfToken, onOpenChat }) {
   const navigate = useNavigate();
   const { partyId } = useParams();
   const { state } = useLocation();
-  const { data, loading, error, retry } = useMatchingResult(partyId, state?.matchingResult);
+  const { data, loading, error, retry, isPreview } = useMatchingResult(partyId, state?.matchingResult);
   const [confirmed, setConfirmed] = useState(false);
   const goHome = () => navigate("/");
+  const openChat = (roomId, account) => {
+    if (onOpenChat) return onOpenChat(roomId, account);
+    navigate(`/rooms/${roomId}`, { state: { account, isPreview } });
+  };
 
   if (loading || error || !data?.party) {
     return <div className="flex flex-1 flex-col gap-4">
@@ -28,9 +33,15 @@ export default function MatchingResult() {
   }
 
   const { party, settlement, settlementNotReady, settlementError } = data;
-  const { members, companionCount, allSameSchool, mySettlementItem } = toMatchingResultView(party, settlement);
+  const { members, companionCount, allSameSchool, mySettlementItem, isRepresentative } = toMatchingResultView(party, settlement);
   const context = state?.matchingContext ?? data;
   const destinationLabel = context.rideRequest?.districtName ?? context.rideRequest?.destinationDongName;
+
+  if (isRepresentative) return <RepresentativeMatchingResult
+    key={party.id} party={party} settlement={settlement} onBack={goHome} retry={retry}
+    banks={banks ?? (isPreview ? data.banks : undefined)} csrfToken={csrfToken}
+    onOpenChat={openChat} isPreview={isPreview}
+  />;
 
   return <div className="flex flex-1 flex-col">
     <div className="-mx-4">
@@ -88,7 +99,7 @@ export default function MatchingResult() {
       {confirmed && <p role="status" className="text-label2 text-primary-normal">
         목업에서 팟을 확정했어요. 채팅방은 아직 연결되지 않았어요.
       </p>}
-      <Button className="w-full" disabled={confirmed} onClick={() => setConfirmed(true)}>
+      <Button className="w-full" disabled={confirmed} onClick={() => party.roomId ? openChat(party.roomId) : setConfirmed(true)}>
         {confirmed ? "확정했어요" : "이 팟 확정하기"}
       </Button>
       <Button className="w-full" variant="secondary" onClick={goHome}>

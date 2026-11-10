@@ -1,4 +1,4 @@
-import { toRegistrationView } from "../registrationUtils";
+import { toRegistrationView } from "../utils/registrationUtils";
 
 /**
  * data: 신청 응답의 data 객체

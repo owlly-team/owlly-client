@@ -2,7 +2,7 @@
 import TopBar from "../../../shared/components/TopBar";
 import DefinitionList from "../components/DefinitionList";
 import Button from "../../../shared/components/Button";
-import { toRegistrationView } from "../registrationUtils";
+import { toRegistrationView } from "../utils/registrationUtils";
 
 //동승 등록 완료 페이지
 export default function CarpoolRegistration({ data, onViewMatchingResult }) {

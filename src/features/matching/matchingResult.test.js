@@ -1,7 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { loadMatchingResult } from "./matchingResultApi.js";
-import { toMatchingResultView } from "./matchingResultUtils.js";
+import { toMatchingResultView, toRepresentativePayments } from "./utils/matchingResultUtils.js";
+import { upsertPrepayAccount } from "./roomAccountApi.js";
 
 const party = {
   id: "401", myMemberId: "502", pickupPoint: { universityName: "단국대" },
@@ -40,6 +41,65 @@ test("loads party and settlement concurrently with session credentials", async (
   resolvers[0](response(party));
   resolvers[1](response(settlement));
   assert.deepEqual(await pending, { party, settlement });
+});
+
+test("representative is determined by party IDs, and receives other members' prepayments", () => {
+  const representative = {
+    ...party, representativeMemberId: "503", myMemberId: "503",
+  };
+  const allItems = { ...settlement, items: [
+    { memberId: "501", estimatedShareWon: 4500, prepayDueWon: 5400 },
+    { memberId: "502", estimatedShareWon: 7900, prepayDueWon: 9500 },
+    { memberId: "503", estimatedShareWon: 7900, prepayDueWon: 0 },
+    { memberId: "504", estimatedShareWon: 4500, prepayDueWon: 5400 },
+  ] };
+  assert.equal(toMatchingResultView(representative, allItems).isRepresentative, true);
+  assert.equal(toMatchingResultView({ ...representative, myMemberId: "502" }, allItems).isRepresentative, false);
+  const view = toRepresentativePayments(representative, allItems);
+  assert.equal(view.totalWon, 14900);
+  assert.deepEqual(view.payments.map(({ member }) => member.memberId), ["501", "502"]);
+  assert.equal(toRepresentativePayments(representative, settlement).totalWon, null);
+  assert.equal(toRepresentativePayments(representative, null).totalWon, null);
+  assert.equal(toRepresentativePayments(representative, { ...allItems, partyId: "999" }).totalWon, null);
+});
+
+test("account PUT uses normalized fields, CSRF, session and a stable retry key", async () => {
+  const calls = [];
+  const masked = { bankCode: "DEMO", maskedAccountNumber: "********0000", maskedHolderName: "박*표" };
+  const options = {
+    csrfToken: "test-csrf", idempotencyKey: "07e1c277-3b26-4f6d-9741-6d646469fda1",
+    fetcher: async (url, init) => { calls.push({ url, init }); return response(masked); },
+  };
+  const input = { bankCode: " DEMO ", accountNumber: "0000-0000 0000", holderName: " 박대표 " };
+  assert.deepEqual(await upsertPrepayAccount("601", input, options), masked);
+  await upsertPrepayAccount("601", input, options);
+  assert.equal(calls[0].url, "/api/v1/rooms/601/accounts/PREPAY_RECEIVE");
+  assert.equal(calls[0].init.method, "PUT");
+  assert.equal(calls[0].init.credentials, "include");
+  assert.equal(calls[0].init.headers["X-CSRF-Token"], "test-csrf");
+  assert.equal(calls[0].init.headers["Idempotency-Key"], calls[1].init.headers["Idempotency-Key"]);
+  assert.deepEqual(JSON.parse(calls[0].init.body), { bankCode: "DEMO", accountNumber: "000000000000", holderName: "박대표" });
+});
+
+test("account errors do not expose server-provided account data", async () => {
+  for (const code of ["ACCOUNT_LOCKED", "ROOM_CLOSED", "ACCOUNT_PURPOSE_NOT_ALLOWED"]) {
+    await assert.rejects(upsertPrepayAccount("601", {
+      bankCode: "DEMO", accountNumber: "0000", holderName: "박대표",
+    }, {
+      csrfToken: "test-csrf", idempotencyKey: "retry-key",
+      fetcher: async () => ({ ok: false, status: 409, json: async () => ({ error: { code, message: "sensitive-account-data" } }) }),
+    }), (error) => error.code === code && !error.message.includes("sensitive-account-data"));
+  }
+});
+
+test("missing CSRF, room or account information never sends an account request", async () => {
+  const fetcher = async () => assert.fail("must not send invalid account requests");
+  const input = { bankCode: "DEMO", accountNumber: "0000", holderName: "박대표" };
+  await assert.rejects(upsertPrepayAccount(null, input, { fetcher }));
+  await assert.rejects(upsertPrepayAccount("601", input, { fetcher }));
+  await assert.rejects(upsertPrepayAccount("601", { ...input, accountNumber: " - " }, {
+    fetcher, csrfToken: "test", idempotencyKey: "retry-key",
+  }));
 });
 
 test("unavailable settlement retains party information and distinguishes 409 from errors", async () => {

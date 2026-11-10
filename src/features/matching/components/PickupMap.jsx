@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { loadKakaoMaps } from "../../../shared/kakaoMaps";
-import { isPoint } from "../mapUtils";
+import { isPoint } from "../utils/mapUtils";
 import iconLocationPin from "../../../assets/icons/location-pin.svg";
 
 //거점 이름 말풍선과 원형 핀 생성

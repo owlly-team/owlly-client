@@ -1,4 +1,4 @@
-import { localDate } from "./mapUtils.js";
+import { localDate } from "./utils/mapUtils.js";
 import { loadKakaoMaps } from "../../shared/kakaoMaps.js";
 
 export function resolveMockDestination({ region }) {
@@ -100,7 +100,7 @@ export const mockMatchingResult = {
     myMemberId: "502",
     routeVersion: 1,
     taxiCalledAt: null,
-    roomId: null,
+    roomId: "601",
     allowedActions: [],
     members: [
       { memberId: "501", maskedName: "김*연", universityName: "단국대", sameGenderAsMe: true, destinationDongName: "영통1동", stopOrder: 1, isRepresentative: false, decision: "PENDING", boardingStatus: "UNKNOWN" },
@@ -119,4 +119,24 @@ export const mockMatchingResult = {
   },
   // API-22/33에는 없는 비교 요금·목적지 안내는 이전 화면의 데이터로 전달한다.
   travelOptions: { soloTaxiEstimatedWon: 27400 },
+};
+
+// 대표 안내 미리보기: 라우터 state.matchingResult에 전달해서 사용한다.
+export const mockRepresentativeMatchingResult = {
+  ...mockMatchingResult,
+  party: {
+    ...mockMatchingResult.party,
+    myMemberId: "503",
+    roomId: "601",
+  },
+  settlement: {
+    ...mockMatchingResult.settlement,
+    estimatedTotalWon: 20300,
+    items: [
+      { id: "10001", memberId: "501", estimatedShareWon: 4500, prepayDueWon: 5400, actualShareWon: null, refundDueWon: null, status: "ESTIMATED", transfers: [] },
+      { id: "10002", memberId: "502", estimatedShareWon: 7900, prepayDueWon: 9500, actualShareWon: null, refundDueWon: null, status: "ESTIMATED", transfers: [] },
+      { id: "10003", memberId: "503", estimatedShareWon: 7900, prepayDueWon: 0, actualShareWon: null, refundDueWon: null, status: "ESTIMATED", transfers: [] },
+    ],
+  },
+  banks: [{ code: "DEMO", name: "예시은행" }],
 };

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { distanceMeters, isPoint } from "./mapUtils";
-import { loadMockPickupPoints, resolveMockDestination } from "./matchingMockData";
+import { distanceMeters, isPoint } from "../utils/mapUtils";
+import { loadMockPickupPoints, resolveMockDestination } from "../matchingMockData";
 
 //PickupLocation 페이지의 지도·하단 시트에서 사용하는 상태와 동작
 export default function usePickupLocation() {

@@ -5,7 +5,7 @@ import TimeChip from "../components/TimeChip";
 import DefinitionList from "../components/DefinitionList";
 import Button from "../../../shared/components/Button";
 import { formatTime } from "../../home/homeUtils";
-import { isMatchingSelection, localDate } from "../mapUtils";
+import { isMatchingSelection, localDate } from "../utils/mapUtils";
 import { createMockMatchingSlots, createMockRegistration } from "../matchingMockData";
 
 //출발 시간 선택 페이지 
