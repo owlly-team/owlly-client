@@ -3,6 +3,7 @@ import Layout from "../shared/layout/Layout";
 import Home from "../features/home/pages/Home";
 import LastTrain from "../features/home/pages/LastTrain";
 import SoloTaxi from "../features/home/pages/SoloTaxi";
+import DemandMap from "../features/demand/pages/DemandMap";
 import Start from "../features/onboarding/pages/Start";
 import SchoolVerification from "../features/onboarding/pages/SchoolVerification";
 import PermissionNotice from "../features/onboarding/pages/PermissionNotice";
@@ -21,6 +22,7 @@ export default function AppRouter() {
           <Route index element={<Home />} />
           <Route path="last-train" element={<LastTrain />} />
           <Route path="solo-taxi" element={<SoloTaxi />} />
+          <Route path="demand-map" element={<DemandMap />} />
           <Route path="onboarding" element={<Start />} />
           <Route
             path="onboarding/school-verification"
