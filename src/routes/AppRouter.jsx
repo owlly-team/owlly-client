@@ -3,6 +3,11 @@ import Layout from "../shared/layout/Layout";
 import Home from "../features/home/pages/Home";
 import LastTrain from "../features/home/pages/LastTrain";
 import SoloTaxi from "../features/home/pages/SoloTaxi";
+import Start from "../features/onboarding/pages/Start";
+import SchoolVerification from "../features/onboarding/pages/SchoolVerification";
+import PermissionNotice from "../features/onboarding/pages/PermissionNotice";
+import Profile from "../features/onboarding/pages/Profile";
+import MatchNotification from "../features/onboarding/pages/MatchNotification";
 import StartTime from "../features/matching/pages/StartTime";
 import CarpoolRegistration from "../features/matching/pages/CarpoolRegistration";
 import PickupLocation from "../features/matching/pages/PickupLocation";
@@ -16,9 +21,23 @@ export default function AppRouter() {
           <Route index element={<Home />} />
           <Route path="last-train" element={<LastTrain />} />
           <Route path="solo-taxi" element={<SoloTaxi />} />
+          <Route path="onboarding" element={<Start />} />
+          <Route
+            path="onboarding/school-verification"
+            element={<SchoolVerification />}
+          />
+          <Route
+            path="onboarding/permissions"
+            element={<PermissionNotice />}
+          />
+          <Route path="onboarding/profile" element={<Profile />} />
+          <Route
+            path="onboarding/match-notification"
+            element={<MatchNotification />}
+          />
           <Route path="pickup-location" element={<PickupLocation />} />
-          <Route path="start-time" element={<StartTime />} /> 
-          <Route path="carpool-registration" element={<CarpoolRegistration />} /> 
+          <Route path="start-time" element={<StartTime />} />
+          <Route path="carpool-registration" element={<CarpoolRegistration />} />
           <Route path="matching-result/:partyId" element={<MatchingResult />} />
         </Route>
       </Routes>

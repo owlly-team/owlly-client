@@ -4,7 +4,7 @@ import HomeMatchingCard from "../components/HomeMatchingCard";
 import iconLocation from "../../../assets/icons/location.svg";
 import HomeIcon from "../../../assets/icons/nav-home.svg?react";
 import BottomTabBar from "../../../shared/components/BottomTabBar";
-import { homeScenarios } from "../homeMockData";
+import { homeScenarios } from "../mocks/homeMockData";
 import useHome from "../hooks/useHome";
 
 export default function Home({ data = homeScenarios.matched, onViewMatchingResult }) {
