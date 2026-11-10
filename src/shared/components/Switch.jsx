@@ -1,9 +1,10 @@
-export default function Switch({ checked = false, onChange, className = "" }) {
+export default function Switch({ checked = false, onChange, className = "", labelledBy }) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
+      aria-labelledby={labelledBy}
       onClick={() => onChange?.(!checked)}
       className={`relative h-8 w-13 shrink-0 rounded-full transition-colors ${checked ? "bg-primary-normal" : "bg-fill-strong"} ${className}`}
     >
