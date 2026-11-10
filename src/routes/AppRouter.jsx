@@ -8,6 +8,10 @@ import SchoolVerification from "../features/onboarding/pages/SchoolVerification"
 import PermissionNotice from "../features/onboarding/pages/PermissionNotice";
 import Profile from "../features/onboarding/pages/Profile";
 import MatchNotification from "../features/onboarding/pages/MatchNotification";
+import StartTime from "../features/matching/pages/StartTime";
+import CarpoolRegistration from "../features/matching/pages/CarpoolRegistration";
+import PickupLocation from "../features/matching/pages/PickupLocation";
+import MatchingResult from "../features/matching/pages/MatchingResult";
 
 export default function AppRouter() {
   return (
@@ -31,6 +35,10 @@ export default function AppRouter() {
             path="onboarding/match-notification"
             element={<MatchNotification />}
           />
+          <Route path="pickup-location" element={<PickupLocation />} />
+          <Route path="start-time" element={<StartTime />} />
+          <Route path="carpool-registration" element={<CarpoolRegistration />} />
+          <Route path="matching-result/:partyId" element={<MatchingResult />} />
         </Route>
       </Routes>
     </BrowserRouter>
