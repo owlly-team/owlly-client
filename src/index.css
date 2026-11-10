@@ -94,3 +94,103 @@ body {
   background-color: var(--color-background-alternative);
   color: var(--color-label-normal);
 }
+
+.pickup-map-marker {
+  display: flex;
+  width: max-content;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 0;
+  background: transparent;
+  color: var(--color-label-normal);
+  font-family: var(--font-sans);
+  cursor: pointer;
+}
+.pickup-map-marker-label {
+  display: flex;
+  width: max-content;
+  flex-shrink: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: var(--color-background-normal);
+  box-shadow: var(--shadow-medium);
+  white-space: nowrap;
+}
+.pickup-map-marker-name {
+  font-size: var(--text-label1);
+  font-weight: 700;
+  line-height: var(--text-label1--line-height);
+}
+.pickup-map-marker-caption {
+  color: var(--color-primary-normal);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 13px;
+}
+.pickup-map-marker-pin {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 2px solid var(--color-static-white);
+  border-radius: 50%;
+  background: var(--color-background-normal);
+  box-shadow: var(--shadow-medium);
+}
+.pickup-map-marker-pin img {
+  width: 16px;
+  height: 16px;
+  filter: grayscale(1);
+}
+.pickup-map-marker.is-nearest .pickup-map-marker-label {
+  border-color: var(--color-primary-normal);
+}
+.pickup-map-marker.is-nearest .pickup-map-marker-pin {
+  width: 36px;
+  height: 36px;
+  background: var(--color-primary-normal);
+}
+.pickup-map-marker.is-nearest .pickup-map-marker-pin img {
+  width: 20px;
+  height: 20px;
+  filter: brightness(0) invert(1);
+}
+.pickup-map-marker:focus-visible {
+  border-radius: 12px;
+  outline: 2px solid var(--color-primary-normal);
+  outline-offset: 2px;
+}
+.pickup-map-current {
+  width: 18px;
+  height: 18px;
+  border: 3px solid white;
+  border-radius: 50%;
+  background: var(--color-primary-normal);
+  box-shadow: 0 0 0 14px #0066ff22;
+}
+.pickup-map-destination {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50% 50% 50% 0;
+  transform: translate(-50%, -100%) rotate(-45deg);
+  background: var(--color-primary-normal);
+  color: white;
+  font-size: 28px;
+  pointer-events: none;
+  box-shadow: var(--shadow-medium);
+}
+.pickup-map-destination span {
+  transform: rotate(45deg);
+}
