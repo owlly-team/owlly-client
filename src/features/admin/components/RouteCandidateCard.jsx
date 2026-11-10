@@ -6,16 +6,21 @@ export default function RouteCandidateCard({
   demandLabel = "AI 추정 수요",
   progress = 0,
   highlighted = false,
+  onClick,
   className = "",
 }) {
+  const Comp = onClick ? "button" : "div";
+
   return (
-    <div
-      className={`flex w-full flex-col gap-1.5 rounded-12 bg-background-normal p-4 ${
+    <Comp
+      type={onClick ? "button" : undefined}
+      onClick={onClick}
+      className={`flex w-full flex-col gap-1.5 rounded-12 bg-background-normal p-4 text-left ${
         highlighted ? "shadow-[inset_0_0_0_1px_var(--color-primary-normal)]" : ""
       } ${className}`}
     >
       <div className="flex items-center gap-3">
-        <span className="w-8 shrink-0 text-center text-heading2 font-bold text-accent-cyan">
+        <span className="w-8 shrink-0 text-center text-heading2 font-bold text-label-alternative">
           {rank}
         </span>
         <div className="flex flex-1 flex-col gap-0.5">
@@ -28,8 +33,8 @@ export default function RouteCandidateCard({
         </div>
       </div>
       <div className="h-1.5 w-full overflow-hidden rounded-full bg-fill-normal">
-        <div className="h-full rounded-full bg-accent-cyan" style={{ width: `${progress}%` }} />
+        <div className="h-full rounded-full bg-label-alternative" style={{ width: `${progress}%` }} />
       </div>
-    </div>
+    </Comp>
   );
 }
