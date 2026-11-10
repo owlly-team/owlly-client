@@ -1,4 +1,4 @@
-import { formatWon } from "../../home/homeUtils";
+import { formatWon } from "../../home/utils/homeUtils";
 import { toRepresentativePayments } from "../utils/matchingResultUtils";
 
 export default function RepresentativePaymentCard({ party, settlement, retry }) {
@@ -18,9 +18,7 @@ export default function RepresentativePaymentCard({ party, settlement, retry }) 
       </div>
       <div className="mt-3 flex items-center justify-between gap-3 border-t border-line-alternative pt-3">
         <div>
-          <p className="text-body2 font-semibold">
-            합계
-          </p>
+          <p className="text-body2 font-semibold">합계</p>
           <p className="mt-1 text-caption1 text-label-alternative">
             내린 뒤 차액은 정산 화면에서 확인해요
           </p></div>

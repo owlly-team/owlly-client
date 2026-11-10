@@ -1,6 +1,6 @@
 import Badge from "../../../shared/components/Badge";
 import iconChevronRight from "../../../assets/icons/chevron-right-sm.svg";
-import { formatWon } from "../homeUtils";
+import { formatWon } from "../utils/homeUtils";
 
 // 백엔드 상태와 분리된 홈 UI 분기. 동승 진행 화면은 추후 구현.
 export default function HomeMatchingCard({ uiState, display, onViewRegistration, onViewMatchingResult }) {

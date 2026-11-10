@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { loadMatchingResult } from "./matchingResultApi.js";
+import { loadMatchingResult } from "./api/matchingResultApi.js";
 import { toMatchingResultView, toRepresentativePayments } from "./utils/matchingResultUtils.js";
-import { upsertPrepayAccount } from "./roomAccountApi.js";
+import { upsertPrepayAccount } from "./api/roomAccountApi.js";
 
 const party = {
   id: "401", myMemberId: "502", pickupPoint: { universityName: "단국대" },

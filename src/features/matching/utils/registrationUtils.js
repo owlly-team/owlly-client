@@ -1,4 +1,4 @@
-import { formatTime } from "../../home/homeUtils.js";
+import { formatTime } from "../../home/utils/homeUtils.js";
 
 const messages = {
   WAITING: ["동승을 등록했어요", "같은 조건으로 등록한 사람과 매칭되면 알림으로 알려드려요."],

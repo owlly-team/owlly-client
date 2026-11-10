@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { loadMatchingResult } from "../matchingResultApi";
-import { mockRepresentativeMatchingResult as mockMatchingResult } from "../matchingMockData";
+import { loadMatchingResult } from "../api/matchingResultApi";
+import { mockRepresentativeMatchingResult as mockMatchingResult } from "../mocks/matchingMockData";
 
 const baseUrl = import.meta.env.VITE_API_BASE_URL ?? "";
 

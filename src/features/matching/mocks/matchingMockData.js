@@ -1,5 +1,5 @@
-import { localDate } from "./utils/mapUtils.js";
-import { loadKakaoMaps } from "../../shared/kakaoMaps.js";
+import { localDate } from "../utils/mapUtils.js";
+import { loadKakaoMaps } from "../../../shared/kakaoMaps.js";
 
 export function resolveMockDestination({ region }) {
   return {

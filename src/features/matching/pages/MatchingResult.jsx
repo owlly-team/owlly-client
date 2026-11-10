@@ -4,7 +4,7 @@ import TopBar from "../../../shared/components/TopBar";
 import Button from "../../../shared/components/Button";
 import FareCompare from "../components/FareCompare";
 import MemberRow from "../components/MemberRow";
-import { formatTime, formatWon } from "../../home/homeUtils";
+import { formatTime, formatWon } from "../../home/utils/homeUtils";
 import useMatchingResult from "../hooks/useMatchingResult";
 import { toMatchingResultView } from "../utils/matchingResultUtils";
 import RepresentativeMatchingResult from "./RepresentativeMatchingResult";

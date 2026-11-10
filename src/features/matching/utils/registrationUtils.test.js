@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { toRegistrationView } from "./registrationUtils.js";
-import { createMockRegistration } from "../matchingMockData.js";
+import { createMockRegistration } from "../mocks/matchingMockData.js";
 
 const slot = { departureAt: "2026-11-10T00:00:00+09:00", waitingCount: 0, registrationAllowed: true, reason: null };
 const data = createMockRegistration(slot);

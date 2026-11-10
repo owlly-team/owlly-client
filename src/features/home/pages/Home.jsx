@@ -5,7 +5,7 @@ import iconLocation from "../../../assets/icons/location.svg";
 import HomeIcon from "../../../assets/icons/nav-home.svg?react";
 import BottomTabBar from "../../../shared/components/BottomTabBar";
 import { homeScenarios } from "../homeMockData";
-import useHome from "../useHome";
+import useHome from "../hooks/useHome";
 
 export default function Home({ data = homeScenarios.matched, onViewMatchingResult }) {
   const {

@@ -4,9 +4,9 @@ import TopBar from "../../../shared/components/TopBar";
 import TimeChip from "../components/TimeChip";
 import DefinitionList from "../components/DefinitionList";
 import Button from "../../../shared/components/Button";
-import { formatTime } from "../../home/homeUtils";
+import { formatTime } from "../../home/utils/homeUtils";
 import { isMatchingSelection, localDate } from "../utils/mapUtils";
-import { createMockMatchingSlots, createMockRegistration } from "../matchingMockData";
+import { createMockMatchingSlots, createMockRegistration } from "../mocks/matchingMockData";
 
 //출발 시간 선택 페이지 
 export default function StartTime() {

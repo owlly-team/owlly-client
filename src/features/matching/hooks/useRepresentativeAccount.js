@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { normalizeAccount, upsertPrepayAccount } from "../roomAccountApi";
+import { normalizeAccount, upsertPrepayAccount } from "../api/roomAccountApi";
 
 export default function useRepresentativeAccount({ roomId, csrfToken, onOpenChat, isPreview }) {
   const [input, setInput] = useState({ bankCode: "", accountNumber: "", holderName: "" });
