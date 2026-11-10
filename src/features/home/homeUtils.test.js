@@ -50,3 +50,27 @@ test("confirmation expires exactly five minutes after matching", () => {
   assert.equal(toHomeViewData(data, start + 300000).matchingDisplay.confirmationExpired, true);
   assert.equal(toHomeViewData(data, start + 600000).matchingDisplay.remainingTimeLabel, "확정 기한 만료");
 });
+
+test("API-20 waiting deadline is not a confirmation deadline or another slot's count", () => {
+  const data = {
+    ...homeScenarios.waiting,
+    rideRequest: { ...homeScenarios.waiting.rideRequest, resultDueAt: "2026-11-09T23:08:00+09:00" },
+    matchingSlots: [{ departureAt: "2026-11-10T00:00:00+09:00", waitingCount: 9, registrationAllowed: true, reason: null }],
+  };
+  const display = toHomeViewData(data).matchingDisplay;
+  assert.equal(display.resultDueLabel, "23:08까지 결과 안내 예정이에요");
+  assert.equal(display.waitingCount, undefined);
+  assert.equal(display.confirmationTimeLabel, undefined);
+  assert.equal(toHomeViewData(homeScenarios.waiting).matchingDisplay.resultDueLabel, "결과는 막차 전에 알려 드려요");
+});
+
+test("failed request uses next available slot instead of stale party departure", () => {
+  const data = {
+    ...homeScenarios.matched,
+    rideRequest: { ...homeScenarios.matched.rideRequest, status: "FAILED", partyId: null },
+    matchingSlots: [{ departureAt: "2026-11-10T00:00:00+09:00", waitingCount: 0, registrationAllowed: true, reason: null }],
+  };
+  const view = toHomeViewData(data);
+  assert.equal(view.matchingDisplay.departureTime, "00:00");
+  assert.equal(view.matchingDisplay.matchedCompanionCount, undefined);
+});

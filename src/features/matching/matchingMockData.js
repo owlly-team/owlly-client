@@ -77,3 +77,46 @@ export function createMockRegistration(slot, selection = {}) {
     matchingSlot: slot,
   };
 }
+
+// API-22 팟과 API-33 정산을 분리한 화면 확인용 목업
+export const mockMatchingResult = {
+  rideRequest: {
+    ...createMockRegistration({ departureAt: "2026-11-05T23:30:00+09:00" }).rideRequest,
+    createdAt: "2026-11-05T22:30:00+09:00",
+    status: "MATCHED",
+    partyId: "401",
+    resultDueAt: null,
+  },
+  party: {
+    id: "401",
+    status: "CONFIRMING",
+    pickupPoint: {
+      id: "11", universityId: "1", universityName: "단국대", name: "단국대 정문",
+      point: { latitude: 37.331, longitude: 127.271 }, meetingNote: "정문 앞",
+    },
+    departureAt: "2026-11-05T23:30:00+09:00",
+    confirmDeadlineAt: "2026-11-05T23:15:00+09:00",
+    representativeMemberId: "503",
+    myMemberId: "502",
+    routeVersion: 1,
+    taxiCalledAt: null,
+    roomId: null,
+    allowedActions: [],
+    members: [
+      { memberId: "501", maskedName: "김*연", universityName: "단국대", sameGenderAsMe: true, destinationDongName: "영통1동", stopOrder: 1, isRepresentative: false, decision: "PENDING", boardingStatus: "UNKNOWN" },
+      { memberId: "502", maskedName: "박*연", universityName: "단국대", sameGenderAsMe: true, destinationDongName: "영통2동", stopOrder: 2, isRepresentative: false, decision: "PENDING", boardingStatus: "UNKNOWN" },
+      { memberId: "503", maskedName: "이*준", universityName: "단국대", sameGenderAsMe: true, destinationDongName: "매탄동", stopOrder: 3, isRepresentative: true, decision: "PENDING", boardingStatus: "UNKNOWN" },
+    ],
+  },
+  settlement: {
+    id: "901", partyId: "401", estimatedTotalWon: 23700, actualTotalWon: null,
+    routeVersion: 1, status: "ESTIMATED",
+    items: [{
+      id: "10002", memberId: "502", estimatedShareWon: 7800, prepayDueWon: 9600,
+      actualShareWon: null, refundDueWon: null, status: "ESTIMATED", transfers: [],
+    }],
+    receiptAvailable: false, finalizedAt: null, refundDueAt: null, allowedActions: [],
+  },
+  // API-22/33에는 없는 비교 요금·목적지 안내는 이전 화면의 데이터로 전달한다.
+  travelOptions: { soloTaxiEstimatedWon: 27400 },
+};

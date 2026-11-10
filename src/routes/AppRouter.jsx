@@ -6,6 +6,7 @@ import SoloTaxi from "../features/home/pages/SoloTaxi";
 import StartTime from "../features/matching/pages/StartTime";
 import CarpoolRegistration from "../features/matching/pages/CarpoolRegistration";
 import PickupLocation from "../features/matching/pages/PickupLocation";
+import MatchingResult from "../features/matching/pages/MatchingResult";
 
 export default function AppRouter() {
   return (
@@ -18,6 +19,7 @@ export default function AppRouter() {
           <Route path="pickup-location" element={<PickupLocation />} />
           <Route path="start-time" element={<StartTime />} /> 
           <Route path="carpool-registration" element={<CarpoolRegistration />} /> 
+          <Route path="matching-result/:partyId" element={<MatchingResult />} />
         </Route>
       </Routes>
     </BrowserRouter>

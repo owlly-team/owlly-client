@@ -47,8 +47,9 @@ export default function CarpoolRegistration({ data, onViewMatchingResult }) {
                 )}
                 {view.partyId && (
                     <Button size="md" variant="secondary" className="w-full"
-                        disabled={!onViewMatchingResult}
-                        onClick={() => onViewMatchingResult?.(view.partyId)}>
+                        onClick={() => onViewMatchingResult
+                            ? onViewMatchingResult(view.partyId)
+                            : navigate(`/matching-result/${view.partyId}`)}>
                         매칭 결과 보기
                     </Button>
                 )}

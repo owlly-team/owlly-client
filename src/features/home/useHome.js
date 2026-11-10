@@ -87,6 +87,13 @@ export default function useHome(data) {
     });
   }
 
+  //MATCHED 신청의 partyId로 매칭 결과 화면 이동
+  function handleViewMatchingResult(partyId) {
+    navigate(`/matching-result/${partyId}`, {
+      state: { matchingContext: { rideRequest, travelOptions } },
+    });
+  }
+
   return {
     viewData,
     matchingUiState,
@@ -98,5 +105,6 @@ export default function useHome(data) {
     setSelectedTab,
     handleTransportSelect,
     handleViewRegistration,
+    handleViewMatchingResult,
   };
 }
