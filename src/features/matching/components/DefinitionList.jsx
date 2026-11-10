@@ -2,13 +2,12 @@ import { toRegistrationView } from "../registrationUtils";
 
 /**
  * data: 신청 응답의 data 객체
- * display: { pickupPoint: { id, name }, destinationDong: { id, name } }
  * matchingSlot: { departureAt, waitingCount }
  * rows: { term, value, accent? }[] — 직접 전달하면 우선 사용한다.
  */
-export default function DefinitionList({ data, display, matchingSlot, rows, className = "" }) {
+export default function DefinitionList({ data, matchingSlot, rows, className = "" }) {
   const displayRows = rows ?? toRegistrationView(
-    data, display, matchingSlot,
+    data, matchingSlot,
   ).rows;
 
   return (

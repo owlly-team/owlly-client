@@ -1,11 +1,13 @@
 ﻿
 const at = (time) => `2026-11-09T${time}:00+09:00`;
 const pickupPoint = {
-  id: "11", universityId: "1", name: "단국대 정문",
+  id: "11", universityId: "1", universityName: "단국대학교", name: "단국대 정문",
   point: { latitude: 37.331, longitude: 127.271 }, meetingNote: "정문 앞",
 };
 const rideRequest = {
   id: "301", journeyId: "201", pickupPointId: "11", districtId: "21",
+  pickupPointName: "단국대 정문", districtName: "수원시 영통구",
+  destinationDongName: "영통2동", universityId: "1", universityName: "단국대학교",
   destinationDongId: "31", departureAt: at("23:30"), sameGenderOnly: true,
   status: "WAITING", resultDueAt: at("22:43"), partyId: null, createdAt: at("22:30"),
 };
@@ -16,8 +18,6 @@ export const defaultHomeData = {
     sameGenderDefault: true,
     defaultDropoff: { latitude: 37.33, longitude: 127.27 },
   },
-  destination: { id: "31", name: "영통2동", districtName: "수원시 영통구" },
-  destinationLabel: "영통2동",
   travelOptions: {
     transit: {
       available: true, lastLeaveAt: at("22:49"), arrivalAt: at("23:41"),
@@ -31,6 +31,9 @@ export const defaultHomeData = {
     },
     soloTaxiEstimatedWon: 27400, poolEstimatedShareWon: 7900,
     estimatedArrivalAt: at("23:05"), destinationDongId: "31", districtId: "21",
+    destinationDongName: "영통2동", districtName: "수원시 영통구",
+    pickupPointId: "11", pickupPointName: "단국대 정문",
+    universityId: "1", universityName: "단국대학교",
     asOf: at("22:30"), warnings: [],
   },
   rideRequest: null,

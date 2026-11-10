@@ -68,7 +68,9 @@ export function toHomeViewData(data, now = Date.now()) {
     : matchingSlots.find((item) => item.registrationAllowed);
   const departureAt = party?.departureAt ?? (isActiveRequest ? rideRequest.departureAt : slot?.departureAt);
   const waitingCount = slot?.waitingCount;
-  const pickupPointName = party?.pickupPoint?.name ?? data.pickupPoint?.name;
+  const pickupPointName = party?.pickupPoint?.name
+    ?? (isActiveRequest ? rideRequest.pickupPointName : travelOptions?.pickupPointName)
+    ?? data.pickupPoint?.name;
   const direction = presentation.directionLabel;
   //나를 제외한 동승 인원 계산
   const companions = party?.members?.filter((member) =>
@@ -112,7 +114,7 @@ export function toHomeViewData(data, now = Date.now()) {
         description: `지금 출발 · ${formatTime(travelOptions?.estimatedArrivalAt)} 도착` },
     },
     pickupPoint: { ...data.pickupPoint, name: presentation.originLabel ?? data.pickupPoint?.name },
-    destinationLabel: data.destinationLabel,
+    destinationLabel: travelOptions?.destinationDongName,
   };
 }
 

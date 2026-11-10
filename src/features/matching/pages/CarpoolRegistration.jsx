@@ -10,7 +10,7 @@ export default function CarpoolRegistration({ data, onViewMatchingResult }) {
     const { state } = useLocation();
     const registration = data ?? state ?? {};
     const view = toRegistrationView(
-        registration.rideRequest, registration.display, registration.matchingSlot,
+        registration.rideRequest, registration.matchingSlot,
     );
     const goHome = () => navigate("/");
 
@@ -27,7 +27,6 @@ export default function CarpoolRegistration({ data, onViewMatchingResult }) {
                 <div className="mt-5 w-full">
                     <DefinitionList
                         data={registration.rideRequest}
-                        display={registration.display}
                         matchingSlot={registration.matchingSlot}
                     />
                 </div>

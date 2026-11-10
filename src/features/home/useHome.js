@@ -62,11 +62,15 @@ export default function useHome(data) {
     navigate("/pickup-location", {
       state: {
         pickupPoint: data.pickupPoint,
-        universityId: data.universityId,
-        // The profile read adapter supplies resolved dong metadata as data.destination.
-        defaultDestination: data.destination ? {
-          ...data.destination,
-          point: data.profile?.defaultDropoff ?? data.destination.point,
+        universityId: travelOptions?.universityId,
+        universityName: travelOptions?.universityName,
+        //응답의 동 ID·이름과 프로필 기본 좌표로 첫 하차 위치 표시
+        defaultDestination: travelOptions?.destinationDongId ? {
+          id: travelOptions.destinationDongId,
+          name: travelOptions.destinationDongName,
+          districtId: travelOptions.districtId,
+          districtName: travelOptions.districtName,
+          point: data.profile?.defaultDropoff,
         } : null,
         sameGenderDefault: data.profile?.sameGenderDefault ?? true,
       },
@@ -78,10 +82,6 @@ export default function useHome(data) {
     navigate("/carpool-registration", {
       state: {
         rideRequest,
-        display: {
-          pickupPoint: data.pickupPoint,
-          destinationDong: { id: data.travelOptions?.destinationDongId, name: data.destinationLabel },
-        },
         matchingSlot: data.matchingSlots?.find((slot) => slot.departureAt === rideRequest?.departureAt),
       },
     });

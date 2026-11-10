@@ -3,8 +3,9 @@ import { loadKakaoMaps } from "../../shared/kakaoMaps.js";
 
 export function resolveMockDestination({ region }) {
   return {
-    id: "31",
-    name: region.region_3depth_name,
+    destinationDongId: "31",
+    destinationDongName: region.region_3depth_name,
+    districtId: "21",
     districtName: `${region.region_1depth_name} ${region.region_2depth_name}`,
   };
 }
@@ -29,6 +30,7 @@ export async function loadMockPickupPoints() {
       resolve([{
         id: "11",
         universityId: "1",
+        universityName: "단국대학교",
         name: "단국대 정문",
         point: { latitude: Number(gate.y), longitude: Number(gate.x) },
         meetingNote: "죽전캠퍼스 정문 · 미리보기용 거점",
@@ -53,19 +55,24 @@ export function createMockMatchingSlots(date) {
 }
 
 export function createMockRegistration(slot, selection = {}) {
-  const pickupPoint = selection.pickupPoint ?? { id: "11", name: "단국대 정문" };
-  const destination = selection.destination ?? { id: "31", name: "영통2동" };
+  const pickupPoint = selection.pickupPoint ?? {
+    id: "11", name: "단국대 정문", universityId: "1", universityName: "단국대학교",
+  };
+  const destination = selection.destination ?? {
+    id: "31", name: "영통2동", districtId: "21", districtName: "수원시 영통구",
+  };
   return {
     rideRequest: {
-      id: "301", journeyId: "201", pickupPointId: pickupPoint.id, districtId: "21",
-      destinationDongId: destination.id, departureAt: slot.departureAt,
+      id: "301", journeyId: "201",
+      pickupPointId: pickupPoint.id, pickupPointName: pickupPoint.name,
+      destinationDongId: destination.id, destinationDongName: destination.name,
+      districtId: destination.districtId, districtName: destination.districtName,
+      universityId: selection.universityId ?? pickupPoint.universityId,
+      universityName: selection.universityName ?? pickupPoint.universityName,
+      departureAt: slot.departureAt,
       sameGenderOnly: selection.sameGenderOnly ?? true,
       status: "WAITING", resultDueAt: null, partyId: null,
       createdAt: "2026-11-09T22:30:00+09:00",
-    },
-    display: {
-      pickupPoint: { id: pickupPoint.id, name: pickupPoint.name },
-      destinationDong: { id: destination.id, name: destination.name },
     },
     matchingSlot: slot,
   };

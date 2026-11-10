@@ -104,7 +104,15 @@ export default function usePickupLocation() {
           setResolving(false);
           return;
         }
-        setDestinationDraft({ ...resolveMockDestination({ region }), point });
+        //서버가 좌표로 행정동을 판별한 응답을 흉내 내고, 지도 선택값으로 변환
+        const resolved = resolveMockDestination({ region });
+        setDestinationDraft({
+          id: resolved.destinationDongId,
+          name: resolved.destinationDongName,
+          districtId: resolved.districtId,
+          districtName: resolved.districtName,
+          point,
+        });
         setResolving(false);
       },
     );
@@ -156,6 +164,7 @@ export default function usePickupLocation() {
         sameGenderOnly,
         sameGenderDefault: state?.sameGenderDefault,
         universityId: state?.universityId,
+        universityName: state?.universityName,
       },
     });
   }

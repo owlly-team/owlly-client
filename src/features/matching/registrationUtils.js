@@ -8,7 +8,7 @@ const messages = {
   EXPIRED: ["동승 신청이 만료됐어요", "새 출발 시간을 선택해 다시 신청해 주세요."],
 };
 
-export function toRegistrationView(rideRequest, display = {}, matchingSlot = null) {
+export function toRegistrationView(rideRequest, matchingSlot = null) {
   const message = rideRequest?.id && messages[rideRequest.status];
   if (!message) return {
     title: "신청 정보를 확인할 수 없어요",
@@ -25,8 +25,8 @@ export function toRegistrationView(rideRequest, display = {}, matchingSlot = nul
     resultDueLabel: rideRequest.status === "WAITING" && rideRequest.resultDueAt
       ? `${formatTime(rideRequest.resultDueAt)}까지 매칭 결과 안내 예정이에요.` : null,
     rows: [
-      { term: "출발", value: `${display.pickupPoint?.id === rideRequest.pickupPointId ? display.pickupPoint.name : "거점 확인 필요"} · ${formatTime(rideRequest.departureAt)}` },
-      { term: "하차 지점", value: display.destinationDong?.id === rideRequest.destinationDongId ? display.destinationDong.name : "하차 지점 확인 필요" },
+      { term: "출발", value: `${rideRequest.pickupPointName ?? "거점 확인 필요"} · ${formatTime(rideRequest.departureAt)}` },
+      { term: "하차 지점", value: rideRequest.destinationDongName ?? "하차 지점 확인 필요" },
       { term: "동성 매칭", value: rideRequest.sameGenderOnly === true ? "켜짐" : rideRequest.sameGenderOnly === false ? "꺼짐" : "확인 필요" },
       { term: "지금 대기", value: Number.isInteger(count) && count >= 0 ? `${count}명` : "확인 필요", accent: true },
     ],
