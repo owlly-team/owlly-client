@@ -2,7 +2,7 @@ import Badge from "../../../shared/components/Badge";
 
 //집까지 마지막 출발
 export default function LastDepartureCard({
-  status = "available",
+  available = true,
   time,
   place,
   note,
@@ -13,7 +13,7 @@ export default function LastDepartureCard({
       <p className="text-label1 text-label-neutral font-semibold">
         집까지 마지막 출발
       </p>
-      {status === "ended" ? (
+      {available === false ? (
         <>
           <p className="text-heading2 text-label-strong font-bold">
             오늘 막차가 끊겼어요
@@ -22,7 +22,7 @@ export default function LastDepartureCard({
             동승이나 혼자 택시로 갈 수 있어요
           </p>
         </>
-      ) : status === "available" ? (
+      ) : available === true ? (
         <>
           <p className="text-display2 text-label-strong font-bold tracking-tight">
             {time}
