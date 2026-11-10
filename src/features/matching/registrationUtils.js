@@ -8,7 +8,6 @@ const messages = {
   EXPIRED: ["동승 신청이 만료됐어요", "새 출발 시간을 선택해 다시 신청해 주세요."],
 };
 
-// rideRequest: API-19/20의 response.data. 표시용 지명과 슬롯은 별도 데이터다.
 export function toRegistrationView(rideRequest, display = {}, matchingSlot = null) {
   const message = rideRequest?.id && messages[rideRequest.status];
   if (!message) return {

@@ -1,10 +1,19 @@
+import { toRegistrationView } from "../registrationUtils";
+
 /**
- * rows: { term, value, accent? }[]
+ * data: 신청 응답의 data 객체
+ * display: { pickupPoint: { id, name }, destinationDong: { id, name } }
+ * matchingSlot: { departureAt, waitingCount }
+ * rows: { term, value, accent? }[] — 직접 전달하면 우선 사용한다.
  */
-export default function DefinitionList({ rows, className = "" }) {
+export default function DefinitionList({ data, display, matchingSlot, rows, className = "" }) {
+  const displayRows = rows ?? toRegistrationView(
+    data, display, matchingSlot,
+  ).rows;
+
   return (
     <dl className={`flex w-full flex-col gap-2 rounded-8 bg-background-normal border border-line-alternative p-4 ${className}`}>
-      {rows.map((row) => (
+      {displayRows.map((row) => (
         <div key={row.term} className="flex items-center justify-between">
           <dt className="text-label1 text-label-alternative">
             {row.term}

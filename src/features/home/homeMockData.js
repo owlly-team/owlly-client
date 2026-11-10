@@ -11,6 +11,12 @@ const rideRequest = {
 };
 export const defaultHomeData = {
   pickupPoint,
+  // 프로필 조회 연동 전 화면 확인용 가상 기본값. 실제 하차 좌표 아님.
+  profile: {
+    sameGenderDefault: true,
+    defaultDropoff: { latitude: 37.33, longitude: 127.27 },
+  },
+  destination: { id: "31", name: "영통2동", districtName: "수원시 영통구" },
   destinationLabel: "영통2동",
   travelOptions: {
     transit: {

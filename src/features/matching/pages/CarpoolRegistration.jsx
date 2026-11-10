@@ -4,7 +4,7 @@ import DefinitionList from "../components/DefinitionList";
 import Button from "../../../shared/components/Button";
 import { toRegistrationView } from "../registrationUtils";
 
-// data.rideRequest에는 API-19 생성 응답 또는 API-20 조회 응답의 data를 전달한다.
+//동승 등록 완료 페이지
 export default function CarpoolRegistration({ data, onViewMatchingResult }) {
     const navigate = useNavigate();
     const { state } = useLocation();
@@ -25,7 +25,11 @@ export default function CarpoolRegistration({ data, onViewMatchingResult }) {
             </div>
             {view.rows.length > 0 && (
                 <div className="mt-5 w-full">
-                    <DefinitionList rows={view.rows} />
+                    <DefinitionList
+                        data={registration.rideRequest}
+                        display={registration.display}
+                        matchingSlot={registration.matchingSlot}
+                    />
                 </div>
             )}
             {view.resultDueLabel && (

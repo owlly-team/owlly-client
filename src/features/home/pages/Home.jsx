@@ -7,7 +7,7 @@ import BottomTabBar from "../../../shared/components/BottomTabBar";
 import { homeScenarios } from "../homeMockData";
 import useHome from "../useHome";
 
-export default function Home({ data = homeScenarios.matched, onViewMatchingResult }) {
+export default function Home({ data = homeScenarios.beforeLastTransit, onViewMatchingResult }) {
   const {
     viewData,
     matchingUiState,

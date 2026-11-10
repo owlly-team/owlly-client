@@ -1,85 +1,62 @@
-import {useNavigate } from "react-router-dom";
+﻿import { useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import TopBar from "../../../shared/components/TopBar";
 import TimeChip from "../components/TimeChip";
 import DefinitionList from "../components/DefinitionList";
 import Button from "../../../shared/components/Button";
 import { formatTime } from "../../home/homeUtils";
-import { createMockRegistration } from "../registrationMockData";
+import { isMatchingSelection, localDate } from "../mapUtils";
+import { createMockMatchingSlots, createMockRegistration } from "../matchingMockData";
 
-// API-18 응답의 data: MatchingSlot[] 형식. 현재는 시안용 목업이다.
-// 자정 이후 슬롯은 다음 날짜의 조회 결과에 해당한다.
-const mockMatchingSlots = [
-    { departureAt: "2026-11-09T23:00:00+09:00", waitingCount: 1, registrationAllowed: true, reason: null },
-    { departureAt: "2026-11-09T23:30:00+09:00", waitingCount: 2, registrationAllowed: true, reason: null },
-    { departureAt: "2026-11-10T00:00:00+09:00", waitingCount: 0, registrationAllowed: true, reason: null },
-    { departureAt: "2026-11-10T00:30:00+09:00", waitingCount: 0, registrationAllowed: true, reason: null },
-];
+//출발 시간 선택 페이지 
+export default function StartTime() {
+  const { state } = useLocation();
+  const navigate = useNavigate();
+  const [date] = useState(localDate);
+  const [selected, setSelected] = useState(null);
+  const valid = isMatchingSelection(state);
+  const { pickupPoint, destination, sameGenderOnly } = state ?? {};
+  const pickupPointId = pickupPoint?.id;
+  const destinationDongId = destination?.id;
+  const requestKey = JSON.stringify([pickupPointId, destinationDongId, sameGenderOnly, date]);
+  const slots = createMockMatchingSlots(date);
+  const selectedSlot = selected?.key === requestKey
+    ? slots.find((slot) => slot.departureAt === selected.departureAt && slot.registrationAllowed === true) : null;
 
-const StartTimeData = {
-    origin: "단국대 정문",
-    destination: "영통2동",
-    definitionList: [
-        { term: "출발 거점", value: "단국대 정문" },
-        { term: "하차 지점", value: "영통2동" },
-        { term: "동성 매칭", value: "켜짐" },
-    ]
-}
+  function handleRegistration() {
+    if (!selectedSlot) return;
+    navigate("/carpool-registration", {
+      state: createMockRegistration(selectedSlot, state),
+    });
+  }
 
-export default function StartTime({ matchingSlots = mockMatchingSlots }) {
-    const navigate = useNavigate();
-    const [selectedDepartureAt, setSelectedDepartureAt] = useState(null);
-    const selectedSlot = matchingSlots.find((slot) =>
-        slot.departureAt === selectedDepartureAt && slot.registrationAllowed === true
-    );
+  if (!valid) return <div className="flex flex-1 flex-col gap-4 pt-4">
+    <p>출발 거점과 하차 지점을 먼저 선택해 주세요.</p>
+    <Button onClick={() => navigate("/pickup-location")}>지도에서 선택하기</Button>
+  </div>;
 
-    const handleRegistration = () => {
-        if (!selectedSlot) return;
-        // 화면 이동만 수행한다. 실제 신청 생성은 API-19 연동이 필요하다.
-        navigate("/carpool-registration", {
-            state: createMockRegistration(selectedSlot),
-        });
-    };
-
-    return(
-        <div className="flex flex-1 flex-col">
-            <div className="-mx-4">
-                <TopBar title="출발 시간 선택" />
-            </div>
-            <div className="flex flex-col gap-2 mt-1">
-                <p className="font-bold text-title3 text-label-normal">
-                    몇 시에 출발할까요?
-                </p>
-                <p className="font-regular text-body2 text-label-neutral">
-                    {StartTimeData.origin} → {StartTimeData.destination}
-                </p>
-            </div>
-            <div className="flex mt-4 w-full min-w-89.5 gap-2">
-                {matchingSlots.map((option) => (
-                    <TimeChip
-                        key={option.departureAt}
-                        time={formatTime(option.departureAt)}
-                        subLabel={!option.registrationAllowed ? "신청 불가" : option.waitingCount > 0 ? `${option.waitingCount}명 대기` : "0명"}
-                        disabled={option.registrationAllowed !== true}
-                        selected={selectedSlot?.departureAt === option.departureAt}
-                        onClick={() => setSelectedDepartureAt(option.departureAt)}
-                    />
-                ))}
-            </div>
-            {matchingSlots.length === 0 && (
-                <p className="text-label1 text-label-alternative mt-2">조회된 출발 시간이 없어요.</p>
-            )}
-            <p className="font-regular text-caption1 text-label-alternative mt-2">
-                같은 거점 · 같은 구 · 같은 학교 · 동성 기준, 지금 대기 인원이에요.
-            </p>
-            <div className="mt-4 w-full">
-                <DefinitionList rows={StartTimeData.definitionList} />
-            </div>
-            <div className="sticky bottom-0 mt-auto flex w-full shrink-0 bg-background-normal pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-                <Button className="w-full" disabled={!selectedSlot} onClick={handleRegistration}>
-                    {selectedSlot ? `${formatTime(selectedSlot.departureAt)}으로 등록하기` : "출발 시간을 선택해 주세요"}
-                </Button>
-            </div>
-        </div>
-    )
+  return <div className="flex flex-1 flex-col">
+    <div className="-mx-4"><TopBar title="출발 시간 선택" onLeftClick={() => navigate("/pickup-location", { state })} /></div>
+    <div className="flex flex-col gap-2 mt-1">
+      <p className="font-bold text-title3 text-label-normal">몇 시에 출발할까요?</p>
+      <p className="font-regular text-body2 text-label-neutral">{pickupPoint.name} → {destination.name}</p>
+    </div>
+    <div className="flex mt-4 w-full gap-2 overflow-x-auto">
+      {slots.map((slot) => <TimeChip key={slot.departureAt} time={formatTime(slot.departureAt)}
+        subLabel={slot.registrationAllowed !== true ? "신청 불가" : slot.waitingCount > 0 ? `${slot.waitingCount}명 대기` : "0명"}
+        disabled={slot.registrationAllowed !== true} selected={selectedSlot?.departureAt === slot.departureAt}
+        onClick={() => setSelected({ key: requestKey, departureAt: slot.departureAt })} />)}
+    </div>
+    <p className="font-regular text-caption1 text-label-alternative mt-2">
+      같은 거점 · 같은 구 · 같은 학교{sameGenderOnly ? " · 동성" : ""} 기준, 지금 대기 인원이에요.
+    </p>
+    <div className="mt-4 w-full"><DefinitionList rows={[
+      { term: "출발 거점", value: pickupPoint.name },
+      { term: "하차 지점", value: destination.name },
+      { term: "동성 매칭", value: sameGenderOnly ? "켜짐" : "꺼짐" },
+    ]} /></div>
+    <div className="sticky bottom-0 mt-auto flex w-full shrink-0 bg-background-normal pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+      <Button className="w-full" disabled={!selectedSlot} onClick={handleRegistration}>{selectedSlot ? `${formatTime(selectedSlot.departureAt)}으로 등록하기` : "출발 시간을 선택해 주세요"}</Button>
+    </div>
+  </div>;
 }

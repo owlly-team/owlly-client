@@ -50,9 +50,29 @@ export default function useHome(data) {
 
   //귀가 방법 카드 눌렀을 때 처리
   function handleTransportSelect(id) {
+    if (id === "carpool") {
+      handleStartRegistration();
+      return;
+    }
     const route = TRANSPORT_ROUTES[id];
     if (route) navigate(route);
   }
+  //출발 거점과 하차 위치 선택
+  function handleStartRegistration() {
+    navigate("/pickup-location", {
+      state: {
+        pickupPoint: data.pickupPoint,
+        universityId: data.universityId,
+        // The profile read adapter supplies resolved dong metadata as data.destination.
+        defaultDestination: data.destination ? {
+          ...data.destination,
+          point: data.profile?.defaultDropoff ?? data.destination.point,
+        } : null,
+        sameGenderDefault: data.profile?.sameGenderDefault ?? true,
+      },
+    });
+  }
+
   //동승 등록 내용 보기
   function handleViewRegistration() {
     navigate("/carpool-registration", {
