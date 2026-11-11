@@ -4,9 +4,9 @@ import Switch from "../../../shared/components/Switch";
 import iconChevronDown from "../../../assets/icons/chevron-down.svg";
 import useRepresentativeAccount from "../hooks/useRepresentativeAccount";
 
-export default function RepresentativeAccountForm({ roomId, banks = [], csrfToken, onOpenChat, isPreview }) {
-  const { input, saving, saved, error, update, submit } = useRepresentativeAccount({
-    roomId, csrfToken, onOpenChat, isPreview,
+export default function RepresentativeAccountForm({ roomId, banks = [], onOpenChat, isPreview }) {
+  const { input, saved, error, update, submit } = useRepresentativeAccount({
+    roomId, onOpenChat,
   });
   // API-31에는 계좌 재사용 옵션이 없어 화면 상태만 관리한다.
   const [reuseAccount, setReuseAccount] = useState(true);
@@ -20,7 +20,7 @@ export default function RepresentativeAccountForm({ roomId, banks = [], csrfToke
         <p>{banks.find((bank) => bank.code === saved.bankCode)?.name ?? saved.bankCode} · {saved.maskedAccountNumber}</p>
         <p className="mt-1">{saved.maskedHolderName}</p>
         <p className="mt-2 text-label2 text-label-alternative">{isPreview ? "미리보기에서 등록했어요. 실제 계좌는 저장되지 않았어요." : "계좌를 등록했어요."}</p>
-      </div> : <fieldset disabled={saving} className="mt-2 flex flex-col gap-2">
+      </div> : <fieldset className="mt-2 flex flex-col gap-2">
         <div className="flex gap-2">
           <div className="relative w-28 shrink-0">
             {banks.length > 0 ? <><select aria-label="은행" required value={input.bankCode} onChange={update("bankCode")} className={`${fieldClass} appearance-none pr-7`}>
@@ -43,8 +43,8 @@ export default function RepresentativeAccountForm({ roomId, banks = [], csrfToke
       {error && <p role="alert" className="mt-3 text-label2 text-status-negative">{error}</p>}
       {saved && !isPreview && !onOpenChat && <p role="status" className="mt-3 text-label2 text-label-alternative">채팅방 이동 기능은 아직 연결되지 않았어요.</p>}
       <div className="sticky bottom-0 mt-auto bg-background-normal pt-10 pb-[max(1rem,env(safe-area-inset-bottom))]">
-        <Button type="submit" className="w-full" disabled={saving || (!isPreview && !roomId) || Boolean(saved && (isPreview || !onOpenChat))}>
-          {saving ? "계좌 등록 중…" : saved ? (onOpenChat && !isPreview ? "채팅방 열기" : "계좌 등록 완료") : "계좌 등록하고 채팅방 열기"}
+        <Button type="submit" className="w-full" disabled={!roomId || Boolean(saved && !onOpenChat)}>
+          {saved ? "채팅방 열기" : "계좌 등록하고 채팅방 열기"}
         </Button>
       </div>
     </form>;

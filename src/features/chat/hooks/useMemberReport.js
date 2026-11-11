@@ -1,5 +1,9 @@
 import { useState } from "react";
-import { getReportTargets } from "../utils/reportUtils";
+
+export function getReportTargets(party) {
+  if (!party?.myMemberId) return [];
+  return party.members.filter((member) => member.memberId !== party.myMemberId);
+}
 
 export default function useMemberReport({ party, onSubmitted }) {
   const [targetMemberId, setTargetMemberId] = useState("");

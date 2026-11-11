@@ -7,8 +7,7 @@ export default function useLeaveParty({ party, now, transfers, onLeft }) {
   function leave() {
     setError("");
     try {
-      const updatedParty = leaveMockParty(party, { now, transfers });
-      onLeft(updatedParty);
+      onLeft(leaveMockParty(party, { now, transfers }));
       return true;
     } catch (failure) {
       setError(failure.message);

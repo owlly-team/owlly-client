@@ -2,7 +2,14 @@ import Button from "../../../shared/components/Button";
 import ReportTargetCard from "./ReportTargetCard";
 import ReportReasonButton from "./ReportReasonButton";
 import useMemberReport from "../hooks/useMemberReport";
-import { REPORT_REASONS } from "../utils/reportUtils";
+
+const REPORT_REASONS = [
+  { code: "ABUSIVE_LANGUAGE", label: "불쾌한 말이나 행동을 했어요" },
+  { code: "PRIVACY_REQUEST", label: "연락처 · 계좌 등 개인정보를 요구했어요" },
+  { code: "NO_SHOW", label: "약속 장소에 나오지 않았어요" },
+  { code: "IDENTITY_MISMATCH", label: "다른 사람이 나왔어요 (확인 코드 불일치)" },
+  { code: "OTHER", label: "기타" },
+];
 
 export default function MemberReportForm({ party, onSubmitted }) {
   const report = useMemberReport({ party, onSubmitted });

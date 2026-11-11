@@ -23,6 +23,7 @@ export default function AppRouter() {
           <Route path="carpool-registration" element={<CarpoolRegistration />} /> 
           <Route path="matching-result/:partyId" element={<MatchingResult />} />
           <Route path="parties/:partyId/room" element={<ChatRoom />} />
+          <Route path="rooms/:roomId" element={<ChatRoom />} />
           <Route path="parties/:partyId/room/report" element={<ReportMember />} />
         </Route>
       </Routes>

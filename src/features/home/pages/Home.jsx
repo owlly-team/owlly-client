@@ -10,7 +10,7 @@ import useHome from "../hooks/useHome";
 
 export default function Home({ data = homeScenarios.matched, onViewMatchingResult }) {
   const { state } = useLocation();
-  // 목업에서 나간 팟의 신청만 취소 상태로 표시한다.
+  // 목업에서 나간 팟의 신청만 취소 상태로 표
   const currentData = state?.leftParty && state.leftParty.id === data.rideRequest?.partyId
     ? { ...data, rideRequest: { ...data.rideRequest, status: "CANCELLED" }, party: null } : data;
   const {

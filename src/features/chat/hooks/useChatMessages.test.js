@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { toChatBubble } from "./messageUtils.js";
+import { toChatBubble } from "./useChatMessages.js";
 
 test("own messages align right, other members left, and system messages in the center", () => {
   const context = { party: { myMemberId: "503", members: [{ memberId: "501", maskedName: "김*연" }] } };

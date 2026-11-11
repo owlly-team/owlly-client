@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { getReportTargets } from "./reportUtils.js";
+import { getReportTargets } from "./useMemberReport.js";
 
 test("report targets exclude the current member, including representative previews", () => {
   const members = ["501", "502", "503"].map((memberId) => ({ memberId }));

@@ -7,10 +7,15 @@ export default function ReportMember() {
   const { partyId } = useParams();
   const { state } = useLocation();
   const navigate = useNavigate();
-  const { room, context } = getMockChatRoom(partyId, state?.chatContext);
-  const backToRoom = (completed = false) => navigate(`/parties/${partyId}/room`, {
-    replace: true, state: { chatContext: context, reportPreview: completed },
-  });
+  const { room, context } = state?.room?.partyId === partyId && state?.chatContext?.party?.id === partyId
+    ? { room: state.room, context: state.chatContext }
+    : getMockChatRoom(partyId, state?.chatContext);
+  const backToRoom = (completed = false) => {
+    const returnTo = state?.returnTo;
+    navigate(returnTo ? { pathname: returnTo.pathname, search: returnTo.search } : `/parties/${partyId}/room`, {
+      replace: true, state: { ...returnTo?.state, chatContext: context, reportPreview: completed },
+    });
+  };
 
   return <div className="flex flex-1 flex-col">
     <div className="-mx-4">
