@@ -134,7 +134,7 @@ export default function MatchingResult({ banks, onOpenChat }) {
       {members.map((member) =>
       <MemberRow key={member.memberId} className="px-0 py-2"
         order={member.stopOrder ?? "-"} name={member.memberId === party.myMemberId ? "나" : member.maskedName} school={member.universityName}
-        gender={member.sameGenderAsMe ? "나와 같은 성별" : undefined} isMe={member.memberId === party.myMemberId} isRepresentative={member.isRepresentative}
+        gender={member.genderLabel} isMe={member.memberId === party.myMemberId} isRepresentative={member.isRepresentative}
         note={`${member.destinationDongName}에서 내려요${member.isRepresentative ? " · 택시 호출 · 결제" : ""}`} 
       />)}
     </section>

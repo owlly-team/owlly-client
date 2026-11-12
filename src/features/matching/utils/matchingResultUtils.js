@@ -1,7 +1,11 @@
 export function toMatchingResultView(party, settlement) {
   const members = party.members
     .filter((member) => !["DECLINED", "LEFT", "REMOVED_UNPAID"].includes(member.decision))
-    .toSorted((a, b) => (a.stopOrder ?? Infinity) - (b.stopOrder ?? Infinity));
+    .toSorted((a, b) => (a.stopOrder ?? Infinity) - (b.stopOrder ?? Infinity))
+    .map((member) => ({
+      ...member,
+      genderLabel: member.gender === "FEMALE" ? "여성" : member.gender === "MALE" ? "남성" : undefined,
+    }));
   return {
     isRepresentative: Boolean(party.myMemberId)
       && party.myMemberId === party.representativeMemberId,

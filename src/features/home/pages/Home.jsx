@@ -21,7 +21,7 @@ export default function Home({ data = homeScenarios.matched, onViewMatchingResul
     showTransportOptions,
     transportOptions,
     selectedTab,
-    setSelectedTab,
+    handleTabChange,
     handleTransportSelect,
     handleViewRegistration,
     handleViewMatchingResult,
@@ -77,7 +77,7 @@ export default function Home({ data = homeScenarios.matched, onViewMatchingResul
         </div>
       )}
       <footer className="bg-background-normal -mx-4 mt-auto">
-        <BottomTabBar activeTab={selectedTab} onTabChange={setSelectedTab} />
+        <BottomTabBar activeTab={selectedTab} onTabChange={handleTabChange} />
       </footer>
     </div>
   );

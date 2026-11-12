@@ -1,5 +1,6 @@
 import { localDate } from "../utils/mapUtils.js";
 import { loadKakaoMaps } from "../../../shared/kakaoMaps.js";
+import { BANK_OPTIONS } from "../../../shared/constants/banks.js";
 
 export function resolveMockDestination({ region }) {
   return {
@@ -103,9 +104,9 @@ export const mockMatchingResult = {
     roomId: "601",
     allowedActions: [],
     members: [
-      { memberId: "501", maskedName: "김*연", universityName: "단국대", sameGenderAsMe: true, destinationDongName: "영통1동", stopOrder: 1, isRepresentative: false, decision: "PENDING", boardingStatus: "UNKNOWN" },
-      { memberId: "502", maskedName: "박*연", universityName: "단국대", sameGenderAsMe: true, destinationDongName: "영통2동", stopOrder: 2, isRepresentative: false, decision: "PENDING", boardingStatus: "UNKNOWN" },
-      { memberId: "503", maskedName: "이*준", universityName: "단국대", sameGenderAsMe: true, destinationDongName: "매탄동", stopOrder: 3, isRepresentative: true, decision: "PENDING", boardingStatus: "UNKNOWN" },
+      { memberId: "501", maskedName: "김*연", universityName: "단국대", sameGenderAsMe: true, gender: "FEMALE", destinationDongName: "영통1동", stopOrder: 1, isRepresentative: false, decision: "PENDING", boardingStatus: "UNKNOWN" },
+      { memberId: "502", maskedName: "박*연", universityName: "단국대", sameGenderAsMe: true, gender: "FEMALE", destinationDongName: "영통2동", stopOrder: 2, isRepresentative: false, decision: "PENDING", boardingStatus: "UNKNOWN" },
+      { memberId: "503", maskedName: "이*준", universityName: "단국대", sameGenderAsMe: true, gender: "FEMALE", destinationDongName: "매탄동", stopOrder: 3, isRepresentative: true, decision: "PENDING", boardingStatus: "UNKNOWN" },
     ],
   },
   settlement: {
@@ -138,5 +139,5 @@ export const mockRepresentativeMatchingResult = {
       { id: "10003", memberId: "503", estimatedShareWon: 7900, prepayDueWon: 0, actualShareWon: null, refundDueWon: null, status: "ESTIMATED", transfers: [] },
     ],
   },
-  banks: [{ code: "DEMO", name: "예시은행" }],
+  banks: BANK_OPTIONS,
 };
