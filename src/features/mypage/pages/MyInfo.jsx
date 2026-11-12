@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Badge from "../../../shared/components/Badge";
 import Switch from "../../../shared/components/Switch";
 import BottomTabBar from "../../../shared/components/BottomTabBar";
@@ -15,6 +16,7 @@ const defaultProfile = {
 };
 
 export default function MyInfo({ data = defaultProfile }) {
+  const navigate = useNavigate();
   const [sameGenderOnly, setSameGenderOnly] = useState(true);
   const [locationAllowed, setLocationAllowed] = useState(true);
   const [notificationAllowed, setNotificationAllowed] = useState(true);
@@ -84,7 +86,13 @@ export default function MyInfo({ data = defaultProfile }) {
       </div>
 
       <div className="-mx-4 pt-4">
-        <BottomTabBar activeTab={activeTab} onTabChange={setActiveTab} />
+        <BottomTabBar
+          activeTab={activeTab}
+          onTabChange={(tab) => {
+            if (tab === "return") navigate("/pickup");
+            else setActiveTab(tab);
+          }}
+        />
       </div>
     </div>
   );

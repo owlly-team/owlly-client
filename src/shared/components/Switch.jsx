@@ -6,10 +6,11 @@ export default function Switch({ checked = false, onChange, className = "", labe
       aria-checked={checked}
       aria-labelledby={labelledBy}
       onClick={() => onChange?.(!checked)}
-      className={`relative h-8 w-13 shrink-0 rounded-full transition-colors ${checked ? "bg-primary-normal" : "bg-fill-strong"} ${className}`}
+      className={`relative h-8 w-13 shrink-0 rounded-full outline-none transition-colors ${checked ? "bg-primary-normal" : "bg-fill-strong"} ${className}`}
     >
       <span
-        className={`absolute top-1 size-6 rounded-full bg-static-white shadow-xsmall transition-transform ${checked ? "translate-x-6" : "translate-x-1"}`}
+        aria-hidden="true"
+        className={`absolute top-1 left-1 size-6 rounded-full bg-static-white shadow-xsmall transition-transform ${checked ? "translate-x-5" : "translate-x-0"}`}
       />
     </button>
   );

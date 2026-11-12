@@ -103,7 +103,7 @@ export default function LastTrain(){
                 <Button size="md" variant="primary" className="w-full" onClick={goHome}>
                     막차로 갈게요
                 </Button>
-                <Button size="md" variant="secondary" className="w-full">
+                <Button size="md" variant="secondary" className="w-full" onClick={() => navigate("/pickup")}>
                     동승도 알아볼래요
                 </Button>
             </div>

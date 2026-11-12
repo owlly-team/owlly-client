@@ -31,7 +31,11 @@ export default function TransportOptionCard({
               : "bg-accent-cyan-surface"
         }`}
       >
-        <img src={icon} alt="" className="size-5" />
+        {typeof icon === "string" ? (
+          <img src={icon} alt="" className="size-5" />
+        ) : (
+          icon
+        )}
       </span>
       <div className="flex flex-1 flex-col gap-0.5">
         <p className="text-body1 text-label-normal font-semibold">{title}</p>

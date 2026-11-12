@@ -77,6 +77,14 @@ export default function useHome(data) {
     });
   }
 
+  function handleTabChange(tab) {
+    if (tab === "return") {
+      handleStartRegistration();
+      return;
+    }
+    setSelectedTab(tab);
+  }
+
   //동승 등록 내용 보기
   function handleViewRegistration() {
     navigate("/carpool-registration", {
@@ -102,7 +110,7 @@ export default function useHome(data) {
     showTransportOptions: !isMatchingWaiting && !isMatchingResult,
     transportOptions,
     selectedTab,
-    setSelectedTab,
+    handleTabChange,
     handleTransportSelect,
     handleViewRegistration,
     handleViewMatchingResult,

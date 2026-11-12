@@ -99,7 +99,7 @@ export default function SoloTaxi(){
                 <Button size="md" variant="primary" className="w-full" onClick={goHome}>
                     혼자 택시로 갈게요
                 </Button>
-                <Button size="md" variant="secondary" className="w-full">
+                <Button size="md" variant="secondary" className="w-full" onClick={() => navigate("/pickup")}>
                     동승도 알아볼래요
                 </Button>
             </div>
