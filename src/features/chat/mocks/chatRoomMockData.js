@@ -7,7 +7,7 @@ export const chatRoomMockData = {
     meetingNote: "단국대 정문", departureAt: "2026-11-05T23:30:00+09:00",
     verificationCode: "4821", closedAt: null, deleteAfter: null, canSendMessage: true,
   },
-  previewNow: "2026-11-05T23:20:00+09:00",
+  previewNow: "2026-11-05T23:30:00+09:00",
   context: {
     party: {
       id: "401", pickupPoint: { name: "정문" }, representativeMemberId: "503", myMemberId: "502",

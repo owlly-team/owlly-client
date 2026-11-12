@@ -30,7 +30,7 @@ export default function RepresentativeAccountForm({ roomId, banks = [], onOpenCh
               {banks.map((bank) => <option key={bank.code} value={bank.code}>{bank.name}</option>)}
             </select><img src={iconChevronDown} alt="" className="pointer-events-none absolute top-1/2 right-3 size-3 -translate-y-1/2" /></> : <input aria-label="은행 코드" placeholder="은행 코드" required maxLength={16} value={input.bankCode} onChange={update("bankCode")} className={fieldClass} />}
           </div>
-          <input aria-label="계좌번호" placeholder="계좌번호" required maxLength={80} inputMode="numeric" autoComplete="off" value={input.accountNumber} onChange={update("accountNumber")} className={fieldClass} />
+          <input type="number" aria-label="계좌번호" placeholder="계좌번호" required min="0" step="1" inputMode="numeric" title="계좌번호는 숫자만 입력해 주세요." autoComplete="off" value={input.accountNumber} onChange={update("accountNumber")} className={`${fieldClass} [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`} />
         </div>
         <input aria-label="예금주" placeholder="예금주" required maxLength={50} autoComplete="off" value={input.holderName} onChange={update("holderName")} className={fieldClass} />
       </fieldset>}
