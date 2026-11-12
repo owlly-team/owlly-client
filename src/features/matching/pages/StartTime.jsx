@@ -32,11 +32,11 @@ export default function StartTime() {
 
   if (!valid) return <div className="flex flex-1 flex-col gap-4 pt-4">
     <p>출발 거점과 하차 지점을 먼저 선택해 주세요.</p>
-    <Button onClick={() => navigate("/pickup-location")}>지도에서 선택하기</Button>
+    <Button onClick={() => navigate("/pickup")}>지도에서 선택하기</Button>
   </div>;
 
   return <div className="flex flex-1 flex-col">
-    <div className="-mx-4"><TopBar title="출발 시간 선택" onLeftClick={() => navigate("/pickup-location", { state })} /></div>
+    <div className="-mx-4"><TopBar title="출발 시간 선택" onLeftClick={() => navigate("/pickup", { state })} /></div>
     <div className="flex flex-col gap-2 mt-1">
       <p className="font-bold text-title3 text-label-normal">몇 시에 출발할까요?</p>
       <p className="font-regular text-body2 text-label-neutral">{pickupPoint.name} → {destination.name}</p>

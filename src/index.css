@@ -95,6 +95,29 @@ body {
   color: var(--color-label-normal);
 }
 
+.settlement-order-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line-normal) transparent;
+  scrollbar-gutter: stable;
+}
+
+.settlement-order-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.settlement-order-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.settlement-order-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--color-line-normal);
+}
+
+.settlement-order-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--color-label-assistive);
+}
+
 .pickup-map-marker {
   display: flex;
   width: max-content;

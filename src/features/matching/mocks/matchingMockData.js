@@ -1,5 +1,6 @@
 import { localDate } from "../utils/mapUtils.js";
 import { loadKakaoMaps } from "../../../shared/kakaoMaps.js";
+import { BANK_OPTIONS } from "../../../shared/constants/banks.js";
 
 export function resolveMockDestination({ region }) {
   return {
@@ -138,5 +139,5 @@ export const mockRepresentativeMatchingResult = {
       { id: "10003", memberId: "503", estimatedShareWon: 7900, prepayDueWon: 0, actualShareWon: null, refundDueWon: null, status: "ESTIMATED", transfers: [] },
     ],
   },
-  banks: [{ code: "DEMO", name: "예시은행" }],
+  banks: BANK_OPTIONS,
 };
