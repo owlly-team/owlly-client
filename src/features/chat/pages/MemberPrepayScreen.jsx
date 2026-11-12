@@ -32,7 +32,7 @@ export default function MemberPrepayScreen({ party, settlement, previewAccount: 
   const [copyError, setCopyError] = useState("");
 
   return <PrepayLayout notice="집결 시각이에요 · 확인 코드를 맞춘 뒤 대표에게 보내 주세요"
-    actionLabel="송금했어요" onNext={onNext}>
+    actionLabel="다음: 탑승 확인" onNext={onNext}>
     <section aria-label="대표에게 보낼 금액과 계좌" className="mt-4 rounded-16 bg-primary-tint p-4">
       <h1 className="text-label2 font-semibold text-label-alternative">
         택시 부르기 전에 {representative?.maskedName ?? "대표"}님(대표)에게 보내 주세요
