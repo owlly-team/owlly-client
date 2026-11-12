@@ -2,6 +2,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import BottomSheet from "../../../shared/components/BottomSheet";
 import Button from "../../../shared/components/Button";
+import { reorderDropoffMembers } from "../utils/dropoffOrderUtils";
 
 export default function DropoffOrderSheet({ rows, onApply, onClose }) {
   const dialog = useRef(null);
@@ -12,13 +13,32 @@ export default function DropoffOrderSheet({ rows, onApply, onClose }) {
   const rowAnimations = useRef(new Map());
   const preview = useRef(null);
   const dropAnimation = useRef(null);
+  const resizeGesture = useRef(null);
   const titleId = useId();
   const descriptionId = useId();
   const [draft, setDraft] = useState(rows);
   const [dragging, setDragging] = useState(null);
+  const [sheetHeight, setSheetHeight] = useState(null);
   const changed = draft.some(
     (row, index) => row.memberId !== rows[index].memberId,
   );
+
+  function resizeSheet(height) {
+    const viewportHeight = window.innerHeight;
+    setSheetHeight(
+      Math.min(
+        viewportHeight * 0.9,
+        Math.max(Math.min(320, viewportHeight * 0.5), height),
+      ),
+    );
+  }
+
+  function finishResize(event) {
+    if (resizeGesture.current?.pointerId !== event.pointerId) return;
+    if (event.type === "pointercancel")
+      setSheetHeight(resizeGesture.current.before);
+    resizeGesture.current = null;
+  }
 
   useLayoutEffect(() => {
     const animations = rowAnimations.current;
@@ -88,9 +108,9 @@ export default function DropoffOrderSheet({ rows, onApply, onClose }) {
         current[to].isRepresentative
       )
         return current;
-      const next = [...current];
+      const next = current.map((row) => row.memberId);
       next.splice(to, 0, next.splice(from, 1)[0]);
-      return next;
+      return reorderDropoffMembers(current, next);
     });
   }
 
@@ -207,11 +227,57 @@ export default function DropoffOrderSheet({ rows, onApply, onClose }) {
         )
           onClose();
       }}
-      className="rounded-t-24 text-label-normal backdrop:bg-material-dimmer fixed inset-x-0 top-auto bottom-0 m-0 mx-auto max-h-[min(50dvh,400px)] w-full max-w-110 overflow-visible border-0 bg-transparent p-0"
+      style={{ height: sheetHeight ?? undefined }}
+      className="rounded-t-24 text-label-normal backdrop:bg-material-dimmer fixed inset-x-0 top-auto bottom-0 m-0 mx-auto max-h-[90dvh] w-full max-w-110 overflow-visible border-0 bg-transparent p-0"
     >
       <BottomSheet
-        onClose={onClose}
-        className="max-h-[min(50dvh,400px)] min-h-0 gap-2! overflow-hidden pb-[max(16px,env(safe-area-inset-bottom))]"
+        handleSlot={
+          <button
+            type="button"
+            aria-label="시트 높이 조절. 위아래로 드래그하거나 방향키로 조절할 수 있어요"
+            className="focus-visible:outline-primary-normal rounded-8 -mt-2.5 flex h-12 w-full shrink-0 cursor-ns-resize touch-none items-center justify-center select-none focus-visible:outline-2"
+            onPointerDown={(event) => {
+              if (!event.isPrimary || event.button !== 0) return;
+              event.preventDefault();
+              resizeGesture.current = {
+                pointerId: event.pointerId,
+                startY: event.clientY,
+                height: dialog.current.getBoundingClientRect().height,
+                before: sheetHeight,
+              };
+              event.currentTarget.setPointerCapture(event.pointerId);
+            }}
+            onPointerMove={(event) => {
+              const active = resizeGesture.current;
+              if (active?.pointerId !== event.pointerId) return;
+              resizeSheet(active.height + active.startY - event.clientY);
+            }}
+            onPointerUp={finishResize}
+            onPointerCancel={finishResize}
+            onLostPointerCapture={() => {
+              resizeGesture.current = null;
+            }}
+            onKeyDown={(event) => {
+              if (!["ArrowUp", "ArrowDown", "Home", "End"].includes(event.key))
+                return;
+              event.preventDefault();
+              const height = dialog.current.getBoundingClientRect().height;
+              resizeSheet(
+                event.key === "Home"
+                  ? 0
+                  : event.key === "End"
+                    ? window.innerHeight
+                    : height + (event.key === "ArrowUp" ? 40 : -40),
+              );
+            }}
+          >
+            <span
+              aria-hidden="true"
+              className="bg-fill-strong h-1 w-10 rounded-full"
+            />
+          </button>
+        }
+        className={`${sheetHeight == null ? "max-h-[min(50dvh,400px)]" : "h-full max-h-full"} min-h-0 gap-2! overflow-hidden pb-[max(16px,env(safe-area-inset-bottom))]`}
       >
         <div className="w-full shrink-0">
           <h2
@@ -358,7 +424,10 @@ export default function DropoffOrderSheet({ rows, onApply, onClose }) {
           <div className="min-w-0 flex-1">
             <p className="text-body2 font-semibold">{dragging.row.name}</p>
             <p className="text-caption1 text-label-alternative">
-              {dragging.row.note}
+              {
+                draft.find((row) => row.memberId === dragging.row.memberId)
+                  ?.note
+              }
             </p>
           </div>
           <span className="text-primary-normal flex size-12 shrink-0 items-center justify-center">

@@ -112,10 +112,14 @@ export const mockMatchingResult = {
   settlement: {
     id: "901", partyId: "401", estimatedTotalWon: 23700, actualTotalWon: null,
     routeVersion: 1, status: "ESTIMATED",
-    items: [{
-      id: "10002", memberId: "502", estimatedShareWon: 7800, prepayDueWon: 9600,
-      actualShareWon: null, refundDueWon: null, status: "ESTIMATED", transfers: [],
-    }],
+    items: [
+      { id: "10001", memberId: "501", maskedName: "김*연", distanceMeters: 8000, isRepresentative: false, isMe: false, estimatedShareWon: 7900, prepayDueWon: 9500, actualShareWon: null, refundDueWon: null, status: "ESTIMATED", transfers: [] },
+      {
+        id: "10002", memberId: "502", maskedName: "박*연", distanceMeters: 12000, isRepresentative: false, isMe: true, estimatedShareWon: 7800, prepayDueWon: 9600,
+        actualShareWon: null, refundDueWon: null, status: "ESTIMATED", transfers: [],
+      },
+      { id: "10003", memberId: "503", maskedName: "이*준", distanceMeters: 16000, isRepresentative: true, isMe: false, estimatedShareWon: 8000, prepayDueWon: 0, actualShareWon: null, refundDueWon: null, status: "ESTIMATED", transfers: [] },
+    ],
     receiptAvailable: false, finalizedAt: null, refundDueAt: null, allowedActions: [],
   },
   // API-22/33에는 없는 비교 요금·목적지 안내는 이전 화면의 데이터로 전달한다.
@@ -134,9 +138,9 @@ export const mockRepresentativeMatchingResult = {
     ...mockMatchingResult.settlement,
     estimatedTotalWon: 20300,
     items: [
-      { id: "10001", memberId: "501", estimatedShareWon: 4500, prepayDueWon: 5400, actualShareWon: null, refundDueWon: null, status: "ESTIMATED", transfers: [] },
-      { id: "10002", memberId: "502", estimatedShareWon: 7900, prepayDueWon: 9500, actualShareWon: null, refundDueWon: null, status: "ESTIMATED", transfers: [] },
-      { id: "10003", memberId: "503", estimatedShareWon: 7900, prepayDueWon: 0, actualShareWon: null, refundDueWon: null, status: "ESTIMATED", transfers: [] },
+      { id: "10001", memberId: "501", maskedName: "김*연", distanceMeters: 8000, isRepresentative: false, isMe: false, estimatedShareWon: 4500, prepayDueWon: 5400, actualShareWon: null, refundDueWon: null, status: "ESTIMATED", transfers: [] },
+      { id: "10002", memberId: "502", maskedName: "박*연", distanceMeters: 12000, isRepresentative: false, isMe: false, estimatedShareWon: 7900, prepayDueWon: 9500, actualShareWon: null, refundDueWon: null, status: "ESTIMATED", transfers: [] },
+      { id: "10003", memberId: "503", maskedName: "이*준", distanceMeters: 16000, isRepresentative: true, isMe: true, estimatedShareWon: 7900, prepayDueWon: 0, actualShareWon: null, refundDueWon: null, status: "ESTIMATED", transfers: [] },
     ],
   },
   banks: BANK_OPTIONS,

@@ -5,23 +5,10 @@ import TopBar from "../../../shared/components/TopBar";
 import IconButton from "../../../shared/components/IconButton";
 import iconKebab from "../../../assets/icons/kebab.svg";
 import TransferRow from "../components/TransferRow";
-
-// 디자인 확인용 고정값. API 연결 시 등록된 멤버 계좌와 정산 결과로 교체한다.
-// 미등록 계좌는 예시 값으로 채우지 않고 비워 두며, 등록 후에만 표시한다.
-const previewRefunds = [
-  {
-    memberId: "501",
-    name: "김*연",
-    account: "신한은행 110-482-••331",
-    amount: "400원",
-  },
-  {
-    memberId: "502",
-    name: "박*윤",
-    account: "카카오뱅크 3333-12-4478210",
-    amount: "750원",
-  },
-];
+import {
+  resolveRepresentativeSettlement,
+  toRepresentativeRefundView,
+} from "../utils/representativeSettlementUtils";
 
 export default function SettlementRefund() {
   const navigate = useNavigate();
@@ -29,19 +16,18 @@ export default function SettlementRefund() {
   const { state } = useLocation();
   const [copiedMemberId, setCopiedMemberId] = useState(null);
   const [notice, setNotice] = useState("");
-  const party = state?.matchingResult?.party;
-  const validContext =
-    partyId === "401" &&
-    (!party ||
-      (party.id === partyId &&
-        Boolean(party.myMemberId) &&
-        party.myMemberId === party.representativeMemberId));
+  const { data, party } = resolveRepresentativeSettlement({ partyId, state });
+  const view = toRepresentativeRefundView(data, partyId, {
+    party,
+    refundAccounts: state?.refundAccounts,
+  });
 
   function goBack() {
     navigate(`/parties/${partyId}/settlement`, { replace: true, state });
   }
 
   async function copyAccount(member) {
+    if (!member.account) return;
     try {
       await navigator.clipboard.writeText(member.account);
       setCopiedMemberId(member.memberId);
@@ -51,7 +37,7 @@ export default function SettlementRefund() {
     }
   }
 
-  if (!validContext) {
+  if (!view) {
     return (
       <div className="flex flex-1 flex-col gap-4">
         <div className="-mx-4">
@@ -69,7 +55,7 @@ export default function SettlementRefund() {
     <div className="flex flex-1 flex-col">
       <div className="-mx-4">
         <TopBar
-          title="정문 → 영통구 · 3명"
+          title="정산 반환 안내"
           onLeftClick={goBack}
           rightSlot={
             <IconButton
@@ -82,9 +68,15 @@ export default function SettlementRefund() {
       </div>
       <div className="pt-4">
         <h1 className="text-title3 text-label-normal font-bold">
-          차액 1,150원을
-          <br />
-          돌려주세요
+          {view.totalWon > 0 ? (
+            <>
+              차액 {view.totalWon.toLocaleString("ko-KR")}원을
+              <br />
+              돌려주세요
+            </>
+          ) : (
+            "돌려줄 금액이 없어요"
+          )}
         </h1>
         <p className="text-body2 text-label-alternative mt-2">
           멤버가 입력한 계좌로 보내 주세요. 보냈는지는 채팅방에서 직접 확인해요.
@@ -94,7 +86,7 @@ export default function SettlementRefund() {
         aria-label="멤버별 돌려줄 금액과 계좌"
         className="divide-line-alternative rounded-16 border-line-alternative mt-4 divide-y border px-4"
       >
-        {previewRefunds.map((member) => (
+        {view.refunds.map((member) => (
           <TransferRow
             key={member.memberId}
             {...member}

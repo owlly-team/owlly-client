@@ -11,6 +11,7 @@ export default function RepresentativePaymentCard({ party, settlement, retry }) 
         {payments.map(({ member, item }) => <div key={member.memberId} className="flex items-center justify-between gap-3">
           <div>
             <p className="text-body2 font-semibold">{member.maskedName}</p>
+            {member.distanceLabel && <p className="mt-1 text-caption1 text-label-alternative">{member.distanceLabel} 구간</p>}
             <p className="mt-1 text-caption1 text-label-alternative">예상 {formatWon(item?.estimatedShareWon)}원의 1.2배</p>
           </div>
           <p className="text-body1 font-bold">{item ? formatWon(item.prepayDueWon) : "금액 준비 중"}</p>

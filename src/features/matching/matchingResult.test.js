@@ -48,3 +48,15 @@ test("selects own amount, counts companions and sorts only active members", () =
   assert.equal(toMatchingResultView(party, null).mySettlementItem, undefined);
   assert.equal(toMatchingResultView(party, { ...settlement, partyId: "999" }).mySettlementItem, undefined);
 });
+
+test("정산 항목의 이름과 거리는 memberId로 연결하며 다른 팟의 응답은 섞지 않는다", () => {
+  const data = { ...settlement, items: [
+    { memberId: "502", maskedName: "같*름", distanceMeters: 8500, isMe: true, isRepresentative: false, estimatedShareWon: 0, prepayDueWon: 0 },
+    { memberId: "501", maskedName: "같*름", distanceMeters: 0, isMe: false, isRepresentative: false, estimatedShareWon: 5000, prepayDueWon: 6000 },
+  ] };
+  const view = toMatchingResultView(party, data);
+  assert.equal(view.mySettlementItem.estimatedShareWon, 0);
+  assert.deepEqual(view.members.slice(0, 2).map((member) => [member.memberId, member.maskedName, member.distanceLabel]),
+    [["501", "같*름", "0km"], ["502", "같*름", "8.5km"]]);
+  assert.equal(toMatchingResultView(party, { ...data, partyId: "999" }).members[0].distanceLabel, null);
+});

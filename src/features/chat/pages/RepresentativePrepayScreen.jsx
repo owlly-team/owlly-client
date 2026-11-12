@@ -2,10 +2,11 @@ import { formatWon } from "../../home/utils/homeUtils";
 import { toMatchingResultView } from "../../matching/utils/matchingResultUtils";
 import { getPrepayAmount } from "../utils/prepayUtils";
 import PrepayLayout from "../components/PrepayLayout";
+import { getSettlementItems } from "../../settlement/utils/settlementUtils";
 
 export default function RepresentativePrepayScreen({ party, settlement, account, onTaxiCalled }) {
   const { members } = toMatchingResultView(party, settlement);
-  const items = settlement?.partyId === party.id ? settlement.items : [];
+  const items = getSettlementItems(settlement, party.id);
   const payments = members.filter((member) => member.memberId !== party.representativeMemberId)
     .map((member) => ({ member, amount: getPrepayAmount(items.find((item) => item.memberId === member.memberId)) }));
   const total = payments.length && payments.every(({ amount }) => amount !== null)
@@ -27,7 +28,7 @@ export default function RepresentativePrepayScreen({ party, settlement, account,
         {payments.map(({ member, amount }) => <li key={member.memberId} className="flex items-center justify-between gap-3 py-2">
           <div>
             <p className="text-body2 font-semibold">{member.maskedName}</p>
-            <p className="mt-0.5 text-caption1 text-label-alternative">{member.destinationDongName}</p>
+            <p className="mt-0.5 text-caption1 text-label-alternative">{[member.destinationDongName, member.distanceLabel].filter(Boolean).join(" · ")}</p>
           </div>
           <p className="text-headline2 font-bold">{formatWon(amount)}</p>
         </li>)}

@@ -1,53 +1,55 @@
-import { getMemberSettlementPreview } from "../mocks/memberSettlementMock.js";
+import {
+  getMemberSettlementPreview,
+  previewRepresentativeAccount,
+} from "../mocks/memberSettlementMock.js";
+import {
+  getSettlementIdentity,
+  isFinalSettlement,
+  toSettlementRows,
+} from "./settlementUtils.js";
 
 export function resolveMemberSettlementData({ partyId, state, search = "" }) {
   const party = state?.matchingResult?.party;
-  const preview = !state?.memberSettlement && !party && partyId === "401";
-  const data = preview
-    ? getMemberSettlementPreview(new URLSearchParams(search).get("preview"))
-    : state?.memberSettlement;
-  if (
-    party &&
-    (party.id !== partyId ||
-      party.myMemberId !== data?.myMemberId ||
-      party.representativeMemberId !== data?.representativeMemberId)
-  ) {
+  const supplied =
+    state?.memberSettlement ??
+    state?.settlement ??
+    state?.matchingResult?.settlement;
+  const kind = new URLSearchParams(search).get("preview");
+  const preview = supplied == null && !party && partyId === "401";
+  const data = preview ? getMemberSettlementPreview(kind) : supplied;
+  if (party && !getSettlementIdentity(data, partyId, party)) {
     return { data: null, isPreview: false };
   }
-  return { data, isPreview: preview || state?.isPreview === true };
+  return {
+    data,
+    party,
+    isPreview: preview || state?.isPreview === true,
+    representativeAccount:
+      state?.representativeAccount ??
+      (preview && kind === "additional" ? previewRepresentativeAccount : null),
+  };
 }
 
 export const formatSettlementWon = (value) =>
   `${value.toLocaleString("ko-KR")}원`;
 
-export function toMemberSettlementView(data, partyId) {
+export function toMemberSettlementView(
+  data,
+  partyId,
+  { party, representativeAccount: account } = {},
+) {
+  const identity = getSettlementIdentity(data, partyId, party);
   if (
-    !data ||
-    data.partyId !== partyId ||
-    !data.myMemberId ||
-    !data.representativeMemberId ||
-    data.myMemberId === data.representativeMemberId ||
-    !Number.isSafeInteger(data.totalFareWon) ||
-    data.totalFareWon < 0 ||
-    !Array.isArray(data.items) ||
-    data.items.some(
-      (item) =>
-        !item.memberId ||
-        !Number.isSafeInteger(item.confirmedWon) ||
-        item.confirmedWon < 0 ||
-        (item.paidWon != null &&
-          (!Number.isSafeInteger(item.paidWon) || item.paidWon < 0)) ||
-        (item.differenceWon != null &&
-          !Number.isSafeInteger(item.differenceWon)),
-    ) ||
-    new Set(data.items.map((item) => item.memberId)).size !== data.items.length
+    !identity ||
+    identity.mine.isRepresentative ||
+    !isFinalSettlement(data, partyId)
   )
     return null;
-  const mine = data.items.find((item) => item.memberId === data.myMemberId);
-  if (!mine || !Number.isSafeInteger(mine.differenceWon)) return null;
-  const account = data.representativeAccount;
+  const { mine, representative } = identity;
+  const rows = toSettlementRows(data, { partyId, party, final: true });
+  const myRow = rows.find((row) => row.memberId === mine.memberId);
   const representativeAccount =
-    account?.memberId === data.representativeMemberId &&
+    account?.memberId === representative.memberId &&
     typeof account.bankName === "string" &&
     account.bankName.trim() &&
     typeof account.accountNumber === "string" &&
@@ -55,30 +57,16 @@ export function toMemberSettlementView(data, partyId) {
       ? account
       : null;
   return {
-    title: data.title,
-    totalFare: formatSettlementWon(data.totalFareWon),
-    differenceWon: mine.differenceWon,
-    amount: formatSettlementWon(Math.abs(mine.differenceWon)),
-    amountWon: Math.abs(mine.differenceWon),
+    myMemberId: mine.memberId,
+    totalFare: formatSettlementWon(data.actualTotalWon),
+    differenceWon: mine.refundDueWon,
+    amount: formatSettlementWon(Math.abs(mine.refundDueWon)),
+    amountWon: Math.abs(mine.refundDueWon),
     representativeAccount,
-    representativeName:
-      account?.memberId === data.representativeMemberId
-        ? account.maskedHolderName
-        : null,
-    confirmed: formatSettlementWon(mine.confirmedWon),
-    paid: mine.paidWon == null ? "-" : formatSettlementWon(mine.paidWon),
-    rows: data.items.map((item) => ({
-      memberId: item.memberId,
-      name: item.memberId === data.myMemberId ? "나" : item.name,
-      note: item.note,
-      confirmed: formatSettlementWon(item.confirmedWon),
-      received: item.paidWon == null ? "-" : formatSettlementWon(item.paidWon),
-      refund:
-        item.differenceWon == null
-          ? "-"
-          : `${item.differenceWon > 0 ? "+" : ""}${formatSettlementWon(item.differenceWon)}`,
-      isAdditionalPayment: item.differenceWon < 0,
-    })),
+    representativeName: representative.maskedName,
+    confirmed: myRow.confirmed,
+    paid: myRow.received,
+    rows,
   };
 }
 

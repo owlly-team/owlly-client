@@ -70,7 +70,7 @@ export const homeScenarios = {
     rideRequest: { ...rideRequest, status: "MATCHED", partyId: party.id },
     party,
     mySettlementItem: {
-      id: "601", memberId: "501", estimatedShareWon: 7900, prepayDueWon: 0,
+      id: "601", memberId: "501", maskedName: "김*연", distanceMeters: 16000, isRepresentative: true, isMe: true, estimatedShareWon: 7900, prepayDueWon: 0,
       actualShareWon: null, refundDueWon: null, status: "ESTIMATED", transfers: [],
     },
 

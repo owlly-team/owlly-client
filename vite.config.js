@@ -7,6 +7,9 @@ import svgr from 'vite-plugin-svgr'
 export default defineConfig({
   plugins: [react(), tailwindcss(), svgr()],
   server: {
+    headers: {
+      'Cache-Control': 'no-store',
+    },
     watch: {
       // Detect saved changes even when filesystem events are missed.
       usePolling: true,

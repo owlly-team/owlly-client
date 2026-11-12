@@ -13,12 +13,16 @@ export default function MemberSettlement() {
   const { partyId } = useParams();
   const { state, search } = useLocation();
   const navigate = useNavigate();
-  const { data, isPreview } = resolveMemberSettlementData({
-    partyId,
-    state,
-    search,
+  const { data, isPreview, party, representativeAccount } =
+    resolveMemberSettlementData({
+      partyId,
+      state,
+      search,
+    });
+  const view = toMemberSettlementView(data, partyId, {
+    party,
+    representativeAccount,
   });
-  const view = toMemberSettlementView(data, partyId);
   function goBack() {
     if (state?.returnTo)
       navigate(
@@ -52,13 +56,13 @@ export default function MemberSettlement() {
         </p>
         {view.differenceWon > 0 ? (
           <RefundAccountCard
-            key={`${partyId}:${data.myMemberId}`}
+            key={`${partyId}:${view.myMemberId}`}
             view={view}
             isPreview={isPreview}
           />
         ) : view.differenceWon < 0 ? (
           <AdditionalPaymentCard
-            key={`${partyId}:${data.myMemberId}:${view.differenceWon}`}
+            key={`${partyId}:${view.myMemberId}:${view.differenceWon}`}
             view={view}
             isPreview={isPreview}
           />
