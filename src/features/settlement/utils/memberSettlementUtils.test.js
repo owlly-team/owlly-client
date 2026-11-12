@@ -26,7 +26,7 @@ test("직접 접근 미리보기 쿼리는 반환·추가 납부·0원 시나리
   ]) {
     const result = resolveMemberSettlementData({ partyId: "401", search });
     assert.equal(result.isPreview, true);
-    const view = toMemberSettlementView(result.data, "401");
+    const view = toMemberSettlementView(result.data, "401", result);
     assert.equal(view.differenceWon, difference);
     if (difference < 0) {
       assert.equal(view.amountWon, 3350);
@@ -79,10 +79,9 @@ test("없는 계좌·다른 멤버 계좌·마스킹된 계좌를 송금 계좌�
     { memberId: "501", bankName: "은행", accountNumber: "1234567890" },
     { memberId: "503", bankName: "은행", accountNumber: "1234-****-5678" },
   ]) {
-    const view = toMemberSettlementView(
-      { ...memberSettlementMock, representativeAccount },
-      "401",
-    );
+    const view = toMemberSettlementView(memberSettlementMock, "401", {
+      representativeAccount,
+    });
     assert.equal(view.representativeAccount, null);
   }
 });
@@ -90,12 +89,22 @@ test("없는 계좌·다른 멤버 계좌·마스킹된 계좌를 송금 계좌�
 test("다른 팟, 대표, 본인 항목 누락과 금액 누락은 결과로 표시하지 않는다", () => {
   assert.equal(toMemberSettlementView(memberSettlementMock, "999"), null);
   for (const patch of [
-    { myMemberId: "503" },
-    { myMemberId: "999" },
-    { totalFareWon: null },
+    {
+      items: memberSettlementMock.items.map((item) => ({
+        ...item,
+        isMe: item.memberId === "503",
+      })),
+    },
+    {
+      items: memberSettlementMock.items.map((item) => ({
+        ...item,
+        isMe: false,
+      })),
+    },
+    { actualTotalWon: null },
     {
       items: memberSettlementMock.items.map((item) =>
-        item.memberId === "502" ? { ...item, differenceWon: null } : item,
+        item.memberId === "502" ? { ...item, refundDueWon: null } : item,
       ),
     },
   ])
@@ -110,7 +119,9 @@ test("차액 0원과 추가 납부의 부호를 보존한다", () => {
     const data = {
       ...memberSettlementMock,
       items: memberSettlementMock.items.map((item) =>
-        item.memberId === "502" ? { ...item, differenceWon } : item,
+        item.memberId === "502"
+          ? { ...item, refundDueWon: differenceWon }
+          : item,
       ),
     };
     const view = toMemberSettlementView(data, "401");

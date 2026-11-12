@@ -74,9 +74,10 @@ export default function ChatRoom({ csrfToken }) {
     account={state?.account ?? (isPreview ? previewAccount : null)} now={isPreview ? previewNow ?? now : now}
     isPreview={isPreview} csrfToken={csrfToken} reportPreview={state?.reportPreview}
     onOpenSettlement={() => openSettlement()}
-    onOpenMemberSettlement={(state?.memberSettlement || (isPreview && currentParty.id === "401" && currentParty.myMemberId === "502")) ? () => navigate(`/parties/${currentParty.id}/settlement/result`, { state: {
+    onOpenMemberSettlement={(state?.memberSettlement || (context.settlement?.actualTotalWon != null) || (isPreview && currentParty.id === "401" && currentParty.myMemberId === "502")) ? () => navigate(`/parties/${currentParty.id}/settlement/result`, { state: {
       ...roomState,
-      memberSettlement: state?.memberSettlement ?? memberSettlementMock,
+      memberSettlement: state?.memberSettlement ?? (context.settlement?.actualTotalWon != null ? context.settlement : isPreview ? memberSettlementMock : undefined),
+      representativeAccount: state?.representativeAccount ?? (state?.account ? { ...state.account, memberId: currentParty.representativeMemberId } : undefined),
       returnTo: { pathname, search, state: roomState },
     } }) : undefined}
     boardingStarted={state?.boardingStarted}

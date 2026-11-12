@@ -5,6 +5,8 @@ import Button from "../../../shared/components/Button";
 import SettlementAmountField from "../components/SettlementAmountField";
 import SettleTable from "../components/SettleTable";
 import DropoffOrderSheet from "../components/DropoffOrderSheet";
+import { resolveRepresentativeSettlement } from "../utils/representativeSettlementUtils";
+import { isWon, toSettlementRows } from "../utils/settlementUtils";
 
 export default function SettlementInput({
   onAmountChange,
@@ -15,44 +17,24 @@ export default function SettlementInput({
   const navigate = useNavigate();
   const { partyId } = useParams();
   const { state } = useLocation();
-  const party = state?.matchingResult?.party;
-  const validContext = party
-    ? party.id === partyId &&
-      Boolean(party.myMemberId) &&
-      party.myMemberId === party.representativeMemberId
-    : partyId === "401";
+  const {
+    data: settlement,
+    party,
+    isPreview,
+  } = resolveRepresentativeSettlement({ partyId, state });
+  const validContext = Boolean(settlement);
+  const initialAmount =
+    settlement?.actualTotalWon ?? settlement?.estimatedTotalWon;
   const [amount, setAmount] = useState(
-    state?.settlementDraft?.amount ?? "30000",
+    state?.settlementDraft?.amount ??
+      (isWon(initialAmount) ? String(initialAmount) : ""),
   );
   // UI 목업: 순서 변경 시 자리별 구간·금액은 유지하고 멤버 ID·이름만 변경
   const [rows, setRows] = useState(
-    state?.settlementDraft?.rows ?? [
-      {
-        memberId: "501",
-        name: "김*연",
-        note: "영통1동 · 8km",
-        confirmed: "5,000원",
-        received: "5,400원",
-        refund: "+400원",
-      },
-      {
-        memberId: "502",
-        name: "박*연",
-        note: "영통2동 · 12km",
-        confirmed: "8,750원",
-        received: "9,500원",
-        refund: "+750원",
-      },
-      {
-        memberId: "503",
-        name: "나 · 대표",
-        note: "매탄동 · 16km",
-        confirmed: "16,250원",
-        received: "-",
-        refund: "-",
-        isRepresentative: true,
-      },
-    ],
+    state?.settlementDraft?.rows ??
+      toSettlementRows(settlement, { partyId, party, receivedOnly: true }).sort(
+        (a, b) => Number(a.isRepresentative) - Number(b.isRepresentative),
+      ),
   );
   const [editingOrder, setEditingOrder] = useState(false);
   const [notice, setNotice] = useState("");
@@ -113,7 +95,13 @@ export default function SettlementInput({
         />
       </div>
       <section aria-label="멤버별 정산 금액" className="mt-4">
-        <SettleTable rows={rows} className="border-line-alternative border" />
+        <SettleTable
+          rows={rows}
+          confirmedLabel={
+            settlement.actualTotalWon == null ? "예상 금액" : "확정 금액"
+          }
+          className="border-line-alternative border"
+        />
         <p className="text-caption1 text-label-alternative mt-3">
           확정 금액은 구간별 거리와 함께 탄 인원에 따라 나눠요.
           <br />
@@ -153,7 +141,8 @@ export default function SettlementInput({
                 state: {
                   ...state,
                   settlementDraft: { amount, rows },
-                  isPreview: true,
+                  settlement,
+                  isPreview,
                 },
               });
           }}

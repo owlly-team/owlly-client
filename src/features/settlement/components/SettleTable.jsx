@@ -7,6 +7,7 @@ export default function SettleTable({
   rows,
   className = "",
   receivedLabel = COLUMNS[2],
+  confirmedLabel = COLUMNS[1],
 }) {
   return (
     <div
@@ -14,7 +15,7 @@ export default function SettleTable({
     >
       <div className="text-caption2 text-label-alternative grid grid-cols-[minmax(0,1.3fr)_repeat(3,minmax(0,1fr))] gap-1">
         <span>{COLUMNS[0]}</span>
-        <span className="text-right">{COLUMNS[1]}</span>
+        <span className="text-right">{confirmedLabel}</span>
         <span className="text-right">{receivedLabel}</span>
         <span className="text-right">{COLUMNS[3]}</span>
       </div>

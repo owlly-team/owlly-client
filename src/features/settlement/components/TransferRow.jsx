@@ -17,7 +17,9 @@ export default function TransferRow({
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 flex-col gap-0.5">
           <p className="text-body2 text-label-normal font-semibold">{name}</p>
-          <p className="text-caption1 text-label-alternative">{account}</p>
+          <p className="text-caption1 text-label-alternative">
+            {account ?? "반환 계좌 등록 대기"}
+          </p>
         </div>
         <span className="text-headline2 text-label-normal shrink-0 font-bold">
           {amount}
@@ -28,6 +30,7 @@ export default function TransferRow({
           variant="chip"
           size="sm"
           onClick={onCopy}
+          disabled={!account || !onCopy}
           className="text-label-normal"
         >
           {copyLabel}
