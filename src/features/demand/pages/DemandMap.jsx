@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import FilterChip from "../../../shared/components/FilterChip";
 import InfoBox from "../../../shared/components/InfoBox";
 import BottomTabBar from "../../../shared/components/BottomTabBar";
@@ -40,6 +41,7 @@ const MOCK_DATA = {
 };
 
 export default function DemandMap() {
+  const navigate = useNavigate();
   const [isCandidate, setIsCandidate] = useState(true);
   const [day, setDay] = useState(DAY_OPTIONS[0]);
   const [time, setTime] = useState(TIME_OPTIONS[0]);
@@ -95,7 +97,13 @@ export default function DemandMap() {
       </div>
 
       <div className="-mx-4 pt-4">
-        <BottomTabBar activeTab={activeTab} onTabChange={setActiveTab} />
+        <BottomTabBar
+          activeTab={activeTab}
+          onTabChange={(tab) => {
+            if (tab === "return") navigate("/pickup");
+            else setActiveTab(tab);
+          }}
+        />
       </div>
     </div>
   );

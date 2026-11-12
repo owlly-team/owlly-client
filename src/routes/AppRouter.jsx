@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from "../shared/layout/Layout";
 import Home from "../features/home/pages/Home";
+import MatchingFailure from "../features/home/pages/MatchingFailure";
 import LastTrain from "../features/home/pages/LastTrain";
 import SoloTaxi from "../features/home/pages/SoloTaxi";
 import AdminLogin from "../features/admin/pages/AdminLogin";
@@ -30,6 +31,7 @@ export default function AppRouter() {
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
+          <Route path="matching/failed" element={<MatchingFailure />} />
           <Route path="train" element={<LastTrain />} />
           <Route path="solo-taxi" element={<SoloTaxi />} />
           <Route path="admin/login" element={<AdminLogin />} />
