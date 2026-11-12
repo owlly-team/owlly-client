@@ -12,7 +12,7 @@ const TRANSPORT_ICONS = {
 };
 
 const TRANSPORT_ROUTES = {
-  bus: "/last-train",
+  bus: "/train",
   taxi: "/solo-taxi",
 };
 
@@ -59,7 +59,7 @@ export default function useHome(data) {
   }
   //출발 거점과 하차 위치 선택
   function handleStartRegistration() {
-    navigate("/pickup-location", {
+    navigate("/pickup", {
       state: {
         pickupPoint: data.pickupPoint,
         universityId: travelOptions?.universityId,
@@ -89,7 +89,7 @@ export default function useHome(data) {
 
   //MATCHED 신청의 partyId로 매칭 결과 화면 이동
   function handleViewMatchingResult(partyId) {
-    navigate(`/matching-result/${partyId}`, {
+    navigate(`/matching/result/${partyId}`, {
       state: { matchingContext: { rideRequest, travelOptions } },
     });
   }

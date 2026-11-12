@@ -1,0 +1,123 @@
+import { useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import Button from "../../../shared/components/Button";
+import TopBar from "../../../shared/components/TopBar";
+import IconButton from "../../../shared/components/IconButton";
+import iconKebab from "../../../assets/icons/kebab.svg";
+import TransferRow from "../components/TransferRow";
+
+// 디자인 확인용 고정값. API 연결 시 등록된 멤버 계좌와 정산 결과로 교체한다.
+// 미등록 계좌는 예시 값으로 채우지 않고 비워 두며, 등록 후에만 표시한다.
+const previewRefunds = [
+  {
+    memberId: "501",
+    name: "김*연",
+    account: "신한은행 110-482-••331",
+    amount: "400원",
+  },
+  {
+    memberId: "502",
+    name: "박*윤",
+    account: "카카오뱅크 3333-12-4478210",
+    amount: "750원",
+  },
+];
+
+export default function SettlementRefund() {
+  const navigate = useNavigate();
+  const { partyId } = useParams();
+  const { state } = useLocation();
+  const [copiedMemberId, setCopiedMemberId] = useState(null);
+  const [notice, setNotice] = useState("");
+  const party = state?.matchingResult?.party;
+  const validContext =
+    partyId === "401" &&
+    (!party ||
+      (party.id === partyId &&
+        Boolean(party.myMemberId) &&
+        party.myMemberId === party.representativeMemberId));
+
+  function goBack() {
+    navigate(`/parties/${partyId}/settlement`, { replace: true, state });
+  }
+
+  async function copyAccount(member) {
+    try {
+      await navigator.clipboard.writeText(member.account);
+      setCopiedMemberId(member.memberId);
+      setNotice("");
+    } catch {
+      setNotice("복사하지 못했어요. 계좌를 길게 눌러 직접 복사해 주세요.");
+    }
+  }
+
+  if (!validContext) {
+    return (
+      <div className="flex flex-1 flex-col gap-4">
+        <div className="-mx-4">
+          <TopBar title="정산" onLeftClick={() => navigate("/")} />
+        </div>
+        <p role="status" className="text-body2 text-label-neutral">
+          정산 정보를 확인할 수 없어요. 대표 계정의 채팅방에서 다시 열어 주세요.
+        </p>
+        <Button onClick={() => navigate("/")}>홈으로</Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-1 flex-col">
+      <div className="-mx-4">
+        <TopBar
+          title="정문 → 영통구 · 3명"
+          onLeftClick={goBack}
+          rightSlot={
+            <IconButton
+              src={iconKebab}
+              alt="더보기"
+              onClick={() => setNotice("더보기 기능은 준비 중이에요.")}
+            />
+          }
+        />
+      </div>
+      <div className="pt-4">
+        <h1 className="text-title3 text-label-normal font-bold">
+          차액 1,150원을
+          <br />
+          돌려주세요
+        </h1>
+        <p className="text-body2 text-label-alternative mt-2">
+          멤버가 입력한 계좌로 보내 주세요. 보냈는지는 채팅방에서 직접 확인해요.
+        </p>
+      </div>
+      <section
+        aria-label="멤버별 돌려줄 금액과 계좌"
+        className="divide-line-alternative rounded-16 border-line-alternative mt-4 divide-y border px-4"
+      >
+        {previewRefunds.map((member) => (
+          <TransferRow
+            key={member.memberId}
+            {...member}
+            className="rounded-none px-0 py-3 [&_p]:break-all [&_p]:select-text"
+            onCopy={() => copyAccount(member)}
+            copyLabel={
+              copiedMemberId === member.memberId ? "복사했어요" : "계좌 복사"
+            }
+          />
+        ))}
+      </section>
+      <p
+        role="status"
+        aria-live="polite"
+        className="text-label2 text-label-alternative mt-3"
+      >
+        {notice || (copiedMemberId ? "계좌를 복사했어요." : "")}
+      </p>
+      <footer className="bg-background-normal sticky bottom-0 mt-auto pt-6 pb-[max(16px,env(safe-area-inset-bottom))]">
+        <Button variant="secondary" className="w-full" disabled>
+          한*윤 화면 보기
+        </Button>
+      </footer>
+    </div>
+  );
+}

@@ -20,6 +20,9 @@ import PickupLocation from "../features/matching/pages/PickupLocation";
 import MatchingResult from "../features/matching/pages/MatchingResult";
 import ChatRoom from "../features/chat/pages/ChatRoom";
 import ReportMember from "../features/chat/pages/ReportMember";
+import SettlementInput from "../features/settlement/pages/SettlementInput";
+import SettlementRefund from "../features/settlement/pages/SettlementRefund";
+import MemberSettlement from "../features/settlement/pages/MemberSettlement";
 
 export default function AppRouter() {
   return (
@@ -27,7 +30,7 @@ export default function AppRouter() {
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
-          <Route path="last-train" element={<LastTrain />} />
+          <Route path="train" element={<LastTrain />} />
           <Route path="solo-taxi" element={<SoloTaxi />} />
           <Route path="admin/login" element={<AdminLogin />} />
           <Route path="admin" element={<DemandMapAdmin />} />
@@ -43,22 +46,37 @@ export default function AppRouter() {
             path="onboarding/school-verification"
             element={<SchoolVerification />}
           />
-          <Route
-            path="onboarding/permissions"
-            element={<PermissionNotice />}
-          />
+          <Route path="onboarding/permissions" element={<PermissionNotice />} />
           <Route path="onboarding/profile" element={<Profile />} />
           <Route
             path="onboarding/match-notification"
             element={<MatchNotification />}
           />
-          <Route path="pickup-location" element={<PickupLocation />} />
+          <Route path="pickup" element={<PickupLocation />} />
           <Route path="start-time" element={<StartTime />} />
-          <Route path="carpool-registration" element={<CarpoolRegistration />} />
-          <Route path="matching-result/:partyId" element={<MatchingResult />} />
+          <Route
+            path="carpool-registration"
+            element={<CarpoolRegistration />}
+          />
+          <Route path="matching/result/:partyId" element={<MatchingResult />} />
           <Route path="parties/:partyId/room" element={<ChatRoom />} />
           <Route path="rooms/:roomId" element={<ChatRoom />} />
-          <Route path="parties/:partyId/room/report" element={<ReportMember />} />
+          <Route
+            path="parties/:partyId/room/report"
+            element={<ReportMember />}
+          />
+          <Route
+            path="parties/:partyId/settlement"
+            element={<SettlementInput />}
+          />
+          <Route
+            path="parties/:partyId/settlement/refund"
+            element={<SettlementRefund /> }
+          />
+          <Route
+            path="parties/:partyId/settlement/result"
+            element={<MemberSettlement />}
+          />
         </Route>
       </Routes>
     </BrowserRouter>

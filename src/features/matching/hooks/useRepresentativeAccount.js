@@ -1,10 +1,20 @@
 import { useState } from "react";
 
 export default function useRepresentativeAccount({ roomId, onOpenChat }) {
-  const [input, setInput] = useState({ bankCode: "", accountNumber: "", holderName: "" });
+  const [input, setInput] = useState({
+    bankCode: "",
+    accountNumber: "",
+    holderName: "",
+  });
   const [saved, setSaved] = useState(null);
   const [error, setError] = useState("");
-  const update = (field) => (event) => setInput((value) => ({ ...value, [field]: event.target.value }));
+  const update = (field) => (event) => {
+    const nextValue =
+      field === "accountNumber"
+        ? event.target.value.replace(/\D/g, "")
+        : event.target.value;
+    setInput((value) => ({ ...value, [field]: nextValue }));
+  };
 
   function submit(event) {
     event.preventDefault();
@@ -15,9 +25,13 @@ export default function useRepresentativeAccount({ roomId, onOpenChat }) {
       accountNumber: input.accountNumber.replace(/[\s-]/g, ""),
       holderName: input.holderName.trim(),
     };
-    if (!account.bankCode || account.bankCode.length > 16
-      || !account.accountNumber || account.accountNumber.length > 40
-      || !account.holderName || account.holderName.length > 50) {
+    if (
+      !account.bankCode ||
+      account.bankCode.length > 16 ||
+      !/^\d{1,40}$/.test(account.accountNumber) ||
+      !account.holderName ||
+      account.holderName.length > 50
+    ) {
       setError("은행, 계좌번호, 예금주를 확인해 주세요.");
       return;
     }
