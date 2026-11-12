@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { getMatchingUiState, toHomeViewData, toTransportOptionCards } from "./homeUtils.js";
-import { homeScenarios } from "./homeMockData.js";
+import { homeScenarios } from "../mocks/homeMockData.js";
 
 test("four home scenarios use API DTOs without changing screenshot values", () => {
   const before = toHomeViewData(homeScenarios.beforeLastTransit);

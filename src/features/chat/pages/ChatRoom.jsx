@@ -1,0 +1,129 @@
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import TopBar from "../../../shared/components/TopBar";
+import Button from "../../../shared/components/Button";
+import ChatBubble from "../components/ChatBubble";
+import RoomConversation from "../components/RoomConversation";
+import MeetingInfoCard from "../components/MeetingInfoCard";
+import ChatRoomMoreMenu from "../components/ChatRoomMoreMenu";
+import RideConfirmButtons from "../components/RideConfirmButtons";
+import RepresentativePrepayScreen from "./RepresentativePrepayScreen";
+import MemberPrepayScreen from "./MemberPrepayScreen";
+import { getRoomPhase } from "../utils/prepayUtils";
+import { toMatchingResultView } from "../../matching/utils/matchingResultUtils";
+import { formatTime } from "../../home/utils/homeUtils";
+import { mockRepresentativeMatchingResult } from "../../matching/mocks/matchingMockData";
+import useChatMessages from "../hooks/useChatMessages";
+import useBoarding from "../hooks/useBoarding";
+import useLeaveParty from "../hooks/useLeaveParty";
+import { getChatRoomView, resolveChatRoom } from "../utils/chatRoomUtils";
+
+const previewAccount = { bankName: "KB국민은행", accountNumber: "943202-01-482917", maskedHolderName: "이*준" };
+
+export default function ChatRoom() {
+  const { roomId, partyId } = useParams();
+  const { state, search, pathname } = useLocation();
+  const navigate = useNavigate();
+  const demo = roomId === mockRepresentativeMatchingResult.party.roomId ? mockRepresentativeMatchingResult : null;
+  // 역할 전환은 개발용 미리보기에서만 허용한다.
+  const data = resolveChatRoom({ roomId, partyId, state, demo,
+    previewMember: new URLSearchParams(search).get("preview") === "member" });
+  const [now, setNow] = useState(Date.now);
+
+  useEffect(() => {
+    if (!state?.reportPreview) return;
+    const timer = window.setTimeout(() => navigate({ pathname, search }, {
+      replace: true, state: { ...state, reportPreview: false },
+    }), 3000);
+    return () => window.clearTimeout(timer);
+  }, [state, pathname, search, navigate]);
+
+  useEffect(() => {
+    const update = () => setNow(Date.now());
+    const timer = window.setInterval(update, 1000);
+    document.addEventListener("visibilitychange", update);
+    window.addEventListener("focus", update);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", update);
+      window.removeEventListener("focus", update);
+    };
+  }, []);
+
+  if (!data) return <div className="flex flex-1 flex-col gap-4">
+    <div className="-mx-4"><TopBar title="채팅방" onLeftClick={() => navigate("/")} /></div>
+    <p role="status">채팅방 정보를 확인할 수 없어요. 매칭 결과에서 다시 열어 주세요.</p>
+    <Button onClick={() => navigate("/")}>홈으로</Button>
+  </div>;
+
+  const { context, room, isPreview, previewNow } = data;
+  const currentParty = context.party;
+  const roomState = { ...state, matchingResult: context, room, isPreview };
+  return <RoomContent key={`${room.id}:${currentParty.myMemberId}:${isPreview}`} context={context} room={room}
+    account={state?.account ?? (isPreview ? previewAccount : null)} now={isPreview ? previewNow ?? now : now}
+    isPreview={isPreview} reportPreview={state?.reportPreview}
+    boardingStarted={state?.boardingStarted}
+    onBoardingStarted={() => navigate({ pathname, search }, {
+      replace: true, state: { ...roomState, boardingStarted: true },
+    })}
+    onReport={() => navigate(`/parties/${currentParty.id}/room/report`, { state: {
+      chatContext: context, room, returnTo: { pathname, search, state: roomState },
+    } })}
+    onBoardingRecorded={({ party: updatedParty }) => navigate({ pathname, search }, {
+      replace: true,
+      state: { ...roomState, matchingResult: { ...context, party: updatedParty } },
+    })} />;
+}
+
+function RoomContent({ context, room, account, now, isPreview, onBoardingRecorded, onReport, reportPreview, boardingStarted, onBoardingStarted }) {
+  const navigate = useNavigate();
+  const { party, settlement } = context;
+  const view = getChatRoomView(room, context, now);
+  const { members, isRepresentative } = toMatchingResultView(party, settlement);
+  const chat = useChatMessages({
+    room,
+    myMemberId: party.myMemberId, isPreview,
+  });
+  const boardingConfirmation = useBoarding({ party, onRecorded: onBoardingRecorded });
+  const phase = getRoomPhase(party, now, boardingStarted || boardingConfirmation.recorded);
+  const representative = members.find((member) => member.memberId === party.representativeMemberId);
+  const transfers = settlement?.partyId === party.id
+    ? settlement.items?.flatMap((item) => item.transfers ?? []) ?? [] : [];
+  const leaveParty = useLeaveParty({ party, now, transfers,
+    onLeft: (updatedParty) => navigate("/", { replace: true, state: { leftParty: updatedParty } }),
+  });
+
+  function handleTaxiCalled() {
+    chat.appendSystemMessage(`${representative?.maskedName ?? "대표"}님이 택시를 불렀어요 · 타면 채팅방에서 탔어요를 눌러 주세요`);
+    onBoardingStarted();
+  }
+
+  return <div className="flex min-h-0 flex-1 flex-col">
+    <header className="-mx-4 shrink-0 bg-background-normal"><TopBar title={view.title} onLeftClick={() => navigate("/")} rightSlot={
+      <ChatRoomMoreMenu canLeave={view.canLeave} leaveDisabledReason={view.leaveDisabledReason}
+        onLeave={leaveParty.leave} leaveError={leaveParty.error} onReport={onReport} />
+    } /></header>
+    {reportPreview && <p role="status" className="pointer-events-none fixed bottom-[calc(env(safe-area-inset-bottom)+5rem)] left-1/2 z-50 w-max max-w-[calc(100%-2rem)] -translate-x-1/2 rounded-12 bg-background-alternative px-4 py-3 text-center text-body2 text-label-neutral shadow-xsmall">신고를 접수했어요</p>}
+    <div className="shrink-0 pt-2"><MeetingInfoCard room={room} view={view} /></div>
+    {!view.closed && phase === "prepay" ? (
+      isRepresentative
+        ? <RepresentativePrepayScreen party={party} settlement={settlement} account={account} onTaxiCalled={handleTaxiCalled} />
+        : <MemberPrepayScreen party={party} settlement={settlement}
+            previewAccount={account}
+            onNext={onBoardingStarted} />
+    ) : <>
+      {!view.closed && phase === "chat" && <ChatBubble variant="system" className="mt-2"
+        message={`${formatTime(party.departureAt)}에 모여요 · 만나면 확인 코드를 맞춰 주세요`} />}
+      <RoomConversation room={room} context={context} canCompose={isPreview && view.canCompose} chat={chat}>
+      {!view.closed && phase === "boarding" && <div className="shrink-0 pb-4">
+        {boardingConfirmation.recorded ? <p role="status" className="text-center text-body2 text-primary-normal">
+          {boardingConfirmation.status === "BOARDED" ? "탔어요" : "응답을 기록했어요"}
+        </p> : <RideConfirmButtons
+          onBoarded={() => boardingConfirmation.record("BOARDED")}
+          onMissed={() => boardingConfirmation.record("MISSED")} />}
+      </div>}
+      <p className="pb-2 text-center text-caption1 text-label-alternative">{isPreview ? "미리보기 채팅이에요. 메시지와 탑승 상태는 이 화면에만 반영돼요." : "메시지 전송·택시 호출 알림의 서버 연결은 준비 중이에요."}</p>
+      </RoomConversation>
+    </>}
+  </div>;
+}

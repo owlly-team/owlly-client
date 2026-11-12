@@ -18,6 +18,8 @@ import StartTime from "../features/matching/pages/StartTime";
 import CarpoolRegistration from "../features/matching/pages/CarpoolRegistration";
 import PickupLocation from "../features/matching/pages/PickupLocation";
 import MatchingResult from "../features/matching/pages/MatchingResult";
+import ChatRoom from "../features/chat/pages/ChatRoom";
+import ReportMember from "../features/chat/pages/ReportMember";
 
 export default function AppRouter() {
   return (
@@ -54,6 +56,9 @@ export default function AppRouter() {
           <Route path="start-time" element={<StartTime />} />
           <Route path="carpool-registration" element={<CarpoolRegistration />} />
           <Route path="matching-result/:partyId" element={<MatchingResult />} />
+          <Route path="parties/:partyId/room" element={<ChatRoom />} />
+          <Route path="rooms/:roomId" element={<ChatRoom />} />
+          <Route path="parties/:partyId/room/report" element={<ReportMember />} />
         </Route>
       </Routes>
     </BrowserRouter>

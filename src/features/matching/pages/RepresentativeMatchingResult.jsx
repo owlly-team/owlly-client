@@ -4,7 +4,7 @@ import RepresentativePaymentCard from "../components/RepresentativePaymentCard";
 import RepresentativeAccountForm from "../components/RepresentativeAccountForm";
 
 export default function RepresentativeMatchingResult({
-  party, settlement, onBack, retry, banks = [], csrfToken, onOpenChat, isPreview = false,
+  party, settlement, onBack, retry, banks = [], onOpenChat, isPreview = false,
 }) {
   return <div className="flex flex-1 flex-col">
     <div className="-mx-4">
@@ -22,7 +22,7 @@ export default function RepresentativeMatchingResult({
     </p>
     <RepresentativePaymentCard party={party} settlement={settlement} retry={retry} />
     <RepresentativeAccountForm
-      roomId={party.roomId} banks={banks} csrfToken={csrfToken}
+      roomId={party.roomId} banks={banks}
       onOpenChat={onOpenChat} isPreview={isPreview}
     />
   </div>;

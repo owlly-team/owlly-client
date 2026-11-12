@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import TopBar from "../../../shared/components/TopBar";
 import Button from "../../../shared/components/Button";
@@ -8,19 +9,67 @@ import { formatTime, formatWon } from "../../home/utils/homeUtils";
 import useMatchingResult from "../hooks/useMatchingResult";
 import { toMatchingResultView } from "../utils/matchingResultUtils";
 import RepresentativeMatchingResult from "./RepresentativeMatchingResult";
+import BottomSheet from "../../../shared/components/BottomSheet";
+import useLeaveParty from "../../chat/hooks/useLeaveParty";
+import { getLeavePartyState } from "../../chat/utils/leavePartyUtils";
+import { chatRoomMockData, getMockChatRoom } from "../../chat/mocks/chatRoomMockData";
+import { mockMatchingResult } from "../mocks/matchingMockData";
 
-export default function MatchingResult({ banks, csrfToken, onOpenChat }) {
+export default function MatchingResult({ banks, onOpenChat }) {
   const navigate = useNavigate();
   const { partyId } = useParams();
-  const { state } = useLocation();
-  const { data, loading, error, retry, isPreview } = useMatchingResult(partyId, state?.matchingResult);
-  const [confirmed, setConfirmed] = useState(false);
+  const { state, search } = useLocation();
+  const memberPreview = new URLSearchParams(search).get("preview") === "member" ? mockMatchingResult : undefined;
+  const { data, loading, error, retry, isPreview, updateParty } = useMatchingResult(partyId, state?.matchingResult ?? memberPreview);
+  const [actionError, setActionError] = useState("");
+  const leaveDialog = useRef(null);
+  const leaveTitleId = useId();
+  const leaveDescriptionId = useId();
+  const clock = Date.parse(chatRoomMockData.previewNow);
+  const previewParty = data?.party && isPreview ? getMockChatRoom(partyId, data, clock).context.party : data?.party;
+  const transfers = data?.settlement?.partyId === partyId
+    ? data.settlement.items?.flatMap((item) => item.transfers ?? []) ?? [] : [];
+  const leaveState = getLeavePartyState(previewParty, clock, transfers);
+  const leaveParty = useLeaveParty({ party: previewParty, now: clock, transfers,
+    onLeft: (party) => navigate("/", { replace: true, state: { leftParty: party } }),
+  });
   const goHome = () => navigate("/");
-  const openChat = (roomId, account) => {
+  const openChat = (roomId, account, matchingResult = data) => {
     if (onOpenChat) return onOpenChat(roomId, account);
-    navigate(`/rooms/${roomId}`, { state: { account, isPreview } });
+    const roomAccount = account ? {
+      ...account,
+      bankName: account.bankName ?? (banks ?? data.banks)?.find((bank) => bank.code === account.bankCode)?.name,
+    } : undefined;
+    navigate(`/rooms/${roomId}`, { state: { account: roomAccount, isPreview, matchingResult } });
   };
 
+  function confirm() {
+    setActionError("");
+    try {
+      const myMember = data.party.members.find((member) => member.memberId === data.party.myMemberId);
+      if (!["PENDING", "ACCEPTED"].includes(myMember?.decision) || data.party.status === "CANCELLED") {
+        throw new Error("지금은 이 팟을 확정할 수 없어요.");
+      }
+      if (myMember.decision !== "ACCEPTED" && data.party.confirmDeadlineAt && clock >= Date.parse(data.party.confirmDeadlineAt)) {
+        throw new Error("팟 확정 마감 시간이 지났어요. 귀가 방법을 다시 확인해 주세요.");
+      }
+      const members = data.party.members.map((member) => member.memberId === data.party.myMemberId
+        ? { ...member, decision: "ACCEPTED" } : member);
+      const party = { ...data.party, members,
+        status: members.filter((member) => ["PENDING", "ACCEPTED"].includes(member.decision))
+          .every((member) => member.decision === "ACCEPTED") ? "PREPAYING" : data.party.status,
+      };
+      if (!party.roomId) throw new Error("채팅방 정보를 확인할 수 없어요.");
+      updateParty({ party });
+      openChat(party.roomId, undefined, { ...data, party });
+    } catch (failure) {
+      setActionError(failure.message);
+    }
+  }
+
+  function leave() {
+    if (leaveParty.leave()) leaveDialog.current?.close();
+  }
   if (loading || error || !data?.party) {
     return <div className="flex flex-1 flex-col gap-4">
       <div className="-mx-4"><TopBar title="매칭 결과" leftAction="close" onLeftClick={goHome} /></div>
@@ -35,11 +84,11 @@ export default function MatchingResult({ banks, csrfToken, onOpenChat }) {
   const { party, settlement, settlementNotReady, settlementError } = data;
   const { members, companionCount, allSameSchool, mySettlementItem, isRepresentative } = toMatchingResultView(party, settlement);
   const context = state?.matchingContext ?? data;
-  const destinationLabel = context.rideRequest?.districtName ?? context.rideRequest?.destinationDongName;
+  const destinationLabel = party.districtName ?? context.rideRequest?.districtName ?? context.rideRequest?.destinationDongName;
 
   if (isRepresentative) return <RepresentativeMatchingResult
     key={party.id} party={party} settlement={settlement} onBack={goHome} retry={retry}
-    banks={banks ?? (isPreview ? data.banks : undefined)} csrfToken={csrfToken}
+    banks={banks ?? data.banks}
     onOpenChat={openChat} isPreview={isPreview}
   />;
 
@@ -96,15 +145,29 @@ export default function MatchingResult({ banks, csrfToken, onOpenChat }) {
       확정하면 채팅방이 열려요.
     </p>
     <div className="sticky bottom-0 mt-auto flex flex-col gap-2 bg-background-normal pt-6 pb-[max(1rem,env(safe-area-inset-bottom))]">
-      {confirmed && <p role="status" className="text-label2 text-primary-normal">
-        목업에서 팟을 확정했어요. 채팅방은 아직 연결되지 않았어요.
-      </p>}
-      <Button className="w-full" disabled={confirmed} onClick={() => party.roomId ? openChat(party.roomId) : setConfirmed(true)}>
-        {confirmed ? "확정했어요" : "이 팟 확정하기"}
+      {actionError && <p role="alert" className="text-label2 text-status-negative">{actionError}</p>}
+      <Button className="w-full" onClick={confirm}>
+        이 팟 확정하기
       </Button>
-      <Button className="w-full" variant="secondary" onClick={goHome}>
+      <Button className="w-full" variant="secondary" disabled={!leaveState.canLeave} onClick={() => leaveDialog.current.showModal()}>
         빠지기
       </Button>
+      {!leaveState.canLeave && <p className="text-label2 text-label-alternative">{leaveState.reason}</p>}
     </div>
+    {createPortal(<dialog ref={leaveDialog} aria-labelledby={leaveTitleId} aria-describedby={leaveDescriptionId}
+      className="fixed inset-x-0 top-auto bottom-0 m-0 mx-auto max-h-[85dvh] w-full max-w-110 overflow-y-auto rounded-t-24 border-0 bg-transparent p-0 text-label-normal backdrop:bg-material-dimmer">
+      <BottomSheet onClose={() => leaveDialog.current.close()}>
+        <h2 id={leaveTitleId} className="mt-3 w-full text-title3 font-bold">팟에서 나갈까요?</h2>
+        <p id={leaveDescriptionId} className="w-full text-body2 text-label-neutral">나가면 다시 들어올 수 없어요.</p>
+        {!leaveState.canLeave && <p role="status" className="w-full text-label2 text-label-neutral">{leaveState.reason}</p>}
+        {leaveParty.error && <p role="alert" className="w-full text-label2 text-status-negative">{leaveParty.error}</p>}
+        <div className="mt-2 grid w-full grid-cols-2 gap-2">
+          <Button variant="secondary" onClick={() => leaveDialog.current.close()}>취소</Button>
+          <Button variant="danger" disabled={!leaveState.canLeave} onClick={leave}>
+            나가기
+          </Button>
+        </div>
+      </BottomSheet>
+    </dialog>, document.body)}
   </div>;
 }
