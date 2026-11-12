@@ -24,19 +24,11 @@ export default function SettlementInput({
   const [amount, setAmount] = useState(
     state?.settlementDraft?.amount ?? "30000",
   );
-  // 정산 입력 UI에 표시할 값. 분담금은 계산하지 않고 추후 API 응답으로 교체한다.
+  // UI 목업: 순서 변경 시 자리별 구간·금액은 유지하고 멤버 ID·이름만 변경
   const [rows, setRows] = useState(
     state?.settlementDraft?.rows ?? [
       {
         memberId: "501",
-        name: "김*연",
-        note: "영통1동 · 8km",
-        confirmed: "5,000원",
-        received: "5,400원",
-        refund: "+400원",
-      },
-      {
-        memberId: "507",
         name: "김*연",
         note: "영통1동 · 8km",
         confirmed: "5,000원",
