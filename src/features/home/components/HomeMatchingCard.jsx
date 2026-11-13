@@ -3,7 +3,12 @@ import iconChevronRight from "../../../assets/icons/chevron-right-sm.svg";
 import { formatWon } from "../utils/homeUtils";
 
 // 백엔드 상태와 분리된 홈 UI 분기. 동승 진행 화면은 추후 구현.
-export default function HomeMatchingCard({ uiState, display, onViewRegistration, onViewMatchingResult }) {
+export default function HomeMatchingCard({
+  uiState,
+  display,
+  onViewRegistration,
+  onViewMatchingResult,
+}) {
   switch (uiState) {
     //매칭 대기
     case "MATCHING_WAITING":
@@ -21,14 +26,15 @@ export default function HomeMatchingCard({ uiState, display, onViewRegistration,
           </h2>
           <p className="text-label2 text-label-neutral mt-1">
             {display?.directionLabel && `${display.directionLabel} 방향 · `}
-            {display?.waitingCount != null && `지금 ${display.waitingCount}명 대기 · `}
+            {display?.waitingCount != null &&
+              `지금 ${display.waitingCount}명 대기 · `}
             {display?.resultDueLabel}
           </p>
           <div className="border-line-alternative mt-3 border-t pt-2">
             <button
               type="button"
               onClick={onViewRegistration}
-              className="font-semibold text-label1 text-label-neutral focus-visible:outline-primary-normal ml-auto flex min-h-7 items-center gap-1 rounded-8 focus-visible:outline-2 focus-visible:outline-offset-2"
+              className="text-label1 text-label-neutral focus-visible:outline-primary-normal rounded-8 ml-auto flex min-h-7 items-center gap-1 font-semibold focus-visible:outline-2 focus-visible:outline-offset-2"
             >
               등록 내용 보기
               <img src={iconChevronRight} alt="" className="size-4" />
@@ -53,7 +59,10 @@ export default function HomeMatchingCard({ uiState, display, onViewRegistration,
               </span>
             )}
           </div>
-          <h2 id="matching-result-title" className="text-heading2 mt-2 font-bold">
+          <h2
+            id="matching-result-title"
+            className="text-heading2 mt-2 font-bold"
+          >
             {display?.matchedCompanionCount != null
               ? `같은 학교 ${display.matchedCompanionCount}명과 매칭됐어요`
               : "같은 학교 동승자와 매칭됐어요"}
@@ -67,23 +76,40 @@ export default function HomeMatchingCard({ uiState, display, onViewRegistration,
               type="button"
               onClick={onViewMatchingResult}
               disabled={!onViewMatchingResult || display?.confirmationExpired}
-              title={!onViewMatchingResult ? "팟 확정 화면 연결 예정" : undefined}
-              className="text-label1 ml-auto flex min-h-7 items-center gap-1 rounded-8 font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:cursor-not-allowed"
+              title={
+                !onViewMatchingResult ? "팟 확정 화면 연결 예정" : undefined
+              }
+              className="text-label1 rounded-8 ml-auto flex min-h-7 items-center gap-1 font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:cursor-not-allowed"
             >
               {display?.confirmationExpired
                 ? "확정 기한이 지났어요"
                 : display?.confirmationTimeLabel
-                ? `${display.confirmationTimeLabel}까지 확정해 주세요`
-                : "매칭 후 5분 이내에 확정해 주세요"}
-              <img src={iconChevronRight} alt="" className="size-4 brightness-0 invert" />
+                  ? `${display.confirmationTimeLabel}까지 확정해 주세요`
+                  : "매칭 결과 확인하기"}
+              <img
+                src={iconChevronRight}
+                alt=""
+                className="size-4 brightness-0 invert"
+              />
             </button>
           </div>
         </section>
       );
     case "RIDE_IN_PROGRESS":
-      return null;
+      return (
+        <section className="rounded-16 border-line-normal mt-5 border p-4">
+          <Badge variant="primary">동승 진행 중</Badge>
+          <h2 className="text-heading2 mt-2 font-bold">
+            {display?.departureTime} {display?.pickupPointName} 출발
+          </h2>
+          {display?.directionLabel && (
+            <p className="text-label2 text-label-neutral mt-1">
+              {display.directionLabel} 방향
+            </p>
+          )}
+        </section>
+      );
     default:
       return null;
   }
 }
-
