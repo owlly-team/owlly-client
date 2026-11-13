@@ -130,6 +130,8 @@ export const routeCandidates = [
 
 export const reportSummary = {
   title: "용인 심야 귀가 수요 리포트",
+  school: "단국대",
+  period: "11.2~11.8",
   meta: "2026년 11월 1주 (11.2~11.8) · 단국대 학생지원팀 · 금요일 23~01시",
   stats: [
     { value: "1,284건", label: "귀가 기록" },
