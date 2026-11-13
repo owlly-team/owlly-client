@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import TopBar from "../../../shared/components/TopBar";
 import TextField from "../../../shared/components/TextField";
 import Badge from "../../../shared/components/Badge";
@@ -8,6 +8,8 @@ import Button from "../../../shared/components/Button";
 import GenderToggle from "../components/GenderToggle";
 import LocationPreview from "../components/LocationPreview";
 import iconSchoolCheck from "../../../assets/icons/school-check.svg";
+import { fetchProfileOptions } from "../api/onboardingApi";
+import { mockProfileOptions } from "../mocks/onboardingMockData";
 
 const defaultProfileData = {
   school: "단국대",
@@ -16,9 +18,28 @@ const defaultProfileData = {
 
 export default function Profile({ data = defaultProfileData }) {
   const navigate = useNavigate();
+  const { state } = useLocation();
+  const school = state?.universityName ?? data.school;
+  const [genderOptions, setGenderOptions] = useState(
+    mockProfileOptions.genderOptions.map((option) => ({
+      value: option.code,
+      label: option.label,
+    })),
+  );
   const [name, setName] = useState("");
   const [gender, setGender] = useState(null);
   const [sameGenderOnly, setSameGenderOnly] = useState(true);
+
+  useEffect(() => {
+    fetchProfileOptions()
+      .then((options) => {
+        setGenderOptions(
+          options.genderOptions.map((option) => ({ value: option.code, label: option.label })),
+        );
+        setSameGenderOnly(options.sameGenderDefault);
+      })
+      .catch(() => {});
+  }, []);
 
   const canStart = name.trim().length > 0 && gender !== null;
 
@@ -30,7 +51,7 @@ export default function Profile({ data = defaultProfileData }) {
         </div>
         <div className="flex flex-col gap-4.5 pt-1">
           <Badge variant="neutral" icon={iconSchoolCheck}>
-            {data.school} 인증 완료
+            {school} 인증 완료
           </Badge>
 
           <div className="flex flex-col gap-2">
@@ -49,14 +70,7 @@ export default function Profile({ data = defaultProfileData }) {
             <span className="text-label2 font-semibold text-label-alternative">
               성별
             </span>
-            <GenderToggle
-              value={gender}
-              onChange={setGender}
-              options={[
-                { value: "female", label: "여성" },
-                { value: "male", label: "남성" },
-              ]}
-            />
+            <GenderToggle value={gender} onChange={setGender} options={genderOptions} />
             <p className="text-caption1 text-label-alternative">
               동성 매칭에 쓰여요. 가입 후에는 바꿀 수 없어요.
             </p>
@@ -94,6 +108,7 @@ export default function Profile({ data = defaultProfileData }) {
           className="w-full"
           style={{ backgroundColor: "#3a3a3c" }}
           disabled={!canStart}
+          // 가입 완료(POST /auth/student-registrations)는 세션/CSRF 처리가 아직 없어서 보류 중.
           onClick={() => navigate("/")}
         >
           시작하기

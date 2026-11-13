@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import Button from "../../../shared/components/Button";
 import PermissionRow from "../components/PermissionRow";
 import iconLocation from "../../../assets/icons/location.svg";
@@ -6,6 +6,7 @@ import iconNotificationClock from "../../../assets/icons/notification-clock.svg"
 
 export default function PermissionNotice() {
   const navigate = useNavigate();
+  const { state } = useLocation();
 
   return (
     <div className="flex flex-1 flex-col justify-between">
@@ -48,7 +49,7 @@ export default function PermissionNotice() {
           variant="primary"
           className="w-full"
           style={{ backgroundColor: "#3a3a3c" }}
-          onClick={() => navigate("/onboarding/profile")}
+          onClick={() => navigate("/onboarding/profile", { state })}
         >
           확인했어요
         </Button>
