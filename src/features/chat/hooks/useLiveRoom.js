@@ -6,6 +6,7 @@ import {
   loadPartyRoom,
 } from "../../matching/utils/partyFlow";
 import { loadCurrentRide } from "../../home/utils/loadHomeData";
+import useCachedParty from "../../matching/hooks/useCachedParty";
 
 export default function useLiveRoom({
   enabled,
@@ -18,6 +19,10 @@ export default function useLiveRoom({
   const [attempt, setAttempt] = useState(0);
   const scope = `${user?.id}:${partyId ?? contextPartyId ?? ""}:${roomId ?? ""}`;
   const current = snapshot?.scope === scope ? snapshot : null;
+  const cached = useCachedParty(
+    current?.data?.context.party.id ?? partyId ?? contextPartyId,
+    enabled,
+  );
   useEffect(() => {
     if (!enabled || status === "loading") return;
     const controller = new AbortController();
@@ -78,9 +83,24 @@ export default function useLiveRoom({
     attempt,
   ]);
   return {
-    data: current?.data,
+    data:
+      status !== "authenticated" || cached?.error
+        ? undefined
+        : current?.data && cached?.response
+          ? {
+              ...current.data,
+              context: {
+                ...current.data.context,
+                party: {
+                  ...cached.response.data,
+                  roomId: current.data.room.id,
+                },
+                partyEtag: cached.response.etag,
+              },
+            }
+          : current?.data,
     loading: enabled && !current,
-    error: current?.error,
+    error: cached?.error ?? current?.error,
     retry: () => setAttempt((value) => value + 1),
   };
 }

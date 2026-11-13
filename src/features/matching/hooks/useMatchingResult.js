@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { mockRepresentativeMatchingResult } from "../mocks/matchingMockData";
 import useSessionStore from "../../../shared/stores/sessionStore";
 import { createMatchingApi } from "../api/matchingApi";
+import useCachedParty from "./useCachedParty";
 import {
   confirmMembership,
   loadMatchingResult,
@@ -23,11 +24,20 @@ export default function useMatchingResult(partyId, preview, isPreview = false) {
   const previewData =
     updated?.source === source ? { ...source, party: updated.party } : source;
   const current = snapshot?.scope === scope ? snapshot : null;
+  const cached = useCachedParty(partyId, !isPreview);
   const data = isPreview
     ? previewData.party?.id === partyId
       ? previewData
       : null
-    : current?.data;
+    : status !== "authenticated" || cached?.error
+      ? undefined
+      : current?.data && cached?.response
+        ? {
+            ...current.data,
+            party: cached.response.data,
+            partyEtag: cached.response.etag,
+          }
+        : current?.data;
 
   useEffect(() => () => operation.current?.abort(), [scope]);
   useEffect(() => {
@@ -46,6 +56,7 @@ export default function useMatchingResult(partyId, preview, isPreview = false) {
         const result = await loadMatchingResult(
           createMatchingApi(csrfToken, controller.signal),
           partyId,
+          { forceParty: attempt > 0 },
         );
         if (!controller.signal.aborted && requestVersion === version.current)
           setSnapshot({ scope, data: result });
@@ -104,7 +115,9 @@ export default function useMatchingResult(partyId, preview, isPreview = false) {
         error.code === "CONFIRMATION_DEADLINE_PASSED"
       ) {
         try {
-          const refreshed = await loadMatchingResult(api, partyId);
+          const refreshed = await loadMatchingResult(api, partyId, {
+            forceParty: true,
+          });
           if (!controller.signal.aborted)
             setSnapshot({ scope, data: refreshed });
         } catch {
@@ -158,7 +171,7 @@ export default function useMatchingResult(partyId, preview, isPreview = false) {
       ? data
         ? null
         : new Error("팟 정보가 없어요.")
-      : current?.error,
+      : (cached?.error ?? current?.error),
     isPreview,
     saving,
     confirm,

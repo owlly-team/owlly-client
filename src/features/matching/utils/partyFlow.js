@@ -13,9 +13,9 @@ export function validateParty(party, partyId, myMemberId) {
 export async function loadMatchingResult(
   api,
   partyId,
-  { includeBanks = true } = {},
+  { includeBanks = true, forceParty = false } = {},
 ) {
-  const { data, etag } = await api.party(partyId);
+  const { data, etag } = await api.party(partyId, { force: forceParty });
   const party = validateParty(data, partyId);
   const [settlementResult, banksResult] = await Promise.allSettled([
     api.settlement(partyId),

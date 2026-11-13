@@ -1,5 +1,6 @@
 import { apiResponse } from "../../../shared/api/client";
 import { normalizeMatchingIds } from "../utils/registrationFlow";
+import { fetchParty, changeParty } from "./partyApi";
 
 export function createMatchingApi(csrfToken, signal) {
   const request = async (path, options) => {
@@ -45,19 +46,23 @@ export function createMatchingApi(csrfToken, signal) {
     rideRequest: (id) => request(`/ride-requests/${encodeURIComponent(id)}`),
     cancelRideRequest: (id, key) =>
       post(`/ride-requests/${encodeURIComponent(id)}/cancel`, undefined, key),
-    party: (id) => request(`/parties/${encodeURIComponent(id)}`),
+    party: (id, options) => fetchParty(id, { signal, ...options }),
     settlement: (id) =>
       request(`/parties/${encodeURIComponent(id)}/settlement`),
     banks: () => request("/banks"),
     room: (id) => request(`/parties/${encodeURIComponent(id)}/room`),
     confirmParty: (id, etag, key) =>
-      post(`/parties/${encodeURIComponent(id)}/confirm`, undefined, key, {
-        "If-Match": etag,
-      }),
+      changeParty(id, () =>
+        post(`/parties/${encodeURIComponent(id)}/confirm`, undefined, key, {
+          "If-Match": etag,
+        }),
+      ),
     leaveParty: (id, etag, key) =>
-      post(`/parties/${encodeURIComponent(id)}/leave`, undefined, key, {
-        "If-Match": etag,
-      }),
+      changeParty(id, () =>
+        post(`/parties/${encodeURIComponent(id)}/leave`, undefined, key, {
+          "If-Match": etag,
+        }),
+      ),
     registerAccount: (roomId, purpose, body, key) =>
       request(`/rooms/${encodeURIComponent(roomId)}/accounts/${purpose}`, {
         method: "PUT",
