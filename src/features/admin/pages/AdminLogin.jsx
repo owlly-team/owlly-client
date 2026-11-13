@@ -3,24 +3,31 @@ import { useNavigate } from "react-router-dom";
 import TextField from "../../../shared/components/TextField";
 import Button from "../../../shared/components/Button";
 import iconAppLogo from "../../../assets/icons/app-logo.svg";
+import { loginStaff } from "../../../shared/api/authApi";
+import useSessionStore from "../../../shared/stores/sessionStore";
 
 export default function AdminLogin() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const canSubmit = email.trim().length > 0 && password.length > 0;
+  const canSubmit = email.trim().length > 0 && password.length > 0 && !submitting;
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!canSubmit) return;
-    // 목업: 실제 인증 없이 입력만 있으면 통과. 틀린 경우를 보고 싶으면
-    // 비밀번호에 "wrong"을 입력해서 에러 문구를 확인할 수 있어요.
-    if (password === "wrong") {
-      setError("메일이나 비밀번호가 맞지 않아요");
-      return;
+    setSubmitting(true);
+    setError("");
+    try {
+      const session = await loginStaff({ email: email.trim(), password });
+      useSessionStore.getState().setSession(session);
+      navigate("/admin");
+    } catch (loginError) {
+      setError(loginError.message);
+    } finally {
+      setSubmitting(false);
     }
-    navigate("/admin");
   };
 
   return (
@@ -75,7 +82,7 @@ export default function AdminLogin() {
           disabled={!canSubmit}
           onClick={handleSubmit}
         >
-          로그인
+          {submitting ? "로그인하는 중..." : "로그인"}
         </Button>
       </div>
     </div>

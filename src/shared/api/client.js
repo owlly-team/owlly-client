@@ -16,6 +16,7 @@ async function request(path, { method = "GET", body, headers } = {}) {
   if (!response.ok) {
     const error = new Error(payload?.error?.message ?? "요청에 실패했어요.");
     error.code = payload?.error?.code;
+    error.status = response.status;
     throw error;
   }
   return payload?.data;
@@ -29,6 +30,21 @@ export function apiPost(path, body, { headers } = {}) {
   return request(path, {
     method: "POST",
     body: body ?? {},
+    headers: { "Idempotency-Key": crypto.randomUUID(), ...headers },
+  });
+}
+
+export function apiPatch(path, body, { headers } = {}) {
+  return request(path, {
+    method: "PATCH",
+    body: body ?? {},
+    headers: { "Idempotency-Key": crypto.randomUUID(), ...headers },
+  });
+}
+
+export function apiDelete(path, { headers } = {}) {
+  return request(path, {
+    method: "DELETE",
     headers: { "Idempotency-Key": crypto.randomUUID(), ...headers },
   });
 }

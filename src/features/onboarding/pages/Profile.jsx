@@ -10,11 +10,32 @@ import LocationPreview from "../components/LocationPreview";
 import iconSchoolCheck from "../../../assets/icons/school-check.svg";
 import { fetchProfileOptions } from "../api/onboardingApi";
 import { mockProfileOptions } from "../mocks/onboardingMockData";
+import { registerStudent } from "../../../shared/api/authApi";
+import useSessionStore from "../../../shared/stores/sessionStore";
 
 const defaultProfileData = {
   school: "단국대",
   dropoffLabel: "영통2동 · 큰길 쪽",
 };
+
+// 지도 핀 선택 UI가 아직 없어서, 위치 권한을 허용했으면 실제 현재 위치를,
+// 아니면 Figma 목업과 같은 영통2동 근방 좌표를 기본 하차 지점으로 사용한다.
+const FALLBACK_DROPOFF = { latitude: 37.33, longitude: 127.27 };
+
+function getDropoffPoint() {
+  return new Promise((resolve) => {
+    if (!navigator.geolocation) {
+      resolve(FALLBACK_DROPOFF);
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) =>
+        resolve({ latitude: position.coords.latitude, longitude: position.coords.longitude }),
+      () => resolve(FALLBACK_DROPOFF),
+      { timeout: 5000 },
+    );
+  });
+}
 
 export default function Profile({ data = defaultProfileData }) {
   const navigate = useNavigate();
@@ -29,6 +50,8 @@ export default function Profile({ data = defaultProfileData }) {
   const [name, setName] = useState("");
   const [gender, setGender] = useState(null);
   const [sameGenderOnly, setSameGenderOnly] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   useEffect(() => {
     fetchProfileOptions()
@@ -41,7 +64,36 @@ export default function Profile({ data = defaultProfileData }) {
       .catch(() => {});
   }, []);
 
-  const canStart = name.trim().length > 0 && gender !== null;
+  const canStart = name.trim().length > 0 && gender !== null && !submitting;
+
+  const handleSubmit = async () => {
+    if (!canStart) return;
+    if (!state?.verificationToken) {
+      navigate("/");
+      return;
+    }
+    setSubmitting(true);
+    setSubmitError("");
+    try {
+      const defaultDropoff = await getDropoffPoint();
+      const session = await registerStudent({
+        verificationToken: state.verificationToken,
+        email: state.email,
+        profile: {
+          realName: name.trim(),
+          genderCode: gender,
+          sameGenderDefault: sameGenderOnly,
+          defaultDropoff,
+        },
+      });
+      useSessionStore.getState().setSession(session);
+      navigate("/");
+    } catch (error) {
+      setSubmitError(error.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="flex flex-1 flex-col justify-between">
@@ -102,16 +154,18 @@ export default function Profile({ data = defaultProfileData }) {
       </div>
 
       <div className="pb-[max(1rem,env(safe-area-inset-bottom))] pt-4">
+        {submitError && (
+          <p className="pb-2 text-center text-caption1 text-status-negative">{submitError}</p>
+        )}
         <Button
           size="md"
           variant="primary"
           className="w-full"
           style={{ backgroundColor: "#3a3a3c" }}
           disabled={!canStart}
-          // 가입 완료(POST /auth/student-registrations)는 세션/CSRF 처리가 아직 없어서 보류 중.
-          onClick={() => navigate("/")}
+          onClick={handleSubmit}
         >
-          시작하기
+          {submitting ? "가입하는 중..." : "시작하기"}
         </Button>
       </div>
     </div>
