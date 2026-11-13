@@ -21,11 +21,12 @@ export default function PickupSheetContent({
   onConfirmDestination,
   onContinue,
   onRetry,
+  onRetryDestination,
 }) {
   //하차 위치 조회 중에는 로딩, 실패하면 오류, 그 외에는 지도 조작 안내
   const destinationMessage = resolving
     ? "하차 지점을 확인하고 있어요…"
-    : destination?.error ?? "지도를 움직이거나 눌러 위치를 바꿀 수 있어요.";
+    : (destination?.error ?? "지도를 움직이거나 눌러 위치를 바꿀 수 있어요.");
 
   return (
     <>
@@ -46,12 +47,30 @@ export default function PickupSheetContent({
             <dt>도착 권역</dt>
             <dd>{destination?.districtName ?? "위치를 선택해 주세요"}</dd>
           </dl>
-          <div aria-live="polite" className="text-caption1 text-label-alternative mb-3">
+          <div
+            aria-live="polite"
+            className="text-caption1 text-label-alternative mb-3"
+          >
             {destinationMessage}
           </div>
+          {destination?.error && onRetryDestination && (
+            <Button
+              variant="text"
+              className="mb-2 w-full"
+              disabled={resolving}
+              onClick={onRetryDestination}
+            >
+              이 위치 다시 확인하기
+            </Button>
+          )}
           <Button
             className="w-full"
-            disabled={!destination?.name || resolving || !!destination?.error}
+            disabled={
+              !destination?.id ||
+              !destination?.name ||
+              resolving ||
+              !!destination?.error
+            }
             onClick={onConfirmDestination}
           >
             이 위치로 할게요
@@ -99,7 +118,9 @@ export default function PickupSheetContent({
             <dd className="text-label-normal text-right">
               {destination?.districtName ? (
                 <>
-                  <span className="text-body1 font-semibold">{destination.districtName}</span>{" "}
+                  <span className="text-body1 font-semibold">
+                    {destination.districtName}
+                  </span>{" "}
                   <span className="text-label-alternative">자동</span>
                 </>
               ) : (
@@ -111,7 +132,9 @@ export default function PickupSheetContent({
             <label id="same-gender-label" className="text-body1 font-semibold">
               동성끼리만 매칭
               <span className="text-label1 text-label-alternative mt-0.5 block font-normal">
-                {sameGenderOnly ? "기본으로 켜져 있어요" : "동성 조건 없이 매칭해요"}
+                {sameGenderOnly
+                  ? "기본으로 켜져 있어요"
+                  : "동성 조건 없이 매칭해요"}
               </span>
             </label>
             <Switch
@@ -120,7 +143,11 @@ export default function PickupSheetContent({
               onChange={onSameGenderChange}
             />
           </div>
-          <Button className="w-full" disabled={!canContinue} onClick={onContinue}>
+          <Button
+            className="w-full"
+            disabled={!canContinue}
+            onClick={onContinue}
+          >
             다음: 출발 시간 고르기
           </Button>
         </>

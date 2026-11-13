@@ -1,17 +1,34 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { distanceMeters, isPoint } from "../utils/mapUtils";
-import { loadMockPickupPoints, resolveMockDestination } from "../mocks/matchingMockData";
+import {
+  loadMockPickupPoints,
+  resolveMockDestination,
+} from "../mocks/matchingMockData";
+import useSessionStore from "../../../shared/stores/sessionStore";
+import { createMatchingApi } from "../api/matchingApi";
+import { loadHomePickupPoints } from "../../home/utils/loadHomeData";
+import { resolveDestinationDraft } from "../utils/destinationResolution";
 
 //PickupLocation 페이지의 지도·하단 시트에서 사용하는 상태와 동작
 export default function usePickupLocation() {
-  const { state } = useLocation();
+  const { state, search } = useLocation();
+  const isPreview =
+    import.meta.env.DEV &&
+    (state?.isPreview === true ||
+      new URLSearchParams(search).get("preview") === "pickup");
+  const session = useSessionStore();
+  const [profile, setProfile] = useState(null);
   const navigate = useNavigate();
   const [points, setPoints] = useState([]);
   const [pickup, setPickup] = useState(state?.pickupPoint ?? null);
   //처음에는 프로필 기본 하차 지점 사용, 시간 선택 화면에서 돌아오면 오늘 선택값 유지
-  const defaultDestination = state?.defaultDestination ?? null;
-  const [destination, setDestination] = useState(state?.destination ?? defaultDestination);
+  const [defaultDestination, setDefaultDestination] = useState(
+    state?.defaultDestination ?? null,
+  );
+  const [destination, setDestination] = useState(
+    state?.destination ?? defaultDestination,
+  );
   //지도에서 편집 중인 위치. 확정하기 전에는 오늘 하차 지점에 반영하지 않음
   const [destinationDraft, setDestinationDraft] = useState(null);
   const [sameGenderOnly, setSameGenderOnly] = useState(
@@ -25,24 +42,68 @@ export default function usePickupLocation() {
   const [locationError, setLocationError] = useState("");
   const [resolving, setResolving] = useState(false);
   const resolution = useRef(0);
+  const mounted = useRef(false);
+  const destinationRequest = useRef(null);
+  const destinationMaps = useRef(null);
+  const initialized = useRef(false);
   //페이지를 떠난 뒤 도착한 하차 위치 조회 결과는 무시
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
       resolution.current += 1;
-    },
-    [],
-  );
+      destinationRequest.current?.abort();
+    };
+  }, []);
 
   //지도에 표시할 임시 거점 불러오기. 다시 조회 버튼을 누르면 재실행
   useEffect(() => {
     const controller = new AbortController();
-    const source = loadMockPickupPoints();
+    if (!isPreview && session.status === "loading") return;
+    const source = (async () => {
+      if (isPreview) return { points: await loadMockPickupPoints() };
+      if (session.status !== "authenticated")
+        throw new Error("로그인한 뒤 출발 거점을 선택해 주세요.");
+      const api = createMatchingApi(session.csrfToken, controller.signal);
+      const { data: loadedProfile } = await api.profile();
+      if (loadedProfile?.user?.id !== String(session.user.id))
+        throw new Error("프로필 정보를 확인할 수 없어요.");
+      const loaded = await loadHomePickupPoints(
+        api,
+        loadedProfile.user.universityId,
+      );
+      return { points: loaded.pickupPoints, profile: loadedProfile };
+    })();
     source
-      .then((data) => {
+      .then(({ points: data, profile: loadedProfile }) => {
         if (controller.signal.aborted) return;
         const valid = data.filter((item) => isPoint(item.point));
         setPoints(valid);
-        setPickup((previous) => valid.find((item) => item.id === previous?.id) ?? null);
+        setPickup(
+          (previous) =>
+            valid.find((item) => item.id === String(previous?.id)) ?? null,
+        );
+        if (loadedProfile) {
+          setProfile(loadedProfile);
+          const fallback =
+            isPoint(loadedProfile.defaultDropoff) && loadedProfile.defaultDongId
+              ? {
+                  id: loadedProfile.defaultDongId,
+                  name: loadedProfile.defaultDongName,
+                  point: loadedProfile.defaultDropoff,
+                }
+              : null;
+          setDefaultDestination((previous) => previous ?? fallback);
+          setDestination((previous) => previous ?? fallback);
+          if (!initialized.current) {
+            setSameGenderOnly(
+              state?.sameGenderOnly ??
+                state?.sameGenderDefault ??
+                loadedProfile.sameGenderDefault,
+            );
+            initialized.current = true;
+          }
+        }
         setRequest({ loading: false, error: "" });
       })
       .catch((error) => {
@@ -53,13 +114,23 @@ export default function usePickupLocation() {
           });
       });
     return () => controller.abort();
-  }, [state?.universityId, attempt]);
+  }, [
+    state?.universityId,
+    state?.sameGenderOnly,
+    state?.sameGenderDefault,
+    attempt,
+    isPreview,
+    session.status,
+    session.user?.id,
+    session.csrfToken,
+  ]);
 
   //지도와 하단 시트에서 함께 사용할 가장 가까운 거점
   const sortedPoints = currentPosition
     ? [...points].sort(
         (a, b) =>
-          distanceMeters(currentPosition, a.point) - distanceMeters(currentPosition, b.point),
+          distanceMeters(currentPosition, a.point) -
+          distanceMeters(currentPosition, b.point),
       )
     : points;
   const nearestId = currentPosition ? sortedPoints[0]?.id : null;
@@ -73,19 +144,37 @@ export default function usePickupLocation() {
     setLocationError("");
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
-        setCurrentPosition({ latitude: coords.latitude, longitude: coords.longitude });
+        if (!mounted.current) return;
+        setCurrentPosition({
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+        });
       },
-      () => setLocationError("현재 위치를 확인할 수 없어요. 지도에서 직접 선택해 주세요."),
+      () => {
+        if (!mounted.current) return;
+        setLocationError(
+          "현재 위치를 확인할 수 없어요. 지도에서 직접 선택해 주세요.",
+        );
+      },
       { timeout: 10000 },
     );
   }
 
   //하차 선택 지도에서 클릭하거나 드래그한 좌표의 행정동 확인
   function selectDestination(point, maps) {
+    destinationMaps.current = maps;
     setSheetOpen(true);
     const version = ++resolution.current;
     setResolving(true);
     setDestinationDraft({ point });
+    destinationRequest.current?.abort();
+    const controller = new AbortController();
+    destinationRequest.current = controller;
+    if (!isPreview && !pickup) {
+      setDestinationDraft({ point, error: "출발 거점을 먼저 선택해 주세요." });
+      setResolving(false);
+      return;
+    }
     new maps.services.Geocoder().coord2RegionCode(
       point.longitude,
       point.latitude,
@@ -99,12 +188,52 @@ export default function usePickupLocation() {
         if (!region) {
           setDestinationDraft({
             point,
-            error: "이 위치의 행정동을 확인할 수 없어요. 다른 위치를 선택해 주세요.",
+            error:
+              "이 위치의 행정동을 확인할 수 없어요. 다른 위치를 선택해 주세요.",
           });
           setResolving(false);
           return;
         }
-        //서버가 좌표로 행정동을 판별한 응답을 흉내 내고, 지도 선택값으로 변환
+        if (!isPreview) {
+          setDestinationDraft({
+            point,
+            name: region.region_3depth_name,
+            districtName: region.region_2depth_name,
+          });
+          resolveDestinationDraft({
+            point,
+            region,
+            load: () =>
+              createMatchingApi(
+                session.csrfToken,
+                controller.signal,
+              ).travelOptions({
+                pickupPointId: pickup.id,
+                dropoff: point,
+                departureAt: new Date().toISOString(),
+              }),
+          })
+            .then((draft) => {
+              if (version !== resolution.current || controller.signal.aborted)
+                return;
+              setDestinationDraft(draft);
+            })
+            .catch((error) => {
+              if (version === resolution.current && !controller.signal.aborted)
+                setDestinationDraft({
+                  point,
+                  name: region.region_3depth_name,
+                  districtName: region.region_2depth_name,
+                  error: error.message,
+                });
+            })
+            .finally(() => {
+              if (version === resolution.current && !controller.signal.aborted)
+                setResolving(false);
+            });
+          return;
+        }
+        // 미리보기에서만 목업 행정동 ID를 사용한다.
         const resolved = resolveMockDestination({ region });
         setDestinationDraft({
           id: resolved.destinationDongId,
@@ -121,13 +250,22 @@ export default function usePickupLocation() {
   const destinationMode = step === "destination";
   //하차 지점 PlaceRow를 누르면 지도 편집으로 전환하고 시트 내리기
   function chooseDestination() {
+    resolution.current += 1;
+    destinationRequest.current?.abort();
+    setResolving(false);
     setDestinationDraft(destination);
     setStep("destination");
     setSheetOpen(false);
   }
   //'이 위치로 할게요' 버튼: 편집한 위치를 오늘 동승에만 적용
   function confirmDestination() {
-    if (!destinationDraft?.name || destinationDraft.error || resolving) return;
+    if (
+      !destinationDraft?.id ||
+      !destinationDraft?.name ||
+      destinationDraft.error ||
+      resolving
+    )
+      return;
     setDestination(destinationDraft);
     setStep("pickup");
   }
@@ -135,6 +273,7 @@ export default function usePickupLocation() {
   function back() {
     if (destinationMode) {
       resolution.current += 1;
+      destinationRequest.current?.abort();
       setResolving(false);
       setDestinationDraft(null);
       setStep("pickup");
@@ -158,13 +297,15 @@ export default function usePickupLocation() {
   function continueToStartTime() {
     navigate("/start-time", {
       state: {
+        isPreview,
+        journeyId: state?.journeyId,
         pickupPoint: pickup,
         destination,
         defaultDestination,
         sameGenderOnly,
         sameGenderDefault: state?.sameGenderDefault,
-        universityId: state?.universityId,
-        universityName: state?.universityName,
+        universityId: profile?.user?.universityId ?? state?.universityId,
+        universityName: profile?.user?.universityName ?? state?.universityName,
       },
     });
   }
@@ -174,12 +315,13 @@ export default function usePickupLocation() {
     locationError ||
     (request.loading
       ? "출발 거점을 불러오고 있어요…"
-      : request.error || (points.length === 0 ? "이용 가능한 출발 거점이 없어요." : ""));
+      : request.error ||
+        (points.length === 0 ? "이용 가능한 출발 거점이 없어요." : ""));
 
   return {
     destinationMode,
     sheetOpen,
-    isPreview: true,
+    isPreview,
     statusMessage,
     canRetry: !request.loading && !!request.error,
     back,
@@ -209,12 +351,26 @@ export default function usePickupLocation() {
       resolving,
       isNearest: pickup?.id === nearestId,
       hasPoints: points.length > 0,
-      canContinue: !!pickup && !!destination?.id && !request.loading && !request.error,
+      canContinue:
+        !!pickup &&
+        !!destination?.id &&
+        typeof sameGenderOnly === "boolean" &&
+        (isPreview || isPoint(destination?.point)) &&
+        !request.loading &&
+        !request.error,
       onSameGenderChange: setSameGenderOnly,
       onChooseDestination: chooseDestination,
       onConfirmDestination: confirmDestination,
       onContinue: continueToStartTime,
       onRetry: retry,
+      onRetryDestination: () => {
+        if (
+          !resolving &&
+          isPoint(destinationDraft?.point) &&
+          destinationMaps.current
+        )
+          selectDestination(destinationDraft.point, destinationMaps.current);
+      },
     },
   };
 }
