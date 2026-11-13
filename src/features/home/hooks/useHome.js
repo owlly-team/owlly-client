@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import useBottomTabNavigation from "../../../shared/hooks/useBottomTabNavigation";
 import iconBus from "../../../assets/icons/transport-bus.svg";
 import iconCarpool from "../../../assets/icons/transport-carpool.svg";
 import iconTaxi from "../../../assets/icons/transport-taxi.svg";
@@ -18,7 +19,6 @@ const TRANSPORT_ROUTES = {
 
 export default function useHome(data) {
   const navigate = useNavigate();
-  const [selectedTab, setSelectedTab] = useState("home");
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -77,13 +77,9 @@ export default function useHome(data) {
     });
   }
 
-  function handleTabChange(tab) {
-    if (tab === "return") {
-      handleStartRegistration();
-      return;
-    }
-    setSelectedTab(tab);
-  }
+  const { activeTab: selectedTab, handleTabChange } = useBottomTabNavigation({
+    onReturn: handleStartRegistration,
+  });
 
   //동승 등록 내용 보기
   function handleViewRegistration() {
