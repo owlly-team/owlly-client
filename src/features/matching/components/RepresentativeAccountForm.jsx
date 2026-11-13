@@ -1,6 +1,4 @@
-import { useState } from "react";
 import Button from "../../../shared/components/Button";
-import Switch from "../../../shared/components/Switch";
 import BankSelectSheet from "../../../shared/components/BankSelectSheet";
 import { BANK_OPTIONS } from "../../../shared/constants/banks";
 import useRepresentativeAccount from "../hooks/useRepresentativeAccount";
@@ -11,12 +9,13 @@ export default function RepresentativeAccountForm({
   onOpenChat,
   isPreview,
 }) {
-  const { input, saved, error, update, submit } = useRepresentativeAccount({
-    roomId,
-    onOpenChat,
-  });
-  // API-31에는 계좌 재사용 옵션이 없어 화면 상태만 관리한다.
-  const [reuseAccount, setReuseAccount] = useState(true);
+  const { input, saved, error, update, submit, saving } =
+    useRepresentativeAccount({
+      roomId,
+      onOpenChat,
+      isPreview,
+      banks,
+    });
   const fieldClass =
     "h-12 min-w-0 w-full rounded-12 border border-line-normal bg-background-normal px-3 text-body2 outline-none focus:border-primary-normal";
 
@@ -41,11 +40,11 @@ export default function RepresentativeAccountForm({
           </p>
         </div>
       ) : (
-        <fieldset className="mt-2 flex flex-col gap-2">
+        <fieldset disabled={saving} className="mt-2 flex flex-col gap-2">
           <div className="flex gap-2">
             <div className="relative w-28 shrink-0">
               <BankSelectSheet
-                banks={banks.length ? banks : BANK_OPTIONS}
+                banks={banks}
                 value={input.bankCode}
                 onChange={(value) => update("bankCode")({ target: { value } })}
                 className="border-line-normal border"
@@ -82,17 +81,20 @@ export default function RepresentativeAccountForm({
         이 방 멤버의 송금 카드에만 보이고, 채팅방이 닫히면 함께 지워져요.
         채팅에서는 계좌번호가 계속 가려져요.
       </p>
-      {!saved && (
-        <div className="mt-3 flex items-center justify-between gap-4">
-          <span id="reuse-account-label" className="text-body2 font-semibold">
-            다음에 대표가 되면 이 계좌 쓰기
-          </span>
-          <Switch
-            checked={reuseAccount}
-            onChange={setReuseAccount}
-            labelledBy="reuse-account-label"
-          />
-        </div>
+      {!banks.length && (
+        <p role="status" className="text-label2 text-label-neutral mt-2">
+          은행 목록을 불러오지 못했어요. 다시 불러와 주세요.
+        </p>
+      )}
+      {!saved && !isPreview && roomId && (
+        <Button
+          variant="text"
+          className="mt-2 self-start"
+          disabled={saving}
+          onClick={(event) => submit(event, true)}
+        >
+          이미 등록했다면 채팅방 열기
+        </Button>
       )}
       {!roomId && !isPreview && (
         <p className="text-label2 text-label-alternative mt-2">
@@ -113,9 +115,19 @@ export default function RepresentativeAccountForm({
         <Button
           type="submit"
           className="w-full"
-          disabled={!roomId || Boolean(saved && !onOpenChat)}
+          disabled={
+            !roomId ||
+            saving ||
+            (!saved && !banks.length) ||
+            Boolean(saved && !onOpenChat)
+          }
+          aria-busy={saving}
         >
-          {saved ? "채팅방 열기" : "계좌 등록하고 채팅방 열기"}
+          {saving
+            ? "처리 중"
+            : saved
+              ? "채팅방 열기"
+              : "계좌 등록하고 채팅방 열기"}
         </Button>
       </div>
     </form>
