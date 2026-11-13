@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from "../shared/layout/Layout";
+import useSessionStore from "../shared/stores/sessionStore";
 import Home from "../features/home/pages/Home";
 import MatchingFailure from "../features/home/pages/MatchingFailure";
 import LastTrain from "../features/home/pages/LastTrain";
@@ -26,6 +28,10 @@ import SettlementRefund from "../features/settlement/pages/SettlementRefund";
 import MemberSettlement from "../features/settlement/pages/MemberSettlement";
 
 export default function AppRouter() {
+  useEffect(() => {
+    useSessionStore.getState().hydrate();
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>

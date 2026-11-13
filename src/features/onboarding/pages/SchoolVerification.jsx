@@ -8,6 +8,8 @@ import {
   requestEmailVerification,
   verifyEmailCode,
 } from "../api/onboardingApi";
+import { loginStudent } from "../../../shared/api/authApi";
+import useSessionStore from "../../../shared/stores/sessionStore";
 
 export default function SchoolVerification() {
   const navigate = useNavigate();
@@ -61,14 +63,22 @@ export default function SchoolVerification() {
     setVerifyError("");
     try {
       const result = await verifyEmailCode({ verificationId, code });
-      navigate("/onboarding/permissions", {
-        state: {
-          universityId: matchedUniversity.id,
-          universityName: matchedUniversity.name,
-          email,
-          verificationToken: result.verificationToken,
-        },
-      });
+      // 기존 학생이면 같은 증표로 바로 로그인하고, 계정이 없으면(신규) 프로필 가입으로 이어간다.
+      try {
+        const session = await loginStudent({ verificationToken: result.verificationToken });
+        useSessionStore.getState().setSession(session);
+        navigate("/");
+      } catch (loginError) {
+        if (loginError.code !== "ACCOUNT_NOT_FOUND") throw loginError;
+        navigate("/onboarding/permissions", {
+          state: {
+            universityId: matchedUniversity.id,
+            universityName: matchedUniversity.name,
+            email,
+            verificationToken: result.verificationToken,
+          },
+        });
+      }
     } catch (error) {
       setVerifyError(error.message);
     } finally {
