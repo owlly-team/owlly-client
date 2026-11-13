@@ -11,6 +11,7 @@ import { matchingFailureMock } from "../mocks/matchingFailureMock";
 import { formatTime, formatWon, toHomeViewData } from "../utils/homeUtils";
 
 export default function MatchingFailure({ data = matchingFailureMock }) {
+  const isPreview = data === matchingFailureMock || data.isPreview === true;
   const navigate = useNavigate();
   const { lastTransit, transportDisplay } = toHomeViewData(data);
   const { travelOptions, rideRequest, nextSlot, demand, selection } = data;
@@ -24,6 +25,11 @@ export default function MatchingFailure({ data = matchingFailureMock }) {
         <TopBar title="매칭 결과" leftAction="close" onLeftClick={goHome} />
       </div>
       <div className="flex flex-col gap-4 pt-1">
+        {isPreview && (
+          <p role="status" className="text-caption1 text-primary-normal">
+            미리보기 · 예시 매칭 결과
+          </p>
+        )}
         <InfoBox
           variant="negative"
           title="이번엔 매칭되지 않았어요"
@@ -51,7 +57,9 @@ export default function MatchingFailure({ data = matchingFailureMock }) {
               iconTone="neutral"
               title="다음 시간대로 다시 등록"
               description={`${formatTime(nextSlot.departureAt)} 출발 · 지금 ${nextSlot.waitingCount}명 대기`}
-              onClick={() => navigate("/start-time", { state: selection })}
+              onClick={() =>
+                navigate("/start-time", { state: { ...selection, isPreview } })
+              }
             />
           )}
           {taxiAvailable && (

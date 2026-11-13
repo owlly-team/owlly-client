@@ -20,7 +20,10 @@ export default function Home({ data, onViewMatchingResult }) {
   ) {
     return (
       <HomeContent
-        data={data ?? homeScenarios.matched}
+        data={{
+          ...(data ?? homeScenarios.matched),
+          isPreview: data?.isPreview ?? true,
+        }}
         onViewMatchingResult={onViewMatchingResult}
       />
     );
@@ -217,6 +220,11 @@ function HomeContent({
         </p>
       </header>
       {statusSlot}
+      {data.isPreview === true && (
+        <p role="status" className="text-caption1 text-primary-normal mt-2">
+          미리보기 · 예시 데이터
+        </p>
+      )}
       {notice && (
         <p role="status" className="text-label2 text-label-neutral mt-3">
           {notice}

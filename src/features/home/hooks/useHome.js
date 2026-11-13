@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useBottomTabNavigation from "../../../shared/hooks/useBottomTabNavigation";
+import { getDisplayNow } from "../../../shared/utils/time";
 import iconBus from "../../../assets/icons/transport-bus.svg";
 import iconCarpool from "../../../assets/icons/transport-carpool.svg";
 import iconTaxi from "../../../assets/icons/transport-taxi.svg";
@@ -26,17 +27,22 @@ export default function useHome(data, { onPendingFeature } = {}) {
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
-    if ((!data.matchedAt && !data.party?.confirmDeadlineAt) || data.previewNow)
+    if (
+      (!data.matchedAt && !data.party?.confirmDeadlineAt) ||
+      (data.isPreview === true && Number.isFinite(Date.parse(data.previewNow)))
+    )
       return;
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
-  }, [data.matchedAt, data.party?.confirmDeadlineAt, data.previewNow]);
+  }, [
+    data.matchedAt,
+    data.party?.confirmDeadlineAt,
+    data.previewNow,
+    data.isPreview,
+  ]);
 
   const { travelOptions, rideRequest, party } = data;
-  const viewData = toHomeViewData(
-    data,
-    data.previewNow ? Date.parse(data.previewNow) : now,
-  );
+  const viewData = toHomeViewData(data, getDisplayNow(data, now));
   const { transportDisplay } = viewData;
 
   // 막차 전후와 매칭 전후를 독립적으로 판단하고 화면 표시 여부만 조합
@@ -65,29 +71,35 @@ export default function useHome(data, { onPendingFeature } = {}) {
 
   //귀가 방법 카드 눌렀을 때 처리
   function handleTransportSelect(id) {
-    if (data.isPreview === false) return onPendingFeature?.();
     if (id === "carpool") {
       handleStartRegistration();
       return;
     }
+    if (data.isPreview === false) return onPendingFeature?.();
     const route = TRANSPORT_ROUTES[id];
     if (route) navigate(route);
   }
   //출발 거점과 하차 위치 선택
   function handleStartRegistration() {
-    if (data.isPreview === false) return onPendingFeature?.();
+    const profile = data.profile;
+    const destinationId =
+      travelOptions?.destinationDongId ?? profile?.defaultDongId;
     navigate("/pickup", {
       state: {
+        isPreview: data.isPreview !== false,
         pickupPoint: data.pickupPoint,
-        universityId: travelOptions?.universityId,
-        universityName: travelOptions?.universityName,
+        universityId:
+          profile?.user?.universityId ?? travelOptions?.universityId,
+        universityName:
+          profile?.user?.universityName ?? travelOptions?.universityName,
         //응답의 동 ID·이름과 프로필 기본 좌표로 첫 하차 위치 표시
-        defaultDestination: travelOptions?.destinationDongId
+        defaultDestination: destinationId
           ? {
-              id: travelOptions.destinationDongId,
-              name: travelOptions.destinationDongName,
-              districtId: travelOptions.districtId,
-              districtName: travelOptions.districtName,
+              id: destinationId,
+              name:
+                travelOptions?.destinationDongName ?? profile?.defaultDongName,
+              districtId: travelOptions?.districtId,
+              districtName: travelOptions?.districtName,
               point: data.profile?.defaultDropoff,
             }
           : null,
@@ -105,6 +117,7 @@ export default function useHome(data, { onPendingFeature } = {}) {
     navigate("/carpool-registration", {
       state: {
         rideRequest,
+        isPreview: data.isPreview !== false,
         matchingSlot: data.matchingSlots?.find(
           (slot) => slot.departureAt === rideRequest?.departureAt,
         ),
@@ -114,9 +127,11 @@ export default function useHome(data, { onPendingFeature } = {}) {
 
   //MATCHED 신청의 partyId로 매칭 결과 화면 이동
   function handleViewMatchingResult(partyId) {
-    if (data.isPreview === false) return onPendingFeature?.();
     navigate(`/matching/result/${partyId}`, {
-      state: { matchingContext: { rideRequest, travelOptions } },
+      state: {
+        isPreview: data.isPreview !== false,
+        matchingContext: { rideRequest, travelOptions },
+      },
     });
   }
 
