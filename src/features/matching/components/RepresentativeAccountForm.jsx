@@ -91,7 +91,6 @@ export default function RepresentativeAccountForm({
             checked={reuseAccount}
             onChange={setReuseAccount}
             labelledBy="reuse-account-label"
-            className="[&>span]:left-0"
           />
         </div>
       )}
