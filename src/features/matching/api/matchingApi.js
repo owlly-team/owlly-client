@@ -71,7 +71,8 @@ export function createMatchingApi(csrfToken, signal) {
     settlement: (id) =>
       request(`/parties/${encodeURIComponent(id)}/settlement`),
     banks: () => request("/banks"),
-    room: (id) => request(`/parties/${encodeURIComponent(id)}/room`),
+    room: (id) =>
+      request(`/parties/${encodeURIComponent(id)}/room`, { cache: "no-store" }),
     confirmParty: (id, etag, key) =>
       changeParty(id, () =>
         post(`/parties/${encodeURIComponent(id)}/confirm`, undefined, key, {

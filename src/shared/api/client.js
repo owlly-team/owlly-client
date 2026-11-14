@@ -10,12 +10,13 @@ export const hasApiBaseUrl = Boolean(configuredBaseUrl);
 
 export async function apiResponse(
   path,
-  { method = "GET", body, headers, signal } = {},
+  { method = "GET", body, headers, signal, cache } = {},
 ) {
   const response = await fetch(`${baseUrl}/api/v1${path}`, {
     method,
     credentials: "include",
     signal,
+    cache,
     headers: {
       ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
       ...headers,

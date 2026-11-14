@@ -31,6 +31,9 @@ export default function ChatRoom({ csrfToken }) {
   const { roomId, partyId } = useParams();
   const { state, search, pathname } = useLocation();
   const navigate = useNavigate();
+  const [messageFailure, setMessageFailure] = useState(null);
+  const denied =
+    messageFailure?.pathname === pathname ? messageFailure.error : null;
   const queryPreview =
     import.meta.env.DEV &&
     ["member", "representative"].includes(
@@ -46,7 +49,7 @@ export default function ChatRoom({ csrfToken }) {
     state?.isPreview !== false &&
     (state?.isPreview === true || queryPreview);
   const live = useLiveRoom({
-    enabled: !previewRequested,
+    enabled: !previewRequested && !denied,
     partyId,
     roomId,
     contextPartyId: state?.matchingResult?.party?.id,
@@ -59,18 +62,21 @@ export default function ChatRoom({ csrfToken }) {
         demo,
         previewMember: new URLSearchParams(search).get("preview") === "member",
       })
-    : live.data;
+    : denied
+      ? null
+      : live.data;
+  const roomError = denied ?? live.error;
   const [now, setNow] = useState(Date.now);
 
   useEffect(() => {
-    if (!state?.reportPreview) return;
+    if (!state?.reportPreview && !state?.reportCompleted) return;
     const timer = window.setTimeout(
       () =>
         navigate(
           { pathname, search },
           {
             replace: true,
-            state: { ...state, reportPreview: false },
+            state: { ...state, reportPreview: false, reportCompleted: false },
           },
         ),
       3000,
@@ -90,7 +96,7 @@ export default function ChatRoom({ csrfToken }) {
     };
   }, []);
 
-  if (live.loading && !previewRequested)
+  if (live.loading && !previewRequested && !denied)
     return (
       <p role="status" className="py-4">
         채팅방 입장 권한을 확인하고 있어요.
@@ -103,15 +109,22 @@ export default function ChatRoom({ csrfToken }) {
           <TopBar title="채팅방" onLeftClick={() => navigate("/")} />
         </div>
         <p role="status">
-          {live.error?.code === "ROOM_ACCESS_EXPIRED" ||
-          live.error?.status === 410
+          {roomError?.code === "ROOM_ACCESS_EXPIRED" ||
+          roomError?.code === "ROOM_CLOSED" ||
+          roomError?.status === 410
             ? "종료된 채팅방이에요. 더 이상 입장할 수 없어요."
-            : live.error?.code === "ROOM_NOT_READY"
+            : roomError?.code === "ROOM_NOT_READY"
               ? "아직 채팅방에 입장할 수 없어요. 대표는 계좌 등록을 먼저 완료해 주세요."
               : "채팅방 정보를 확인할 수 없어요. 매칭 결과에서 다시 열어 주세요."}
         </p>
         {!previewRequested && (
-          <Button variant="secondary" onClick={live.retry}>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setMessageFailure(null);
+              live.retry();
+            }}
+          >
             다시 확인
           </Button>
         )}
@@ -143,12 +156,13 @@ export default function ChatRoom({ csrfToken }) {
     <RoomContent
       key={`${room.id}:${currentParty.myMemberId}:${isPreview}`}
       context={context}
+      onChatUnavailable={(error) => setMessageFailure({ pathname, error })}
       room={room}
       account={state?.account ?? (isPreview ? previewAccount : null)}
       now={getDisplayNow(data, now)}
       isPreview={isPreview}
       csrfToken={csrfToken}
-      reportPreview={state?.reportPreview}
+      reportPreview={state?.reportPreview || state?.reportCompleted}
       onOpenSettlement={() => openSettlement()}
       onOpenMemberSettlement={
         state?.memberSettlement ||
@@ -194,6 +208,7 @@ export default function ChatRoom({ csrfToken }) {
         navigate(`/parties/${currentParty.id}/room/report`, {
           state: {
             chatContext: context,
+            isPreview,
             room,
             returnTo: { pathname, search, state: roomState },
           },
@@ -228,6 +243,7 @@ export default function ChatRoom({ csrfToken }) {
 
 function RoomContent({
   context,
+  onChatUnavailable,
   room,
   account,
   now,
@@ -249,6 +265,7 @@ function RoomContent({
     room,
     myMemberId: party.myMemberId,
     isPreview,
+    onUnavailable: onChatUnavailable,
   });
   const boardingConfirmation = useBoarding({
     party,
@@ -299,7 +316,7 @@ function RoomContent({
               leaveSaving={leaveParty.saving}
               onLeave={leaveParty.leave}
               leaveError={leaveParty.error}
-              onReport={isPreview ? onReport : undefined}
+              onReport={view.closed ? undefined : onReport}
             />
           }
         />
@@ -315,6 +332,11 @@ function RoomContent({
       <div className="shrink-0 pt-2">
         <MeetingInfoCard room={room} view={view} />
       </div>
+      {context.refreshError && (
+        <p role="status" className="text-label2 text-label-neutral py-2">
+          {context.refreshError}
+        </p>
+      )}
       {!view.closed && phase === "prepay" ? (
         isRepresentative ? (
           <RepresentativePrepayScreen
@@ -347,7 +369,7 @@ function RoomContent({
           <RoomConversation
             room={room}
             context={context}
-            canCompose={isPreview && view.canCompose}
+            canCompose={view.canCompose}
             chat={chat}
           >
             {!view.closed && phase === "boarding" && (
@@ -419,7 +441,7 @@ function RoomContent({
             <p className="text-caption1 text-label-alternative pb-2 text-center">
               {isPreview
                 ? "미리보기 채팅이에요. 메시지와 탑승 상태는 이 화면에만 반영돼요."
-                : "메시지 전송·택시 호출 알림의 서버 연결은 준비 중이에요."}
+                : "전화번호·링크·계좌번호는 서버에서 가려져요."}
             </p>
           </RoomConversation>
         </>

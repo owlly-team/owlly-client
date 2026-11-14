@@ -58,7 +58,25 @@ export default function useLiveRoom({
         timer = setTimeout(refresh, 15000);
       } catch (error) {
         if (controller.signal.aborted) return;
-        setSnapshot({ scope, error });
+        const accessDenied =
+          [401, 403, 404, 410].includes(error.status) ||
+          ["ROOM_NOT_READY", "ROOM_ACCESS_EXPIRED"].includes(error.code);
+        setSnapshot((previous) => ({
+          scope,
+          error,
+          ...(!accessDenied && previous?.scope === scope && previous.data
+            ? {
+                data: {
+                  ...previous.data,
+                  context: {
+                    ...previous.data.context,
+                    refreshError:
+                      "채팅방 상태를 다시 확인하지 못했어요. 잠시 후 재시도해요.",
+                  },
+                },
+              }
+            : {}),
+        }));
         if (
           ![401, 403, 404, 410].includes(error.status) &&
           error.code !== "ROOM_ACCESS_EXPIRED"
