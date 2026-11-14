@@ -42,7 +42,7 @@ export default function DemoControls() {
   }, [session, pathname, match, prepay]);
   if (!session || hidden || state?.isPreview === false) return null;
   function restart(role = session.role, scenario) {
-    useRoomMessagesStore.setState({ messagesByRoom: {} });
+    useRoomMessagesStore.getState().resetPreview();
     reset(role, scenario);
     navigate("/", { replace: true, state: null });
   }

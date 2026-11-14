@@ -94,16 +94,27 @@ test("demo screens render both roles through registration, confirmation, prepay 
         /매칭됐어요/,
       );
       const context = useDemoStore.getState().session.matchingResult;
-      useDemoStore
-        .getState()
-        .updateParty({
-          ...context.party,
-          status: "PREPAYING",
-          members: context.party.members.map((member) => ({
-            ...member,
-            decision: "ACCEPTED",
-          })),
-        });
+      useDemoStore.getState().updateParty({
+        ...context.party,
+        status: "PREPAYING",
+        members: context.party.members.map((member) => ({
+          ...member,
+          decision: "ACCEPTED",
+        })),
+      });
+      const ongoingHome = render(Home, "/");
+      assert.match(ongoingHome, /진행 중인 동승/);
+      assert.match(ongoingHome, /오늘 귀가 순서/);
+      assert.match(ongoingHome, /확인 코드 4821/);
+      assert.match(ongoingHome, /채팅방으로/);
+      assert.match(ongoingHome, /나 내림/);
+      assert.doesNotMatch(ongoingHome, /집까지 마지막 출발|귀가 방법 비교/);
+      assert.match(
+        ongoingHome,
+        role === "representative"
+          ? /멤버들의 선입금 확인하기/
+          : /대표에게 9,600원 먼저 보내기/,
+      );
       if (role === "representative")
         assert.match(
           render(Matching, "/matching/result/401", "/matching/result/:partyId"),

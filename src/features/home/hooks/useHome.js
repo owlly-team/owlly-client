@@ -29,7 +29,9 @@ export default function useHome(data, { onPendingFeature } = {}) {
 
   useEffect(() => {
     if (
-      (!data.matchedAt && !data.party?.confirmDeadlineAt) ||
+      (!data.matchedAt &&
+        !data.party?.confirmDeadlineAt &&
+        !data.party?.departureAt) ||
       (data.isPreview === true && Number.isFinite(Date.parse(data.previewNow)))
     )
       return;
@@ -38,12 +40,14 @@ export default function useHome(data, { onPendingFeature } = {}) {
   }, [
     data.matchedAt,
     data.party?.confirmDeadlineAt,
+    data.party?.departureAt,
     data.previewNow,
     data.isPreview,
   ]);
 
   const { travelOptions, rideRequest, party } = data;
-  const viewData = toHomeViewData(data, getDisplayNow(data, now));
+  const displayNow = getDisplayNow(data, now);
+  const viewData = toHomeViewData(data, displayNow);
   const { transportDisplay } = viewData;
 
   // 막차 전후와 매칭 전후를 독립적으로 판단하고 화면 표시 여부만 조합
@@ -56,6 +60,7 @@ export default function useHome(data, { onPendingFeature } = {}) {
   );
   const isMatchingWaiting = matchingUiState === "MATCHING_WAITING";
   const isMatchingResult = matchingUiState === "MATCHING_RESULT";
+  const isRideInProgress = matchingUiState === "RIDE_IN_PROGRESS";
   //막차 끊기면 버스 카드 제외
   const visibleOptions = toTransportOptionCards(
     travelOptions ?? (data.isPreview === false ? {} : null),
@@ -162,12 +167,30 @@ export default function useHome(data, { onPendingFeature } = {}) {
     );
   }
 
+  function handleOpenRoom(room) {
+    if (!party?.id || rideRequest?.partyId !== party.id) return;
+    const roomId =
+      room?.partyId === party.id && (!party.roomId || room.id === party.roomId)
+        ? room.id
+        : party.roomId;
+    navigate(roomId ? `/rooms/${roomId}` : `/parties/${party.id}/room`, {
+      state: {
+        isPreview: data.isPreview === true,
+        matchingResult: { party, rideRequest, settlement: data.settlement },
+        ...(room?.partyId === party.id && room.id === roomId ? { room } : {}),
+      },
+    });
+  }
+
   return {
     viewData,
     matchingUiState,
+    isRideInProgress,
+    displayNow,
     transitAvailable,
     showTransitAlternative: isMatchingResult && transitAvailable === true,
-    showTransportOptions: !isMatchingWaiting && !isMatchingResult,
+    showTransportOptions:
+      !isMatchingWaiting && !isMatchingResult && !isRideInProgress,
     transportOptions,
     selectedTab,
     handleTabChange,
@@ -175,5 +198,6 @@ export default function useHome(data, { onPendingFeature } = {}) {
     handleViewRegistration,
     handleViewMatchingResult,
     handleViewFailure,
+    handleOpenRoom,
   };
 }

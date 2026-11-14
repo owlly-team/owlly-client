@@ -13,7 +13,6 @@ export default function PickupLocation() {
     sheetProps,
     destinationMode,
     sheetOpen,
-    isPreview,
     statusMessage,
     canRetry,
     back,
@@ -34,9 +33,6 @@ export default function PickupLocation() {
           <h1 className="text-body1 font-bold">
             {destinationMode ? "오늘 어디서 내릴까요?" : "어디서 출발할까요?"}
           </h1>
-          {isPreview && (
-            <span className="text-caption2 text-primary-normal">미리보기 · 임시 거점</span>
-          )}
           <p className="text-caption1 text-label-alternative mt-1">
             {destinationMode
               ? "지도를 움직여 택시가 설 수 있는 큰길에 핀을 맞춰 주세요"

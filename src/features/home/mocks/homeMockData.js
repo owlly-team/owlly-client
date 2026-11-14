@@ -1,8 +1,11 @@
 ﻿
+import { mockRepresentativeMatchingResult } from "../../matching/mocks/matchingMockData.js";
+
 const at = (time) => `2026-11-09T${time}:00+09:00`;
 const pickupPoint = {
   id: "11", universityId: "1", universityName: "단국대학교", name: "단국대 정문",
-  point: { latitude: 37.331, longitude: 127.271 }, meetingNote: "정문 앞",
+  // 지도 진입 시 카카오 장소 검색으로 실제 정문 좌표를 채운다.
+  point: null, meetingNote: "정문 앞",
 };
 const rideRequest = {
   id: "301", journeyId: "201", pickupPointId: "11", districtId: "21",
@@ -51,8 +54,23 @@ const party = {
   })),
   routeVersion: 1, taxiCalledAt: null, roomId: null, allowedActions: [],
 };
-// Home의 data prop에 넣어 네 가지 시안을 확인한다.
+const progressParty = {
+  ...mockRepresentativeMatchingResult.party, status: "PREPAYING", myMemberId: "502",
+  pickupPoint, departureAt: at("23:30"), districtName: "영통구",
+  members: mockRepresentativeMatchingResult.party.members.map((member) => ({ ...member, decision: "ACCEPTED" })),
+};
+const progressSettlement = {
+  ...mockRepresentativeMatchingResult.settlement,
+  items: mockRepresentativeMatchingResult.settlement.items.map((item) => ({ ...item, isMe: item.memberId === "502" })),
+};
+// Home의 data prop 또는 ?preview=home&scenario=키로 화면을 확인한다.
 export const homeScenarios = {
+  inProgress: {
+    ...defaultHomeData, isPreview: true, previewNow: at("23:22"),
+    rideRequest: { ...rideRequest, status: "MATCHED", partyId: progressParty.id },
+    party: progressParty, settlement: progressSettlement,
+    mySettlementItem: progressSettlement.items.find((item) => item.isMe),
+  },
   beforeLastTransit: defaultHomeData,
   afterLastTransit: {
     ...defaultHomeData,

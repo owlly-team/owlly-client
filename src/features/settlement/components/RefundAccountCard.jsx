@@ -88,12 +88,8 @@ export default function RefundAccountCard({
         >
           {account.notice ||
             (account.saved
-              ? isPreview
-                ? "미리보기에서 계좌를 입력했어요. 실제로 전달되지는 않아요."
-                : "환급받을 계좌를 등록했어요."
-              : isPreview
-                ? "계좌 전달 미리보기예요. 실제 계좌는 저장되지 않아요."
-                : account.loading
+              ? "환급받을 계좌를 등록했어요."
+              : account.loading
                   ? "은행과 본인 정보를 확인하고 있어요."
                   : "")}
         </p>

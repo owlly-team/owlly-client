@@ -78,9 +78,7 @@ export default function usePickupLocation() {
     const source = (async () => {
       if (isPreview)
         return {
-          points: demoSession
-            ? [demoSession.home.pickupPoint]
-            : await loadMockPickupPoints(),
+          points: await loadMockPickupPoints(),
         };
       if (session.status !== "authenticated")
         throw new Error("로그인한 뒤 출발 거점을 선택해 주세요.");
@@ -98,6 +96,7 @@ export default function usePickupLocation() {
       .then(({ points: data, profile: loadedProfile }) => {
         if (controller.signal.aborted) return;
         const valid = data.filter((item) => isPoint(item.point));
+        if (isPreview && valid[0]) useDemoStore.getState().resolvePickup(valid[0]);
         setPoints(valid);
         setPickup(
           (previous) =>
@@ -141,7 +140,6 @@ export default function usePickupLocation() {
     attempt,
     isPreview,
     session.status,
-    demoSession,
     session.user?.id,
     session.csrfToken,
   ]);

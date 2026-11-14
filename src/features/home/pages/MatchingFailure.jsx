@@ -170,11 +170,6 @@ function PreviewMatchingFailure({ data }) {
         <TopBar title="매칭 결과" leftAction="close" onLeftClick={goHome} />
       </div>
       <div className="flex flex-col gap-4 pt-1">
-        {isPreview && (
-          <p role="status" className="text-caption1 text-primary-normal">
-            미리보기 · 예시 매칭 결과
-          </p>
-        )}
         <InfoBox
           variant="negative"
           title="이번엔 매칭되지 않았어요"

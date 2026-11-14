@@ -9,6 +9,7 @@ import {
   prepayDemo,
   finalizeDemoSettlement,
   DEMO_WAIT_MS,
+  resolveDemoPickup,
 } from "./demoFlow.js";
 import { createMockRegistration } from "../matching/mocks/matchingMockData.js";
 import { resolveChatRoom } from "../chat/utils/chatRoomUtils.js";
@@ -37,6 +38,23 @@ function register(role) {
   );
   return registerDemo(session, registration, selection, 100);
 }
+
+test("Kakao search replaces stale preview coordinates throughout the same journey only", () => {
+  let session = matchDemo(register("member"));
+  const point = {
+    ...session.home.pickupPoint,
+    point: { latitude: 37.3, longitude: 127.1 },
+  };
+  session = resolveDemoPickup(session, point);
+  assert.deepEqual(session.home.pickupPoint, point);
+  assert.deepEqual(session.home.party.pickupPoint, point);
+  assert.deepEqual(session.registration.pickupPoint, point);
+  assert.deepEqual(session.matchingResult.party.pickupPoint, point);
+  assert.equal(session.matchingResult.party.myMemberId, "502");
+  assert.equal(resolveDemoPickup(session, { ...point, id: "other" }), session);
+  assert.equal(resolveDemoPickup(session, { ...point, point: null }), session);
+  assert.equal(createDemoSession().home.pickupPoint.point, null);
+});
 
 for (const role of ["member", "representative"]) {
   test(`${role}: registration, home, matching, chat and settlement share one journey`, () => {

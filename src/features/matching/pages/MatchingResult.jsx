@@ -268,11 +268,6 @@ export default function MatchingResult({ banks, onOpenChat }) {
 
   return (
     <div className="flex flex-1 flex-col">
-      {isPreview && (
-        <p role="status" className="text-caption1 text-primary-normal">
-          미리보기 · 예시 매칭 결과
-        </p>
-      )}
       <div className="-mx-4">
         <TopBar title="매칭 결과" leftAction="close" onLeftClick={goHome} />
       </div>

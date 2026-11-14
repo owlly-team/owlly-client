@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { useMockApi } from "../../shared/api/client";
 import {
   cancelDemo,
   createDemoSession,
@@ -6,6 +7,7 @@ import {
   prepayDemo,
   registerDemo,
   updateDemoParty,
+  resolveDemoPickup,
 } from "./demoFlow.js";
 
 const STORAGE_KEY = "owlly-demo-v1";
@@ -15,14 +17,18 @@ function loadSession() {
   if (["member", "representative"].includes(mode))
     return createDemoSession(mode);
   if (mode === "off") return null;
+  const fallback = () =>
+    useMockApi ? { ...createDemoSession(), autoMock: true } : null;
   try {
     const saved = JSON.parse(sessionStorage.getItem(STORAGE_KEY));
     return saved?.home?.isPreview === true &&
       ["member", "representative"].includes(saved.role)
-      ? saved
-      : null;
+      ? saved.autoMock && !useMockApi
+        ? null
+        : saved
+      : fallback();
   } catch {
-    return null;
+    return fallback();
   }
 }
 
@@ -31,6 +37,10 @@ export const useDemoStore = create((set) => ({
   reset: (role, scenario) =>
     set({ session: createDemoSession(role, scenario) }),
   stop: () => set({ session: null }),
+  resolvePickup: (point) =>
+    set(({ session }) =>
+      session ? { session: resolveDemoPickup(session, point) } : {},
+    ),
   register: (registration, selection) =>
     set(({ session }) =>
       session

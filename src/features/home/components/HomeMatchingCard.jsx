@@ -2,14 +2,13 @@ import Badge from "../../../shared/components/Badge";
 import iconChevronRight from "../../../assets/icons/chevron-right-sm.svg";
 import { formatWon } from "../utils/homeUtils";
 
-// 백엔드 상태와 분리된 홈 UI 분기. 동승 진행 화면은 추후 구현.
+// 대기·매칭 결과·실패 카드. 동승 진행 화면은 HomeRideProgress에서 표시한다.
 export default function HomeMatchingCard({
   uiState,
   display,
   onViewRegistration,
   onViewMatchingResult,
   onViewFailure,
-  onOpenRoom,
 }) {
   switch (uiState) {
     case "MATCHING_FAILED":
@@ -115,29 +114,6 @@ export default function HomeMatchingCard({
               />
             </button>
           </div>
-        </section>
-      );
-    case "RIDE_IN_PROGRESS":
-      return (
-        <section className="rounded-16 border-line-normal mt-5 border p-4">
-          <Badge variant="primary">동승 진행 중</Badge>
-          <h2 className="text-heading2 mt-2 font-bold">
-            {display?.departureTime} {display?.pickupPointName} 출발
-          </h2>
-          {display?.directionLabel && (
-            <p className="text-label2 text-label-neutral mt-1">
-              {display.directionLabel} 방향
-            </p>
-          )}
-          {onOpenRoom && (
-            <button
-              type="button"
-              onClick={onOpenRoom}
-              className="text-label1 text-primary-normal mt-3 min-h-12 w-full text-right font-semibold"
-            >
-              채팅방으로 돌아가기
-            </button>
-          )}
         </section>
       );
     default:

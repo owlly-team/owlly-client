@@ -319,6 +319,8 @@ function RoomContent({
   const chat = useChatMessages({
     room,
     myMemberId: party.myMemberId,
+    members: party.members,
+    previewNow: now,
     isPreview,
     onUnavailable: onChatUnavailable,
   });
@@ -483,7 +485,7 @@ function RoomContent({
                       className="mt-3 w-full"
                       onClick={onOpenMemberSettlement}
                     >
-                      {isPreview ? "정산 결과 미리보기" : "정산 결과 보기"}
+                      정산 결과 보기
                     </Button>
                   )}
                 {!boardingConfirmation.recorded &&
@@ -511,9 +513,7 @@ function RoomContent({
               </div>
             )}
             <p className="text-caption1 text-label-alternative pb-2 text-center">
-              {isPreview
-                ? "미리보기 채팅이에요. 메시지와 탑승 상태는 이 화면에만 반영돼요."
-                : "전화번호·링크·계좌번호는 서버에서 가려져요."}
+              전화번호·링크·계좌번호는 채팅에서 가려져요.
             </p>
           </RoomConversation>
         </>

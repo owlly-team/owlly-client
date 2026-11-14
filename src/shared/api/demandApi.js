@@ -38,9 +38,9 @@ function buildQuery(params) {
 
 // data와 meta.runId를 함께 써야 하는 화면(리포트 생성용 runId 확보 등)이 있어
 // 여기만 전체 응답을 반환한다. 호출부에서 { data, meta }로 구조분해한다.
-export async function fetchDemandCandidates(params = {}) {
+export async function fetchDemandCandidates(params = {}, { signal } = {}) {
   if (useMock) return { data: [], meta: {} };
-  return apiResponse(`/demand/candidates${buildQuery(params)}`);
+  return apiResponse(`/demand/candidates${buildQuery(params)}`, { signal });
 }
 
 export async function fetchDemandCandidateDetail(estimateId) {

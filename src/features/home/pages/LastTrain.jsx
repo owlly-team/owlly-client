@@ -1,4 +1,5 @@
 import { canPreview } from "../../demo/demoStore";
+import { useMockApi } from "../../../shared/api/client";
 import { useLocation, useNavigate } from "react-router-dom";
 import LiveTravelDetails from "../components/LiveTravelDetails";
 import Badge from "../../../shared/components/Badge";
@@ -59,9 +60,11 @@ const LastTrainData = {
 
 //막차경로
 export default function LastTrain() {
-  const { search } = useLocation();
-  return canPreview() &&
-    new URLSearchParams(search).get("preview") === "train" ? (
+  const { search, state } = useLocation();
+  return state?.isPreview !== false &&
+    (useMockApi ||
+      (canPreview() &&
+        new URLSearchParams(search).get("preview") === "train")) ? (
     <PreviewLastTrain />
   ) : (
     <LiveTravelDetails mode="BUS" />
@@ -78,9 +81,6 @@ function PreviewLastTrain() {
         <TopBar title="막차 경로" onLeftClick={goHome} />
       </div>
       <div className="flex flex-1 flex-col gap-2 pt-2">
-        <p role="status" className="text-caption1 text-primary-normal">
-          미리보기 · 예시 경로와 시간이에요.
-        </p>
         <p className="text-caption1 text-label-alternative font-semibold">
           {LastTrainData.origin} → {LastTrainData.destination}
         </p>

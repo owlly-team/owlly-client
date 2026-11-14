@@ -1,4 +1,5 @@
 import { canPreview } from "../../demo/demoStore";
+import { useMockApi } from "../../../shared/api/client";
 import { useLocation, useNavigate } from "react-router-dom";
 import LiveTravelDetails from "../components/LiveTravelDetails";
 import Badge from "../../../shared/components/Badge";
@@ -48,9 +49,11 @@ const SoloTaxiData = {
 
 //혼자 택시
 export default function SoloTaxi() {
-  const { search } = useLocation();
-  return canPreview() &&
-    new URLSearchParams(search).get("preview") === "taxi" ? (
+  const { search, state } = useLocation();
+  return state?.isPreview !== false &&
+    (useMockApi ||
+      (canPreview() &&
+        new URLSearchParams(search).get("preview") === "taxi")) ? (
     <PreviewSoloTaxi />
   ) : (
     <LiveTravelDetails mode="SOLO" />
@@ -67,9 +70,6 @@ function PreviewSoloTaxi() {
         <TopBar title="혼자 택시" onLeftClick={goHome} />
       </div>
       <div className="flex flex-1 flex-col gap-2 pt-2">
-        <p role="status" className="text-caption1 text-primary-normal">
-          미리보기 · 예시 경로와 시간이에요.
-        </p>
         <p className="text-caption1 text-label-alternative font-semibold">
           {SoloTaxiData.origin} → {SoloTaxiData.destination}
         </p>

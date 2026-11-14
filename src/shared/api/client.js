@@ -7,6 +7,7 @@ const baseUrl =
     : configuredBaseUrl;
 
 export const hasApiBaseUrl = Boolean(configuredBaseUrl);
+export const useMockApi = import.meta.env.DEV && !hasApiBaseUrl;
 
 export async function apiResponse(
   path,

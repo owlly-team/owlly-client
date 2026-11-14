@@ -108,8 +108,12 @@ export default function SettlementRefund() {
         {notice}
       </p>
       <footer className="bg-background-normal sticky bottom-0 mt-auto pt-6 pb-[max(16px,env(safe-area-inset-bottom))]">
-        <Button variant="secondary" className="w-full" disabled>
-          한*윤 화면 보기
+        <Button
+          variant="secondary"
+          className="w-full"
+          onClick={() => navigate("/demand-map")}
+        >
+          수요 지도에서 내 귀가 보기
         </Button>
       </footer>
     </div>

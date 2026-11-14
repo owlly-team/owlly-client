@@ -3,8 +3,39 @@ import {
   mockMatchingResult,
   mockRepresentativeMatchingResult,
 } from "../matching/mocks/matchingMockData.js";
+import { isPoint } from "../matching/utils/mapUtils.js";
 
 export const DEMO_WAIT_MS = 10000;
+
+export function resolveDemoPickup(session, pickupPoint) {
+  if (
+    !isPoint(pickupPoint?.point) ||
+    session.home.pickupPoint?.id !== pickupPoint.id
+  )
+    return session;
+  const updateParty = (party) =>
+    party?.pickupPoint?.id === pickupPoint.id
+      ? { ...party, pickupPoint }
+      : party;
+  return {
+    ...session,
+    home: {
+      ...session.home,
+      pickupPoint,
+      party: updateParty(session.home.party),
+    },
+    registration:
+      session.registration?.rideRequest?.pickupPointId === pickupPoint.id
+        ? { ...session.registration, pickupPoint }
+        : session.registration,
+    matchingResult: session.matchingResult
+      ? {
+          ...session.matchingResult,
+          party: updateParty(session.matchingResult.party),
+        }
+      : null,
+  };
+}
 
 export function createDemoSession(
   role = "representative",
@@ -119,6 +150,7 @@ export function matchDemo(session) {
       mySettlementItem: source.settlement.items.find(
         (item) => item.memberId === party.myMemberId,
       ),
+      settlement: source.settlement,
     },
   };
 }
