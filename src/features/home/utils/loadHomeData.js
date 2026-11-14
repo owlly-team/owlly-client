@@ -48,7 +48,7 @@ export async function loadHomePickupPoints(api, universityId) {
 }
 
 // 페이지 순서에 의존하지 않고 현재 신청을 가진 귀가를 찾는다.
-export async function loadCurrentRide(api) {
+export async function loadCurrentRide(api, { knownRequests = [] } = {}) {
   const journeys = [];
   const visited = new Set();
   let cursor;
@@ -64,22 +64,38 @@ export async function loadCurrentRide(api) {
     visited.add(cursor);
   } while (cursor);
 
+  const known = new Map(
+    knownRequests.map((item) => [String(item.journeyId), item.requestId]),
+  );
   const candidates = journeys
-    .filter((item) => item.activeRequestId)
+    .filter(
+      (item) =>
+        item.activeRequestId ||
+        (item.outcome === "UNRESOLVED" && known.has(String(item.id))),
+    )
     .sort(
       (a, b) =>
         Date.parse(b.intendedDepartureAt) - Date.parse(a.intendedDepartureAt),
     );
+  let failure = null;
   for (const journey of candidates) {
-    const { data: rideRequest } = await api.rideRequest(
-      journey.activeRequestId,
-    );
-    if (
-      rideRequest?.id !== journey.activeRequestId ||
-      rideRequest.journeyId !== journey.id
-    ) {
+    const requestId = journey.activeRequestId ?? known.get(String(journey.id));
+    let rideRequest;
+    try {
+      ({ data: rideRequest } = await api.rideRequest(requestId));
+    } catch (error) {
+      if (error.status === 404 && !journey.activeRequestId) continue;
+      throw error;
+    }
+    if (rideRequest?.id !== requestId || rideRequest.journeyId !== journey.id) {
       throw new Error("귀가와 신청 정보가 일치하지 않아요.");
     }
+    if (
+      rideRequest.status === "FAILED" &&
+      journey.outcome === "UNRESOLVED" &&
+      !failure
+    )
+      failure = { journey, rideRequest, party: null };
     if (!["WAITING", "MATCHED"].includes(rideRequest.status)) continue;
     if (rideRequest.status === "WAITING")
       return { journey, rideRequest, party: null };
@@ -115,7 +131,7 @@ export async function loadCurrentRide(api) {
       ),
     };
   }
-  return { journey: null, rideRequest: null, party: null };
+  return failure ?? { journey: null, rideRequest: null, party: null };
 }
 
 export function getSlotDates(now = new Date()) {

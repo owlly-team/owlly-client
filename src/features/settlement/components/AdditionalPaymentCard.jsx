@@ -1,11 +1,16 @@
 import { useEffect, useRef, useState } from "react";
-import Button from "../../../shared/components/Button";
 import AccountCard from "./AccountCard";
+import useRecipientAccount from "../../chat/hooks/useRecipientAccount";
+import { BANK_OPTIONS } from "../../../shared/constants/banks";
 
-export default function AdditionalPaymentCard({ view, isPreview }) {
+export default function AdditionalPaymentCard({
+  view,
+  isPreview,
+  party,
+  settlement,
+}) {
   const [copied, setCopied] = useState(null);
   const [notice, setNotice] = useState("");
-  const [checked, setChecked] = useState(false);
   const request = useRef(0);
   useEffect(
     () => () => {
@@ -13,7 +18,16 @@ export default function AdditionalPaymentCard({ view, isPreview }) {
     },
     [],
   );
-  const account = view.representativeAccount;
+  const recipient = useRecipientAccount({
+    party: party ?? {},
+    settlement,
+    isPreview,
+  });
+  const account = isPreview ? view.representativeAccount : recipient.account;
+  const bankName =
+    account?.bankName ??
+    BANK_OPTIONS.find((bank) => bank.code === account?.bankCode)?.name ??
+    account?.bankCode;
 
   async function copy(kind) {
     const version = ++request.current;
@@ -49,15 +63,20 @@ export default function AdditionalPaymentCard({ view, isPreview }) {
         amountNote={`확정 ${view.confirmed} − 보낸 ${view.paid}`}
         account={
           account
-            ? `${account.bankName} ${account.accountNumber}`
-            : "대표 계좌를 확인할 수 없어요"
+            ? `${bankName} ${account.accountNumber}`
+            : recipient.loading
+              ? "대표 계좌를 확인하고 있어요"
+              : "대표 계좌를 확인할 수 없어요"
         }
         accountNote={
           account
             ? account.maskedHolderName
               ? `예금주 ${account.maskedHolderName}`
               : "예금주 정보 없음"
-            : "채팅방에서 대표에게 계좌를 확인해 주세요."
+            : (recipient.error ??
+              (recipient.missingTransfer
+                ? "본인의 선입금 이체 정보를 확인할 수 없어요."
+                : "채팅방에서 대표에게 계좌를 확인해 주세요."))
         }
         onCopyAmount={() => copy("amount")}
         onCopyAccount={() => copy("account")}
@@ -66,27 +85,12 @@ export default function AdditionalPaymentCard({ view, isPreview }) {
         accountCopyDisabled={!account}
         className="[&_p]:select-text"
       />
-      <Button
-        variant="secondary"
-        className="mt-3 w-full"
-        disabled={!isPreview || !account || checked}
-        onClick={() => setChecked(true)}
-      >
-        {checked ? "보냈다고 체크했어요" : "송금했어요"}
-      </Button>
       <p
         role="status"
         aria-live="polite"
         className="text-caption1 text-label-neutral mt-2"
       >
-        {checked
-          ? "보냈다고 체크했어요. 실제 입금 여부는 채팅방에서 확인해 주세요."
-          : notice}
-      </p>
-      <p className="text-caption1 text-label-alternative mt-2">
-        {isPreview
-          ? "송금 체크 미리보기예요. 실제 송금이나 입금 확인은 처리하지 않아요."
-          : "송금 체크 기능은 준비 중이에요. 실제 송금은 은행 앱에서 진행해 주세요."}
+        {notice}
       </p>
     </section>
   );

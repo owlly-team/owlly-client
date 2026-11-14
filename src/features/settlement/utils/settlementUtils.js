@@ -17,6 +17,26 @@ export function getSettlementItems(settlement, partyId) {
 
 export function getSettlementIdentity(settlement, partyId, party) {
   const items = getSettlementItems(settlement, partyId);
+  if (
+    party?.routeVersion != null &&
+    party.routeVersion !== settlement?.routeVersion
+  )
+    return null;
+  // 일반 멤버의 API-33은 본인 항목만 반환한다. 대표 식별 정보는 API-22에서 얻는다.
+  if (
+    party?.id === partyId &&
+    items.length === 1 &&
+    items[0].memberId === party.myMemberId &&
+    items[0].isMe === true &&
+    items[0].isRepresentative === false &&
+    party.myMemberId !== party.representativeMemberId
+  ) {
+    const representative = party.members?.find(
+      (member) => member.memberId === party.representativeMemberId,
+    );
+    if (!representative) return null;
+    return { mine: items[0], representative, items };
+  }
   const mine = items.filter((item) => item.isMe === true);
   const representatives = items.filter(
     (item) => item.isRepresentative === true,
@@ -98,9 +118,9 @@ export function toSettlementRows(
   { partyId, party, final = false, receivedOnly = false },
 ) {
   const items = getSettlementItems(settlement, partyId);
-  const representativeId = items.find(
-    (item) => item.isRepresentative === true,
-  )?.memberId;
+  const representativeId =
+    (party?.id === partyId ? party.representativeMemberId : null) ??
+    items.find((item) => item.isRepresentative === true)?.memberId;
   const ordered =
     party?.id === partyId
       ? [...items].sort((a, b) => {
@@ -144,6 +164,10 @@ export function toSettlementRows(
 export function isFinalSettlement(settlement, partyId) {
   const items = getSettlementItems(settlement, partyId);
   return (
+    ["REFUNDING", "COMPLETED", "REVIEW_REQUIRED"].includes(
+      settlement?.status,
+    ) &&
+    Number.isFinite(Date.parse(settlement.finalizedAt)) &&
     isWon(settlement?.actualTotalWon) &&
     items.length > 0 &&
     items.every(

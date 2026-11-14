@@ -1,5 +1,5 @@
 /**
- * steps: { time, type: "walk" | "transit" | "home", icon, title, description? }[]
+ * steps: { time, type: "walk" | "transit" | "home", icon, iconClassName?, title, description? }[]
  */
 
 const STEP_BACKGROUNDS = {
@@ -28,7 +28,7 @@ export default function RouteSteps({ steps = [], className = "" }) {
               <span className={`flex size-7 items-center justify-center rounded-full 
                     ${STEP_BACKGROUNDS[step.type] ?? STEP_BACKGROUNDS.walk}`}
               >
-                <img src={step.icon} alt="" className="size-4" />
+                <img src={step.icon} alt="" className={`size-4 ${step.iconClassName ?? ""}`} />
               </span>
               {!isLast && (
                 <span

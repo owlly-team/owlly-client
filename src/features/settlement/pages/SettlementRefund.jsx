@@ -1,10 +1,12 @@
+import { canPreview } from "../../demo/demoStore";
 import { useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import Button from "../../../shared/components/Button";
 import TopBar from "../../../shared/components/TopBar";
 import IconButton from "../../../shared/components/IconButton";
 import iconKebab from "../../../assets/icons/kebab.svg";
-import TransferRow from "../components/TransferRow";
+import RefundTransferRow from "../components/RefundTransferRow";
+import useSettlementData from "../hooks/useSettlementData";
 import {
   resolveRepresentativeSettlement,
   toRepresentativeRefundView,
@@ -14,27 +16,29 @@ export default function SettlementRefund() {
   const navigate = useNavigate();
   const { partyId } = useParams();
   const { state } = useLocation();
-  const [copiedMemberId, setCopiedMemberId] = useState(null);
   const [notice, setNotice] = useState("");
-  const { data, party } = resolveRepresentativeSettlement({ partyId, state });
+  const isPreview = canPreview() && state?.isPreview === true;
+  const live = useSettlementData(partyId, !isPreview);
+  const { data, party } = resolveRepresentativeSettlement({
+    partyId,
+    allowPreview: canPreview(),
+    state: isPreview
+      ? state
+      : {
+          isPreview: false,
+          matchingResult: {
+            party: live.data?.party,
+            settlement: live.data?.settlement,
+          },
+        },
+  });
   const view = toRepresentativeRefundView(data, partyId, {
     party,
-    refundAccounts: state?.refundAccounts,
+    refundAccounts: isPreview ? state?.refundAccounts : undefined,
   });
 
   function goBack() {
     navigate(`/parties/${partyId}/settlement`, { replace: true, state });
-  }
-
-  async function copyAccount(member) {
-    if (!member.account) return;
-    try {
-      await navigator.clipboard.writeText(member.account);
-      setCopiedMemberId(member.memberId);
-      setNotice("");
-    } catch {
-      setNotice("복사하지 못했어요. 계좌를 길게 눌러 직접 복사해 주세요.");
-    }
   }
 
   if (!view) {
@@ -87,14 +91,12 @@ export default function SettlementRefund() {
         className="divide-line-alternative rounded-16 border-line-alternative mt-4 divide-y border px-4"
       >
         {view.refunds.map((member) => (
-          <TransferRow
-            key={member.memberId}
-            {...member}
-            className="rounded-none px-0 py-3 [&_p]:break-all [&_p]:select-text"
-            onCopy={() => copyAccount(member)}
-            copyLabel={
-              copiedMemberId === member.memberId ? "복사했어요" : "계좌 복사"
-            }
+          <RefundTransferRow
+            key={`${partyId}:${party?.myMemberId}:${member.memberId}:${member.transferId}`}
+            member={member}
+            partyId={partyId}
+            representativeMemberId={party?.myMemberId}
+            isPreview={isPreview}
           />
         ))}
       </section>
@@ -103,11 +105,15 @@ export default function SettlementRefund() {
         aria-live="polite"
         className="text-label2 text-label-alternative mt-3"
       >
-        {notice || (copiedMemberId ? "계좌를 복사했어요." : "")}
+        {notice}
       </p>
       <footer className="bg-background-normal sticky bottom-0 mt-auto pt-6 pb-[max(16px,env(safe-area-inset-bottom))]">
-        <Button variant="secondary" className="w-full" disabled>
-          한*윤 화면 보기
+        <Button
+          variant="secondary"
+          className="w-full"
+          onClick={() => navigate("/demand-map")}
+        >
+          수요 지도에서 내 귀가 보기
         </Button>
       </footer>
     </div>

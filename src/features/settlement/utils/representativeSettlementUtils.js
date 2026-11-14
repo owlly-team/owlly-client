@@ -1,19 +1,30 @@
 import { representativeSettlementMock } from "../mocks/memberSettlementMock.js";
 import { getSettlementIdentity, isFinalSettlement } from "./settlementUtils.js";
+import { getRefundTransferId } from "./refundRecipientAccount.js";
 
-export function resolveRepresentativeSettlement({ partyId, state }) {
+export function resolveRepresentativeSettlement({
+  partyId,
+  state,
+  allowPreview = false,
+}) {
   const party = state?.matchingResult?.party;
   const supplied = state?.settlement ?? state?.matchingResult?.settlement;
   const preview =
+    allowPreview &&
+    state?.isPreview === true &&
     supplied == null &&
-    partyId === "401" &&
-    (!party || state?.isPreview === true);
-  const data = preview ? representativeSettlementMock : supplied;
+    partyId === "401";
+  const data =
+    state?.isPreview === true && !allowPreview
+      ? null
+      : preview
+        ? representativeSettlementMock
+        : supplied;
   const identity = getSettlementIdentity(data, partyId, party);
   return {
     data: identity?.mine.isRepresentative ? data : null,
     party,
-    isPreview: preview || state?.isPreview === true,
+    isPreview: allowPreview && state?.isPreview === true,
   };
 }
 
@@ -40,8 +51,10 @@ export function toRepresentativeRefundView(
           : null;
       return {
         memberId: item.memberId,
+        transferId: getRefundTransferId(item, identity.representative.memberId),
         name: item.maskedName ?? "이름 미정",
         account: accountLabel,
+        accountNumber: accountLabel ? account.accountNumber : null,
         amountWon: item.refundDueWon,
         amount: `${item.refundDueWon.toLocaleString("ko-KR")}원`,
         received: item.status === "COMPLETED",

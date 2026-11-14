@@ -12,6 +12,8 @@ import {
 import { isPoint } from "../../matching/utils/mapUtils";
 import useHomeLocation from "./useHomeLocation";
 import { nearestPickupPoint } from "../utils/homeLocation";
+import useCachedParty from "../../matching/hooks/useCachedParty";
+import { rideRequestIndex } from "../../matching/stores/rideRequestIndex";
 
 export default function useHomeData() {
   const { status, user, csrfToken } = useSessionStore();
@@ -26,7 +28,23 @@ export default function useHomeData() {
     user?.role === "STUDENT" &&
     user?.status === "ACTIVE";
   const base = getUserScopedData(bootstrap, userId);
-  const ride = getUserScopedData(rideState, userId);
+  const loadedRide = getUserScopedData(rideState, userId);
+  const cached = useCachedParty(loadedRide?.data?.party?.id, allowed);
+  const ride = cached?.error
+    ? { error: cached.error }
+    : loadedRide?.data && cached?.response
+      ? {
+          ...loadedRide,
+          data: {
+            ...loadedRide.data,
+            party: cached.response.data,
+            partyEtag: cached.response.etag,
+            mySettlementItem: loadedRide.data.settlement?.items?.find(
+              (item) => item.memberId === cached.response.data.myMemberId,
+            ),
+          },
+        }
+      : loadedRide;
   const pickupPoints = base?.pickupPoints ?? [];
   const currentLocation = useHomeLocation(userId, allowed);
   const nearestPoint = nearestPickupPoint(pickupPoints, currentLocation);
@@ -48,7 +66,9 @@ export default function useHomeData() {
     async function refreshRide() {
       let delay = 15000;
       try {
-        const data = await loadCurrentRide(api);
+        const data = await loadCurrentRide(api, {
+          knownRequests: rideRequestIndex.list(userId),
+        });
         if (!controller.signal.aborted) setRideState({ userId, data });
       } catch (error) {
         if (controller.signal.aborted) return;

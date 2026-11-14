@@ -47,11 +47,14 @@ export default function Profile({ data = defaultProfileData }) {
       label: option.label,
     })),
   );
-  const [name, setName] = useState("");
-  const [gender, setGender] = useState(null);
-  const [sameGenderOnly, setSameGenderOnly] = useState(true);
+  const [name, setName] = useState(state?.name ?? "");
+  const [gender, setGender] = useState(state?.gender ?? null);
+  const [sameGenderOnly, setSameGenderOnly] = useState(state?.sameGenderOnly ?? true);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const dropoffLabel = state?.dropoffDongName
+    ? `${state.dropoffDongName} · 핀 선택됨`
+    : data.dropoffLabel;
 
   useEffect(() => {
     fetchProfileOptions()
@@ -59,12 +62,18 @@ export default function Profile({ data = defaultProfileData }) {
         setGenderOptions(
           options.genderOptions.map((option) => ({ value: option.code, label: option.label })),
         );
-        setSameGenderOnly(options.sameGenderDefault);
+        if (state?.sameGenderOnly === undefined) setSameGenderOnly(options.sameGenderDefault);
       })
       .catch(() => {});
-  }, []);
+  }, [state?.sameGenderOnly]);
 
   const canStart = name.trim().length > 0 && gender !== null && !submitting;
+
+  function openDropoffPicker() {
+    navigate("/onboarding/dropoff-location", {
+      state: { ...state, name, gender, sameGenderOnly },
+    });
+  }
 
   const handleSubmit = async () => {
     if (!canStart) return;
@@ -75,7 +84,7 @@ export default function Profile({ data = defaultProfileData }) {
     setSubmitting(true);
     setSubmitError("");
     try {
-      const defaultDropoff = await getDropoffPoint();
+      const defaultDropoff = state?.defaultDropoff ?? (await getDropoffPoint());
       const session = await registerStudent({
         verificationToken: state.verificationToken,
         email: state.email,
@@ -132,7 +141,7 @@ export default function Profile({ data = defaultProfileData }) {
             <span className="text-label2 font-semibold text-label-alternative">
               집 근처 하차 지점
             </span>
-            <LocationPreview label={data.dropoffLabel} />
+            <LocationPreview label={dropoffLabel} onClick={openDropoffPicker} />
             <p className="text-caption1 text-label-alternative">
               택시가 설 수 있는 큰길로 핀을 옮겨 주세요. 다른 멤버에게는
               행정동만 보여요.

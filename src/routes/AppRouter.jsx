@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from "../shared/layout/Layout";
 import useSessionStore from "../shared/stores/sessionStore";
+import { useDemoStore } from "../features/demo/demoStore";
 import Home from "../features/home/pages/Home";
 import MatchingFailure from "../features/home/pages/MatchingFailure";
 import LastTrain from "../features/home/pages/LastTrain";
@@ -16,6 +17,7 @@ import Start from "../features/onboarding/pages/Start";
 import SchoolVerification from "../features/onboarding/pages/SchoolVerification";
 import PermissionNotice from "../features/onboarding/pages/PermissionNotice";
 import Profile from "../features/onboarding/pages/Profile";
+import DropoffLocation from "../features/onboarding/pages/DropoffLocation";
 import MatchNotification from "../features/onboarding/pages/MatchNotification";
 import StartTime from "../features/matching/pages/StartTime";
 import CarpoolRegistration from "../features/matching/pages/CarpoolRegistration";
@@ -28,9 +30,10 @@ import SettlementRefund from "../features/settlement/pages/SettlementRefund";
 import MemberSettlement from "../features/settlement/pages/MemberSettlement";
 
 export default function AppRouter() {
+  const demoActive = useDemoStore((store) => Boolean(store.session));
   useEffect(() => {
-    useSessionStore.getState().hydrate();
-  }, []);
+    if (!demoActive) useSessionStore.getState().hydrate();
+  }, [demoActive]);
 
   return (
     <BrowserRouter>
@@ -57,6 +60,10 @@ export default function AppRouter() {
           <Route path="onboarding/permissions" element={<PermissionNotice />} />
           <Route path="onboarding/profile" element={<Profile />} />
           <Route
+            path="onboarding/dropoff-location"
+            element={<DropoffLocation />}
+          />
+          <Route
             path="onboarding/match-notification"
             element={<MatchNotification />}
           />
@@ -79,7 +86,7 @@ export default function AppRouter() {
           />
           <Route
             path="parties/:partyId/settlement/refund"
-            element={<SettlementRefund /> }
+            element={<SettlementRefund />}
           />
           <Route
             path="parties/:partyId/settlement/result"

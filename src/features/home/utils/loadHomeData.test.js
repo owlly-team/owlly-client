@@ -9,6 +9,57 @@ import {
   upcomingSlots,
 } from "./loadHomeData.js";
 
+test("an observed FAILED request remains discoverable after activeRequestId becomes null", async () => {
+  const journey = { id: "1", outcome: "UNRESOLVED", activeRequestId: null };
+  const request = { id: "11", journeyId: "1", status: "FAILED" };
+  const api = {
+    journeys: async () => ({ data: [journey] }),
+    rideRequest: async () => ({ data: request }),
+  };
+  assert.equal((await loadCurrentRide(api)).rideRequest, null);
+  const recovered = await loadCurrentRide(api, {
+    knownRequests: [{ journeyId: "1", requestId: "11" }],
+  });
+  assert.equal(recovered.rideRequest, request);
+  assert.equal(recovered.party, null);
+  api.journeys = async () => ({
+    data: [{ ...journey, outcome: "SOLO_SELECTED" }],
+  });
+  assert.equal(
+    (
+      await loadCurrentRide(api, {
+        knownRequests: [{ journeyId: "1", requestId: "11" }],
+      })
+    ).rideRequest,
+    null,
+  );
+});
+
+test("an active request takes priority over an older failed journey", async () => {
+  const api = {
+    journeys: async () => ({
+      data: [
+        { id: "1", outcome: "UNRESOLVED", activeRequestId: null },
+        { id: "2", outcome: "UNRESOLVED", activeRequestId: "22" },
+      ],
+    }),
+    rideRequest: async (id) => ({
+      data:
+        id === "11"
+          ? { id, journeyId: "1", status: "FAILED" }
+          : { id, journeyId: "2", status: "WAITING" },
+    }),
+  };
+  assert.equal(
+    (
+      await loadCurrentRide(api, {
+        knownRequests: [{ journeyId: "1", requestId: "11" }],
+      })
+    ).rideRequest.id,
+    "22",
+  );
+});
+
 test("home departure defaults to the account school, keeping explicit and active selections", () => {
   const shared = { id: "11", universityId: null };
   const other = { id: "21", universityId: "2" };

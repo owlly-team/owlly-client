@@ -4,7 +4,15 @@ import BottomSheet from "../../../shared/components/BottomSheet";
 import Button from "../../../shared/components/Button";
 import { reorderDropoffMembers } from "../utils/dropoffOrderUtils";
 
-export default function DropoffOrderSheet({ rows, onApply, onClose }) {
+export default function DropoffOrderSheet({
+  rows,
+  onApply,
+  onClose,
+  saving = false,
+  disabled = false,
+  notice = "",
+  preserveMemberData = false,
+}) {
   const dialog = useRef(null);
   const list = useRef(null);
   const gesture = useRef(null);
@@ -91,6 +99,7 @@ export default function DropoffOrderSheet({ rows, onApply, onClose }) {
   }, []);
 
   function move(memberId, targetId) {
+    if (saving) return;
     positions.current = new Map(
       Array.from(list.current.children, (element) => [
         element.dataset.dropoffId,
@@ -110,7 +119,9 @@ export default function DropoffOrderSheet({ rows, onApply, onClose }) {
         return current;
       const next = current.map((row) => row.memberId);
       next.splice(to, 0, next.splice(from, 1)[0]);
-      return reorderDropoffMembers(current, next);
+      return preserveMemberData
+        ? next.map((id) => current.find((row) => row.memberId === id))
+        : reorderDropoffMembers(current, next);
     });
   }
 
@@ -214,7 +225,7 @@ export default function DropoffOrderSheet({ rows, onApply, onClose }) {
       aria-describedby={descriptionId}
       onCancel={(event) => {
         event.preventDefault();
-        onClose();
+        if (!saving) onClose();
       }}
       onClick={(event) => {
         if (event.target !== event.currentTarget) return;
@@ -225,7 +236,7 @@ export default function DropoffOrderSheet({ rows, onApply, onClose }) {
           event.clientX < bounds.left ||
           event.clientX > bounds.right
         )
-          onClose();
+          if (!saving) onClose();
       }}
       style={{ height: sheetHeight ?? undefined }}
       className="rounded-t-24 text-label-normal backdrop:bg-material-dimmer fixed inset-x-0 top-auto bottom-0 m-0 mx-auto max-h-[90dvh] w-full max-w-110 overflow-visible border-0 bg-transparent p-0"
@@ -336,9 +347,15 @@ export default function DropoffOrderSheet({ rows, onApply, onClose }) {
                 <button
                   type="button"
                   aria-label={`${row.name} 순서 이동. 위아래 방향키로도 이동할 수 있어요`}
+                  disabled={saving}
                   className="rounded-8 text-label-alternative focus-visible:outline-primary-normal flex size-12 shrink-0 cursor-grab touch-none items-center justify-center focus-visible:outline-2 active:cursor-grabbing"
                   onPointerDown={(event) => {
-                    if (!event.isPrimary || event.button !== 0 || dragging)
+                    if (
+                      saving ||
+                      !event.isPrimary ||
+                      event.button !== 0 ||
+                      dragging
+                    )
                       return;
                     event.preventDefault();
                     const bounds = event.currentTarget
@@ -394,12 +411,18 @@ export default function DropoffOrderSheet({ rows, onApply, onClose }) {
         </p>
         <div className="flex w-full shrink-0 flex-col gap-2">
           <Button
-            disabled={!changed || dragging !== null}
+            disabled={!changed || dragging !== null || saving || disabled}
+            aria-busy={saving}
             onClick={() => onApply(draft)}
           >
-            이 순서로 고칠게요
+            {saving ? "순서 저장 중" : "이 순서로 고칠게요"}
           </Button>
-          <Button variant="secondary" onClick={onClose}>
+          {notice && (
+            <p role="status" className="text-label2 text-label-alternative">
+              {notice}
+            </p>
+          )}
+          <Button variant="secondary" onClick={onClose} disabled={saving}>
             닫기
           </Button>
         </div>
