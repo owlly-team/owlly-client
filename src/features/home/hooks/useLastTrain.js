@@ -90,7 +90,7 @@ export default function useLastTrain(routeState, isPreview) {
       }
       const journey = await submitBusChoice(api, attempt.current);
       if (active())
-        navigate("/", {
+        navigate("/home", {
           replace: true,
           state: { selectedTransport: "transit", journeyId: journey.id },
         });

@@ -27,7 +27,7 @@ export default function LastTrain() {
     ? (state?.travelContext ?? defaultHomeData)
     : live.data;
   const view = toLastTrainView(data ?? {});
-  const goHome = () => navigate("/");
+  const goHome = () => navigate("/home");
   const canShow = Boolean(data) && !live.error;
   function openPickup() {
     navigate("/pickup", {
@@ -152,7 +152,7 @@ export default function LastTrain() {
             onClick={
               isPreview
                 ? () =>
-                    navigate("/", {
+                    navigate("/home", {
                       replace: true,
                       state: { selectedTransport: "transit", isPreview: true },
                     })

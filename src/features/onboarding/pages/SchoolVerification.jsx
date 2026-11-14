@@ -13,6 +13,7 @@ import useSessionStore from "../../../shared/stores/sessionStore";
 
 export default function SchoolVerification() {
   const navigate = useNavigate();
+  const sessionStatus = useSessionStore((store) => store.status);
   const goBack = () => navigate("/onboarding");
 
   const [universities, setUniversities] = useState([]);
@@ -37,18 +38,20 @@ export default function SchoolVerification() {
   );
   const isValidDomain = email.includes("@") && Boolean(matchedUniversity);
   const showDomainError = email.length > 0 && !isValidDomain;
-  const canSend = isValidDomain && !sending;
-  const canVerify = codeSent && code.length === 6 && !verifying;
+  const canSend = sessionStatus !== "loading" && isValidDomain && !sending;
+  const canVerify =
+    sessionStatus !== "loading" && codeSent && code.length === 6 && !verifying;
   const schoolNames = universities
     .map((university) => university.name)
     .join(" · ");
 
   const handleSendCode = async () => {
-    if (!isValidDomain || sending) return;
+    if (!canSend) return;
     setSending(true);
     setSendError("");
     try {
       const result = await requestEmailVerification({
+        csrfToken: useSessionStore.getState().csrfToken,
         universityId: matchedUniversity.id,
         email,
       });
@@ -66,14 +69,19 @@ export default function SchoolVerification() {
     setVerifying(true);
     setVerifyError("");
     try {
-      const result = await verifyEmailCode({ verificationId, code });
+      const result = await verifyEmailCode({
+        verificationId,
+        code,
+        csrfToken: useSessionStore.getState().csrfToken,
+      });
       // 기존 학생이면 같은 증표로 바로 로그인하고, 계정이 없으면(신규) 프로필 가입으로 이어간다.
       try {
         const session = await loginStudent({
+          csrfToken: useSessionStore.getState().csrfToken,
           verificationToken: result.verificationToken,
         });
         useSessionStore.getState().setSession(session);
-        navigate("/");
+        navigate("/home");
       } catch (loginError) {
         if (loginError.code !== "ACCOUNT_NOT_FOUND") throw loginError;
         navigate("/onboarding/permissions", {

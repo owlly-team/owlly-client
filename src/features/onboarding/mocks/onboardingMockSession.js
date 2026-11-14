@@ -1,6 +1,5 @@
 import { mockUniversities } from "./onboardingMockData.js";
 
-export const MOCK_VERIFICATION_CODE = "123456";
 const verifications = new Map();
 const tokens = new Map();
 let account = null;
@@ -36,8 +35,8 @@ export function verifyMockCode({ verificationId, code }) {
   const verification = verifications.get(verificationId);
   if (!verification)
     throw fail("VERIFICATION_NOT_FOUND", "코드를 먼저 보내 주세요.");
-  if (code !== MOCK_VERIFICATION_CODE)
-    throw fail("INVALID_CODE", "코드가 올바르지 않아요.");
+  if (typeof code !== "string" || !/^\d{6}$/.test(code))
+    throw fail("INVALID_CODE", "코드 6자리를 입력해 주세요.");
   const verificationToken = `mock-token-${crypto.randomUUID()}`;
   tokens.set(verificationToken, verification);
   return {

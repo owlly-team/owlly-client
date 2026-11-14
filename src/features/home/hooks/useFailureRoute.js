@@ -29,7 +29,7 @@ export default function useFailureRoute() {
     now,
     requestId,
     canChoose: canResolveFailure(data),
-    goHome: () => navigate("/"),
+    goHome: () => navigate("/home"),
     retryRegistration: () => {
       if (!canResolveFailure(data) || failure.saving) return;
       navigate(
@@ -55,7 +55,7 @@ export default function useFailureRoute() {
     chooseAndClose: async (mode) => {
       const result = await failure.choose(mode);
       if (result)
-        navigate("/", {
+        navigate("/home", {
           replace: true,
           state: { selectedTransport: mode === "BUS" ? "transit" : "taxi" },
         });

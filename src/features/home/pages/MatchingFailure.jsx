@@ -162,7 +162,7 @@ function PreviewMatchingFailure({ data }) {
   const { travelOptions, rideRequest, nextSlot, demand, selection } = data;
   const transitAvailable = travelOptions?.transit?.available === true;
   const taxiAvailable = Number.isFinite(travelOptions?.soloTaxiEstimatedWon);
-  const goHome = () => navigate("/");
+  const goHome = () => navigate("/home");
 
   return (
     <div className="flex w-full flex-1 flex-col">
@@ -238,7 +238,7 @@ function PreviewMatchingFailure({ data }) {
           <Button
             className="w-full"
             onClick={() =>
-              navigate("/", { state: { selectedTransport: "transit" } })
+              navigate("/home", { state: { selectedTransport: "transit" } })
             }
           >
             막차로 갈게요

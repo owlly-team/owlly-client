@@ -64,14 +64,14 @@ export default function SettlementInput(props) {
     return (
       <div className="flex flex-1 flex-col gap-4">
         <div className="-mx-4">
-          <TopBar title="정산" onLeftClick={() => navigate("/")} />
+          <TopBar title="정산" onLeftClick={() => navigate("/home")} />
         </div>
         <p role="status" className="text-body2 text-label-neutral">
           {live.loading
             ? "정산 정보를 불러오고 있어요."
             : "정산 입력 정보를 확인할 수 없어요. 대표 계정의 채팅방에서 다시 열어 주세요."}
         </p>
-        {!live.loading && <Button onClick={() => navigate("/")}>홈으로</Button>}
+        {!live.loading && <Button onClick={() => navigate("/home")}>홈으로</Button>}
       </div>
     );
 

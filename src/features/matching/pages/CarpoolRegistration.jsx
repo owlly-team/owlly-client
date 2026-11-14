@@ -17,13 +17,13 @@ export default function CarpoolRegistration({ data, onViewMatchingResult }) {
     state?.isPreview !== false ? demo?.registration : null;
   const registration = data ?? demoRegistration ?? state ?? {};
   const active = useRideRegistration(registration, () =>
-    navigate("/", { replace: true }),
+    navigate("/home", { replace: true }),
   );
   const view = toRegistrationView(
     active.rideRequest,
     registration.matchingSlot,
   );
-  const goHome = () => navigate("/");
+  const goHome = () => navigate("/home");
 
   return (
     <div className="flex flex-1 flex-col">

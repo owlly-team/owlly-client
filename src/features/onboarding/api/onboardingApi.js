@@ -19,17 +19,29 @@ export async function fetchProfileOptions() {
   return apiGet("/profile-options");
 }
 
-export async function requestEmailVerification({ universityId, email }) {
+export async function requestEmailVerification({
+  universityId,
+  email,
+  csrfToken,
+}) {
   if (isMockMode()) return requestMockVerification({ universityId, email });
-  return apiPost("/auth/email-verifications", {
-    universityId: Number(universityId),
-    email,
-  });
+  return apiPost(
+    "/auth/email-verifications",
+    {
+      universityId: Number(universityId),
+      email,
+    },
+    { headers: csrfToken ? { "X-CSRF-Token": csrfToken } : {} },
+  );
 }
 
-export async function verifyEmailCode({ verificationId, code }) {
+export async function verifyEmailCode({ verificationId, code, csrfToken }) {
   if (isMockMode()) return verifyMockCode({ verificationId, code });
-  return apiPost(`/auth/email-verifications/${verificationId}/verify`, {
-    code,
-  });
+  return apiPost(
+    `/auth/email-verifications/${verificationId}/verify`,
+    {
+      code,
+    },
+    { headers: csrfToken ? { "X-CSRF-Token": csrfToken } : {} },
+  );
 }

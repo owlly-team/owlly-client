@@ -19,9 +19,8 @@ const defaultProfileData = {
   dropoffLabel: "영통2동 · 큰길 쪽",
 };
 
-// 지도 핀 선택 UI가 아직 없어서, 위치 권한을 허용했으면 실제 현재 위치를,
-// 아니면 Figma 목업과 같은 영통2동 근방 좌표를 기본 하차 지점으로 사용한다.
-const FALLBACK_DROPOFF = { latitude: 37.33, longitude: 127.27 };
+// 위치 선택이 없으면 현재 위치를 사용하고, 목업 또는 위치 조회 실패 시 영통2동을 사용한다.
+const FALLBACK_DROPOFF = { latitude: 37.2469632, longitude: 127.0563198 };
 
 function getDropoffPoint() {
   return new Promise((resolve) => {
@@ -99,6 +98,7 @@ export default function Profile({ data = defaultProfileData }) {
         state?.defaultDropoff ??
         (mock ? FALLBACK_DROPOFF : await getDropoffPoint());
       const session = await registerStudent({
+        csrfToken: useSessionStore.getState().csrfToken,
         verificationToken: state.verificationToken,
         email: state.email,
         profile: {
@@ -112,7 +112,7 @@ export default function Profile({ data = defaultProfileData }) {
         },
       });
       useSessionStore.getState().setSession(session);
-      navigate("/");
+      navigate("/home");
     } catch (error) {
       setSubmitError(error.message);
     } finally {

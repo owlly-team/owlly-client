@@ -76,7 +76,7 @@ export default function useStartTime(selection) {
           : Date.now();
         const dates = getSlotDates(new Date(clock));
         const pages = isPreview
-          ? dates.map((date) => ({ data: createMockMatchingSlots(date) }))
+          ? [{ data: createMockMatchingSlots(dates[0]) }]
           : await Promise.all(
               dates.map((date) =>
                 api.slots({

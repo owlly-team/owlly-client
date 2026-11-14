@@ -62,7 +62,7 @@ export default function SoloTaxi() {
 
 function PreviewSoloTaxi() {
   const navigate = useNavigate();
-  const goHome = () => navigate("/");
+  const goHome = () => navigate("/home");
 
   return (
     <div className="flex flex-1 flex-col justify-between">

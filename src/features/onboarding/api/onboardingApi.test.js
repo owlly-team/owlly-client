@@ -2,6 +2,65 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "vite";
 
+test("live authentication POSTs forward a restored session's CSRF token only in the header", async () => {
+  const server = await createServer({
+    server: { middlewareMode: true, hmr: false },
+    appType: "custom",
+    define: {
+      "import.meta.env.DEV": "true",
+      "import.meta.env.VITE_API_BASE_URL": '"https://api.example.test"',
+    },
+  });
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = async (url, options) => {
+    calls.push({ url, ...options });
+    return new Response(JSON.stringify({ data: {} }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  };
+  try {
+    const onboarding = await server.ssrLoadModule(
+      "/src/features/onboarding/api/onboardingApi.js",
+    );
+    const auth = await server.ssrLoadModule("/src/shared/api/authApi.js");
+    for (const csrfToken of ["restored-session-csrf", undefined]) {
+      await onboarding.requestEmailVerification({
+        universityId: "3",
+        email: "student@dankook.ac.kr",
+        csrfToken,
+      });
+      await onboarding.verifyEmailCode({
+        verificationId: "10",
+        code: "123456",
+        csrfToken,
+      });
+      await auth.loginStudent({ verificationToken: "verified", csrfToken });
+      await auth.registerStudent({
+        verificationToken: "verified",
+        profile: {},
+        csrfToken,
+      });
+      await auth.loginStaff({
+        email: "staff@example.test",
+        password: "test",
+        csrfToken,
+      });
+      for (const call of calls.splice(0)) {
+        assert.equal(call.method, "POST");
+        assert.equal(call.credentials, "include");
+        assert.equal(call.headers["X-CSRF-Token"], csrfToken);
+        assert.ok(call.headers["Idempotency-Key"]);
+        assert.equal(Object.hasOwn(JSON.parse(call.body), "csrfToken"), false);
+      }
+    }
+  } finally {
+    globalThis.fetch = originalFetch;
+    await server.close();
+  }
+});
+
 test("mock onboarding only performs the verification and registration actions explicitly requested", async () => {
   const server = await createServer({
     server: { middlewareMode: true, hmr: false },
@@ -25,9 +84,6 @@ test("mock onboarding only performs the verification and registration actions ex
     const { isMockMode } = await server.ssrLoadModule(
       "/src/shared/api/mockMode.js",
     );
-    const mock = await server.ssrLoadModule(
-      "/src/features/onboarding/mocks/onboardingMockSession.js",
-    );
     const mypage = await server.ssrLoadModule(
       "/src/features/mypage/api/mypageApi.js",
     );
@@ -44,7 +100,7 @@ test("mock onboarding only performs the verification and registration actions ex
     });
     const { verificationToken } = await onboarding.verifyEmailCode({
       verificationId,
-      code: mock.MOCK_VERIFICATION_CODE,
+      code: "654321",
     });
     await assert.rejects(
       auth.loginStudent({ verificationToken }),

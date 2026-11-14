@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 
 const TAB_ROUTES = {
-  home: "/",
+  home: "/home",
   return: "/pickup",
   map: "/demand-map",
   profile: "/my-info",

@@ -8,19 +8,28 @@ import useSessionStore from "../../../shared/stores/sessionStore";
 
 export default function AdminLogin() {
   const navigate = useNavigate();
+  const sessionStatus = useSessionStore((store) => store.status);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const canSubmit = email.trim().length > 0 && password.length > 0 && !submitting;
+  const canSubmit =
+    sessionStatus !== "loading" &&
+    email.trim().length > 0 &&
+    password.length > 0 &&
+    !submitting;
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
     setSubmitting(true);
     setError("");
     try {
-      const session = await loginStaff({ email: email.trim(), password });
+      const session = await loginStaff({
+        email: email.trim(),
+        password,
+        csrfToken: useSessionStore.getState().csrfToken,
+      });
       useSessionStore.getState().setSession(session);
       navigate("/admin");
     } catch (loginError) {
@@ -35,15 +44,15 @@ export default function AdminLogin() {
       <div className="flex flex-col gap-5 pt-8">
         <div className="flex items-end gap-2.5">
           <img src={iconAppLogo} alt="" className="size-13" />
-          <span className="text-title1 font-extrabold tracking-tight text-label-alternative">
+          <span className="text-title1 text-label-alternative font-extrabold tracking-tight">
             아울리
           </span>
-          <span className="pb-1.5 text-label1 font-bold text-label-alternative/72">
+          <span className="text-label1 text-label-alternative/72 pb-1.5 font-bold">
             Owlly
           </span>
         </div>
         <div className="flex flex-col gap-2">
-          <h1 className="text-title3 font-bold tracking-tight text-label-normal">
+          <h1 className="text-title3 text-label-normal font-bold tracking-tight">
             학교 관계자 로그인
           </h1>
           <p className="text-body2 text-label-neutral">
@@ -69,11 +78,13 @@ export default function AdminLogin() {
             setError("");
           }}
           helperText={error || undefined}
-          inputClassName={error ? "shadow-[inset_0_0_0_1px_var(--color-status-negative)]" : ""}
+          inputClassName={
+            error ? "shadow-[inset_0_0_0_1px_var(--color-status-negative)]" : ""
+          }
         />
       </div>
 
-      <div className="pb-[max(1rem,env(safe-area-inset-bottom))] pt-4">
+      <div className="pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
         <Button
           size="md"
           variant="primary"

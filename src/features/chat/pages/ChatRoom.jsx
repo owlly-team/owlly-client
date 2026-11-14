@@ -172,7 +172,7 @@ export default function ChatRoom({ csrfToken }) {
     return (
       <div className="flex flex-1 flex-col gap-4">
         <div className="-mx-4">
-          <TopBar title="채팅방" onLeftClick={() => navigate("/")} />
+          <TopBar title="채팅방" onLeftClick={() => navigate("/home")} />
         </div>
         <p role="status">
           {roomError?.code === "ROOM_ACCESS_EXPIRED" ||
@@ -194,7 +194,7 @@ export default function ChatRoom({ csrfToken }) {
             다시 확인
           </Button>
         )}
-        <Button onClick={() => navigate("/")}>홈으로</Button>
+        <Button onClick={() => navigate("/home")}>홈으로</Button>
       </div>
     );
 
@@ -384,7 +384,7 @@ function RoomContent({
     onLeft: (updatedParty) => {
       if (isPreview && useMockJourneyStore.getState().journey)
         useMockJourneyStore.getState().cancel();
-      navigate("/", { replace: true, state: { leftParty: updatedParty } });
+      navigate("/home", { replace: true, state: { leftParty: updatedParty } });
     },
   });
 
@@ -406,7 +406,7 @@ function RoomContent({
       <header className="bg-background-normal -mx-4 shrink-0">
         <TopBar
           title={view.title}
-          onLeftClick={() => navigate("/")}
+          onLeftClick={() => navigate("/home")}
           rightSlot={
             <ChatRoomMoreMenu
               canLeave={view.canLeave}
