@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from "../shared/layout/Layout";
 import useSessionStore from "../shared/stores/sessionStore";
+import { useDemoStore } from "../features/demo/demoStore";
 import Home from "../features/home/pages/Home";
 import MatchingFailure from "../features/home/pages/MatchingFailure";
 import LastTrain from "../features/home/pages/LastTrain";
@@ -29,9 +30,10 @@ import SettlementRefund from "../features/settlement/pages/SettlementRefund";
 import MemberSettlement from "../features/settlement/pages/MemberSettlement";
 
 export default function AppRouter() {
+  const demoActive = useDemoStore((store) => Boolean(store.session));
   useEffect(() => {
-    useSessionStore.getState().hydrate();
-  }, []);
+    if (!demoActive) useSessionStore.getState().hydrate();
+  }, [demoActive]);
 
   return (
     <BrowserRouter>
@@ -84,7 +86,7 @@ export default function AppRouter() {
           />
           <Route
             path="parties/:partyId/settlement/refund"
-            element={<SettlementRefund /> }
+            element={<SettlementRefund />}
           />
           <Route
             path="parties/:partyId/settlement/result"

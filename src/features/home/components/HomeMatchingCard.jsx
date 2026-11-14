@@ -9,6 +9,7 @@ export default function HomeMatchingCard({
   onViewRegistration,
   onViewMatchingResult,
   onViewFailure,
+  onOpenRoom,
 }) {
   switch (uiState) {
     case "MATCHING_FAILED":
@@ -127,6 +128,15 @@ export default function HomeMatchingCard({
             <p className="text-label2 text-label-neutral mt-1">
               {display.directionLabel} 방향
             </p>
+          )}
+          {onOpenRoom && (
+            <button
+              type="button"
+              onClick={onOpenRoom}
+              className="text-label1 text-primary-normal mt-3 min-h-12 w-full text-right font-semibold"
+            >
+              채팅방으로 돌아가기
+            </button>
           )}
         </section>
       );

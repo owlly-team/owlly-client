@@ -1,3 +1,4 @@
+import { canPreview } from "../../demo/demoStore";
 import { useLocation, useNavigate } from "react-router-dom";
 import LiveTravelDetails from "../components/LiveTravelDetails";
 import Badge from "../../../shared/components/Badge";
@@ -48,7 +49,7 @@ const SoloTaxiData = {
 //혼자 택시
 export default function SoloTaxi() {
   const { search } = useLocation();
-  return import.meta.env.DEV &&
+  return canPreview() &&
     new URLSearchParams(search).get("preview") === "taxi" ? (
     <PreviewSoloTaxi />
   ) : (

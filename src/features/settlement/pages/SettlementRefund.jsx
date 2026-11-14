@@ -1,3 +1,4 @@
+import { canPreview } from "../../demo/demoStore";
 import { useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import Button from "../../../shared/components/Button";
@@ -16,11 +17,11 @@ export default function SettlementRefund() {
   const { partyId } = useParams();
   const { state } = useLocation();
   const [notice, setNotice] = useState("");
-  const isPreview = import.meta.env.DEV && state?.isPreview === true;
+  const isPreview = canPreview() && state?.isPreview === true;
   const live = useSettlementData(partyId, !isPreview);
   const { data, party } = resolveRepresentativeSettlement({
     partyId,
-    allowPreview: import.meta.env.DEV,
+    allowPreview: canPreview(),
     state: isPreview
       ? state
       : {

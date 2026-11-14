@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useBottomTabNavigation from "../../../shared/hooks/useBottomTabNavigation";
 import { getDisplayNow } from "../../../shared/utils/time";
+import { useDemoStore } from "../../demo/demoStore";
 import iconBus from "../../../assets/icons/transport-bus.svg";
 import iconCarpool from "../../../assets/icons/transport-carpool.svg";
 import iconTaxi from "../../../assets/icons/transport-taxi.svg";
@@ -127,6 +128,25 @@ export default function useHome(data, { onPendingFeature } = {}) {
 
   //MATCHED 신청의 partyId로 매칭 결과 화면 이동
   function handleViewMatchingResult(partyId) {
+    const demoResult =
+      data.isPreview === true
+        ? useDemoStore.getState().session?.matchingResult
+        : null;
+    const myDecision = demoResult?.party.members.find(
+      (member) => member.memberId === demoResult.party.myMemberId,
+    )?.decision;
+    if (
+      demoResult?.party.id === partyId &&
+      myDecision === "ACCEPTED" &&
+      (demoResult.party.myMemberId !==
+        demoResult.party.representativeMemberId ||
+        useDemoStore.getState().session.account)
+    ) {
+      navigate(`/rooms/${demoResult.party.roomId}`, {
+        state: { isPreview: true },
+      });
+      return;
+    }
     navigate(`/matching/result/${partyId}`, {
       state: {
         isPreview: data.isPreview !== false,

@@ -1,4 +1,5 @@
-﻿import LastDepartureCard from "../components/LastDepartureCard";
+import { canPreview, useDemoStore } from "../../demo/demoStore";
+import LastDepartureCard from "../components/LastDepartureCard";
 import TransportOptionCard from "../components/TransportOptionCard";
 import { useId, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -13,10 +14,11 @@ import Button from "../../../shared/components/Button";
 
 export default function Home({ data, onViewMatchingResult }) {
   const { search } = useLocation();
+  const session = useDemoStore((store) => store.session);
+  if (session && !data) return <HomeContent data={session.home} />;
   if (
     data ||
-    (import.meta.env.DEV &&
-      new URLSearchParams(search).get("preview") === "home")
+    (canPreview() && new URLSearchParams(search).get("preview") === "home")
   ) {
     return (
       <HomeContent
@@ -251,6 +253,13 @@ function HomeContent({
         display={matchingDisplay}
         onViewRegistration={handleViewRegistration}
         onViewFailure={handleViewFailure}
+        onOpenRoom={
+          currentData.isPreview === true &&
+          currentData.party &&
+          useDemoStore.getState().session
+            ? () => handleViewMatchingResult(currentData.party.id)
+            : undefined
+        }
         onViewMatchingResult={
           currentData.rideRequest?.status === "MATCHED" &&
           currentData.rideRequest?.partyId

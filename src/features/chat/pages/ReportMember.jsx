@@ -1,3 +1,4 @@
+import { canPreview } from "../../demo/demoStore";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import TopBar from "../../../shared/components/TopBar";
 import MemberReportForm from "../components/MemberReportForm";
@@ -8,7 +9,7 @@ export default function ReportMember() {
   const { partyId } = useParams();
   const { state } = useLocation();
   const navigate = useNavigate();
-  const isPreview = import.meta.env.DEV && state?.isPreview === true;
+  const isPreview = canPreview() && state?.isPreview === true;
   const live = useLiveRoom({ enabled: !isPreview, partyId });
   const preview = isPreview
     ? state?.room?.partyId === partyId &&
