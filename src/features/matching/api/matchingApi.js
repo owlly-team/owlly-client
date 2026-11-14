@@ -87,6 +87,19 @@ export function createMatchingApi(csrfToken, signal) {
           "If-Match": etag,
         }),
       ),
+    confirmBoarding: (id, status, key) =>
+      changeParty(id, () =>
+        post(`/parties/${encodeURIComponent(id)}/boarding`, { status }, key),
+      ),
+    confirmTaxiCall: (id, etag, key) =>
+      changeParty(id, () =>
+        post(
+          `/parties/${encodeURIComponent(id)}/taxi-call-confirmation`,
+          undefined,
+          key,
+          { "If-Match": etag },
+        ),
+      ),
     registerAccount: (roomId, purpose, body, key) =>
       request(`/rooms/${encodeURIComponent(roomId)}/accounts/${purpose}`, {
         method: "PUT",

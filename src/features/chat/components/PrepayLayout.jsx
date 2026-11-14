@@ -4,6 +4,8 @@ export default function PrepayLayout({
   notice,
   actionLabel,
   onNext,
+  disabled = false,
+  saving = false,
   children,
 }) {
   return (
@@ -15,8 +17,13 @@ export default function PrepayLayout({
       </div>
       {children}
       <div className="bg-background-normal sticky bottom-0 mt-auto pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-        <Button className="w-full" disabled={!onNext} onClick={onNext}>
-          {actionLabel}
+        <Button
+          className="w-full"
+          disabled={!onNext || disabled || saving}
+          aria-busy={saving}
+          onClick={onNext}
+        >
+          {saving ? "처리 중" : actionLabel}
         </Button>
       </div>
     </div>

@@ -15,6 +15,7 @@ import { formatTime } from "../../home/utils/homeUtils";
 import { mockRepresentativeMatchingResult } from "../../matching/mocks/matchingMockData";
 import useChatMessages from "../hooks/useChatMessages";
 import useBoarding from "../hooks/useBoarding";
+import useTaxiCall from "../hooks/useTaxiCall";
 import useLeaveParty from "../hooks/useLeaveParty";
 import { getChatRoomView, resolveChatRoom } from "../utils/chatRoomUtils";
 import { memberSettlementMock } from "../../settlement/mocks/memberSettlementMock";
@@ -228,6 +229,7 @@ export default function ChatRoom({ csrfToken }) {
             (member) => member.memberId === updatedParty.myMemberId,
           )?.boardingStatus === "BOARDED";
         if (
+          isPreview &&
           boarded &&
           updatedParty.myMemberId &&
           updatedParty.myMemberId === updatedParty.representativeMemberId
@@ -270,6 +272,7 @@ function RoomContent({
   const boardingConfirmation = useBoarding({
     party,
     now,
+    etag: context.partyEtag,
     csrfToken,
     isPreview,
     onRecorded: onBoardingRecorded,
@@ -302,6 +305,12 @@ function RoomContent({
     );
     onBoardingStarted();
   }
+  const taxiCall = useTaxiCall({
+    party,
+    etag: context.partyEtag,
+    isPreview,
+    onConfirmed: isPreview ? handleTaxiCalled : undefined,
+  });
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -347,7 +356,10 @@ function RoomContent({
                 : settlement
             }
             account={account}
-            onTaxiCalled={isPreview ? handleTaxiCalled : undefined}
+            onTaxiCalled={taxiCall.confirm}
+            taxiCallSaving={taxiCall.saving}
+            taxiCallError={taxiCall.error}
+            taxiCallDisabledReason={taxiCall.disabledReason}
           />
         ) : (
           <MemberPrepayScreen

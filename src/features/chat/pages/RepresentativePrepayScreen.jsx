@@ -7,6 +7,9 @@ export default function RepresentativePrepayScreen({
   settlement,
   account,
   onTaxiCalled,
+  taxiCallSaving,
+  taxiCallError,
+  taxiCallDisabledReason,
 }) {
   const { payments, totalWon: total } = toRepresentativePayments(
     party,
@@ -24,6 +27,8 @@ export default function RepresentativePrepayScreen({
       notice="집결 시각이에요 · 확인 코드를 맞추면 멤버들이 먼저 보내요"
       actionLabel="택시를 불렀어요"
       onNext={onTaxiCalled}
+      saving={taxiCallSaving}
+      disabled={Boolean(taxiCallDisabledReason)}
     >
       <h1 className="text-title3 mt-5 font-bold">
         들어온 돈을 확인하고
@@ -61,6 +66,14 @@ export default function RepresentativePrepayScreen({
           ))}
         </ul>
       </section>
+      {(taxiCallError || taxiCallDisabledReason) && (
+        <p
+          role={taxiCallError ? "alert" : "status"}
+          className="text-label2 text-label-neutral mt-2"
+        >
+          {taxiCallError || taxiCallDisabledReason}
+        </p>
+      )}
     </PrepayLayout>
   );
 }
