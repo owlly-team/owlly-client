@@ -52,7 +52,13 @@ export default function useTravelChoice(routeState, isPreview, mode = "BUS") {
   useEffect(() => {
     if (isPreview || !allowed) return;
     const controller = new AbortController();
-    loadLastTrain(createHomeApi(csrfToken, controller.signal), source, userId)
+    loadLastTrain(
+      createHomeApi(csrfToken, controller.signal),
+      revision > 0 ? { ...source, travelOptions: null } : source,
+      userId,
+      Date.now(),
+      { universityId: user?.universityId },
+    )
       .then((data) => {
         if (!controller.signal.aborted) setSnapshot({ scope, revision, data });
       })
@@ -62,7 +68,16 @@ export default function useTravelChoice(routeState, isPreview, mode = "BUS") {
         setSnapshot({ scope, revision, error });
       });
     return () => controller.abort();
-  }, [isPreview, allowed, source, userId, csrfToken, scope, revision]);
+  }, [
+    isPreview,
+    allowed,
+    source,
+    userId,
+    user?.universityId,
+    csrfToken,
+    scope,
+    revision,
+  ]);
 
   async function choose() {
     if (
@@ -84,7 +99,9 @@ export default function useTravelChoice(routeState, isPreview, mode = "BUS") {
     try {
       if (!csrfToken) throw new Error("로그인 상태를 다시 확인해 주세요.");
       if (!attempt.current) {
-        const { journey } = await loadCurrentRide(api);
+        const { journey } = await loadCurrentRide(api, {
+          includeSettlement: false,
+        });
         if (!active()) return;
         attempt.current = createTransportAttempt(
           { ...current.data, journey },

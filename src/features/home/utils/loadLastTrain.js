@@ -1,19 +1,37 @@
 import { isPoint } from "../../matching/utils/mapUtils.js";
-import {
-  loadHomePickupPoints,
-  selectSchoolPickupPoint,
-} from "./loadHomeData.js";
+import { selectSchoolPickupPoint } from "./loadHomeData.js";
+import { loadPickupContext } from "../../matching/utils/loadPickupContext.js";
 
-export async function loadLastTrain(api, source, userId, now = Date.now()) {
+export function hasFreshTravelContext(source, now = Date.now()) {
+  const travel = source?.travelOptions;
+  const age = now - Date.parse(travel?.asOf);
+  return Boolean(
+    source?.pickupPoint?.id &&
+    isPoint(source.dropoff) &&
+    travel?.destinationDongId &&
+    (travel.pickupPointId == null ||
+      travel.pickupPointId === source.pickupPoint.id) &&
+    age >= 0 &&
+    age < 15000,
+  );
+}
+
+export async function loadLastTrain(
+  api,
+  source,
+  userId,
+  now = Date.now(),
+  { universityId } = {},
+) {
+  if (hasFreshTravelContext(source, now)) return source;
   let context = source;
   if (!context?.pickupPoint?.id || !isPoint(context.dropoff)) {
-    const { data: profile } = await api.profile();
-    if (profile?.user?.id !== userId || !isPoint(profile.defaultDropoff))
+    const { profile, pickupPoints } = await loadPickupContext(api, {
+      id: userId,
+      universityId,
+    });
+    if (!isPoint(profile.defaultDropoff))
       throw new Error("기본 하차 위치를 확인해 주세요.");
-    const { pickupPoints } = await loadHomePickupPoints(
-      api,
-      profile.user.universityId,
-    );
     const pickupPoint = selectSchoolPickupPoint(pickupPoints, {
       universityId: profile.user.universityId,
     });

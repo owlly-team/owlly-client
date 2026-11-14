@@ -9,6 +9,49 @@ import {
   upcomingSlots,
 } from "./loadHomeData.js";
 
+test("room recovery can skip unused settlement and home can show its party before money arrives", async () => {
+  let resolveMoney, painted;
+  const money = new Promise((resolve) => {
+    resolveMoney = resolve;
+  });
+  const shown = new Promise((resolve) => {
+    painted = resolve;
+  });
+  let reads = 0;
+  const api = {
+    journeys: async () => ({ data: [{ id: "1", activeRequestId: "11" }] }),
+    rideRequest: async () => ({
+      data: { id: "11", journeyId: "1", status: "MATCHED", partyId: "22" },
+    }),
+    party: async () => ({
+      data: { id: "22", myMemberId: "32", status: "RIDING" },
+    }),
+    settlement: () => {
+      reads++;
+      return money;
+    },
+  };
+  assert.equal(
+    (await loadCurrentRide(api, { includeSettlement: false })).party.id,
+    "22",
+  );
+  assert.equal(reads, 0);
+  const updates = [];
+  const done = loadCurrentRide(api, {
+    onUpdate: (data) => {
+      updates.push(data);
+      painted();
+    },
+  });
+  await shown;
+  assert.equal(updates[0].settlementLoading, true);
+  assert.equal(updates[0].party.id, "22");
+  resolveMoney({
+    data: { partyId: "22", items: [{ memberId: "32", estimatedShareWon: 0 }] },
+  });
+  assert.equal((await done).mySettlementItem.estimatedShareWon, 0);
+});
+
 test("an observed FAILED request remains discoverable after activeRequestId becomes null", async () => {
   const journey = { id: "1", outcome: "UNRESOLVED", activeRequestId: null };
   const request = { id: "11", journeyId: "1", status: "FAILED" };

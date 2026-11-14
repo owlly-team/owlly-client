@@ -7,7 +7,9 @@ export async function loadMatchingTravel(
   previous,
   now = Date.now(),
 ) {
-  const { party, rideRequest, journey } = await loadCurrentRide(api);
+  const { party, rideRequest, journey } = await loadCurrentRide(api, {
+    includeSettlement: false,
+  });
   if (
     party?.id !== partyId ||
     rideRequest?.partyId !== partyId ||

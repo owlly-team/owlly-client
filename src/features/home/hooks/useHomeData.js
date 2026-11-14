@@ -4,7 +4,6 @@ import { createHomeApi } from "../api/homeApi";
 import {
   getUserScopedData,
   loadCurrentRide,
-  loadHomePickupPoints,
   selectSchoolPickupPoint,
 } from "../utils/loadHomeData";
 import {
@@ -15,6 +14,7 @@ import useHomeLocation from "./useHomeLocation";
 import { nearestPickupPoint } from "../utils/homeLocation";
 import useCachedParty from "../../matching/hooks/useCachedParty";
 import { rideRequestIndex } from "../../matching/stores/rideRequestIndex";
+import { loadPickupContext } from "../../matching/utils/loadPickupContext";
 
 export default function useHomeData() {
   const { status, user, csrfToken } = useSessionStore();
@@ -69,6 +69,15 @@ export default function useHomeData() {
       try {
         const data = await loadCurrentRide(api, {
           knownRequests: rideRequestIndex.list(userId),
+          onUpdate: (data) => {
+            if (!controller.signal.aborted)
+              setRideState((previous) =>
+                previous?.userId === userId &&
+                previous.data?.party?.id === data.party.id
+                  ? previous
+                  : { userId, data },
+              );
+          },
         });
         if (!controller.signal.aborted) setRideState({ userId, data });
       } catch (error) {
@@ -96,19 +105,26 @@ export default function useHomeData() {
     if (!allowed) return;
     const controller = new AbortController();
     const api = createHomeApi(csrfToken, controller.signal);
-    api
-      .profile()
-      .then(async (profile) => {
-        if (profile.data?.user?.id !== userId)
-          throw new Error("프로필 정보를 확인할 수 없어요.");
-        const points = await loadHomePickupPoints(
-          api,
-          profile.data.user.universityId,
-        );
+    loadPickupContext(
+      api,
+      { id: userId, universityId: user?.universityId },
+      {
+        onProfile: (profile) => {
+          if (!controller.signal.aborted)
+            setBootstrap({
+              userId,
+              profile,
+              pickupPoints: [],
+              pickupLoading: true,
+            });
+        },
+      },
+    )
+      .then(({ profile, ...points }) => {
         if (controller.signal.aborted) return;
         setBootstrap({
           userId,
-          profile: profile.data,
+          profile,
           ...points,
         });
       })
@@ -179,35 +195,36 @@ export default function useHomeData() {
     status,
     user,
     allowed,
-    data: base?.profile
-      ? {
-          ...current?.data,
-          ...ride?.data,
-          isPreview: false,
-          profile: base.profile,
-          pickupPoint: pickupPoint ?? ride?.data?.party?.pickupPoint,
-          // 선택 중인 비교 조건과 다른 신청의 대기 인원을 섞지 않는다.
-          matchingSlots: current?.data?.matchingSlots?.filter(
-            () =>
-              !ride?.data?.rideRequest ||
-              (ride.data.rideRequest.pickupPointId === pickupPoint?.id &&
-                ride.data.rideRequest.destinationDongId ===
-                  current.data.travelOptions?.destinationDongId &&
-                ride.data.rideRequest.sameGenderOnly ===
-                  base.profile.sameGenderDefault),
-          ),
-          presentation: {
-            directionLabel:
-              ride?.data?.party?.districtName ??
-              ride?.data?.rideRequest?.districtName ??
-              current?.data?.travelOptions?.districtName,
-          },
-        }
-      : null,
+    data:
+      base?.profile || ride?.data
+        ? {
+            ...current?.data,
+            ...ride?.data,
+            isPreview: false,
+            profile: base?.profile,
+            pickupPoint: pickupPoint ?? ride?.data?.party?.pickupPoint,
+            // 선택 중인 비교 조건과 다른 신청의 대기 인원을 섞지 않는다.
+            matchingSlots: current?.data?.matchingSlots?.filter(
+              () =>
+                !ride?.data?.rideRequest ||
+                (ride.data.rideRequest.pickupPointId === pickupPoint?.id &&
+                  ride.data.rideRequest.destinationDongId ===
+                    current.data.travelOptions?.destinationDongId &&
+                  ride.data.rideRequest.sameGenderOnly ===
+                    base?.profile?.sameGenderDefault),
+            ),
+            presentation: {
+              directionLabel:
+                ride?.data?.party?.districtName ??
+                ride?.data?.rideRequest?.districtName ??
+                current?.data?.travelOptions?.districtName,
+            },
+          }
+        : null,
     error: base?.error ?? ride?.error ?? current?.error,
     pickupAvailability: base?.pickupAvailability,
     defaultDestinationLabel: base?.profile?.defaultDongName,
-    loading: allowed && !base,
+    loading: allowed && (!base || Boolean(base.pickupLoading)),
     refreshing: Boolean(pickupPoint && !current),
     pickupPoints,
     universityName: base?.profile?.user?.universityName ?? user?.universityName,

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import useSessionStore from "../../../shared/stores/sessionStore";
 import { createMatchingApi } from "../../matching/api/matchingApi";
 import { loadMatchingResult } from "../../matching/utils/partyFlow";
@@ -10,6 +10,7 @@ export default function useSettlementData(partyId, enabled = true) {
   const scope = `${user?.id}:${partyId}`;
   const [snapshot, setSnapshot] = useState(null);
   const [revision, setRevision] = useState(0);
+  const loadedScope = useRef(null);
   const refresh = useCallback(() => setRevision((value) => value + 1), []);
   const applyRoute = useCallback(
     (data) => {
@@ -37,10 +38,17 @@ export default function useSettlementData(partyId, enabled = true) {
         const data = await loadMatchingResult(api, partyId, {
           includeBanks: false,
           forceParty: true,
+          onUpdate: (data) => {
+            if (!controller.signal.aborted && loadedScope.current !== scope)
+              setSnapshot({ scope, data });
+          },
         });
         if (data.settlementError)
           throw new Error("정산 정보를 새로 불러오지 못했어요.");
-        if (!controller.signal.aborted) setSnapshot({ scope, data });
+        if (!controller.signal.aborted) {
+          loadedScope.current = scope;
+          setSnapshot({ scope, data });
+        }
       } catch (error) {
         if (controller.signal.aborted) return;
         setSnapshot((previous) =>
@@ -81,7 +89,7 @@ export default function useSettlementData(partyId, enabled = true) {
                 : current.data.party,
           }
         : null,
-    loading: enabled && !current,
+    loading: enabled && (!current || Boolean(current.data?.settlementLoading)),
     error: cached?.error ?? current?.error,
     refresh,
     applyRoute,

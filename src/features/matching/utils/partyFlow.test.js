@@ -22,6 +22,28 @@ const party = {
 };
 const now = Date.parse("2026-11-14T23:00:00+09:00");
 
+test("independent settlement request starts before party response finishes", async () => {
+  let resolveParty,
+    requested = false;
+  const pendingParty = new Promise((resolve) => {
+    resolveParty = resolve;
+  });
+  const done = loadMatchingResult(
+    {
+      party: () => pendingParty,
+      settlement: async () => {
+        requested = true;
+        return { data: { partyId: "401", items: [] } };
+      },
+    },
+    "401",
+    { includeBanks: false },
+  );
+  assert.equal(requested, true);
+  resolveParty({ data: party });
+  assert.equal((await done).settlement.partyId, "401");
+});
+
 test("matching party and settlement display before a slow bank list", async () => {
   let resolveBank, resolveSettlement, firstPaint, farePaint;
   const bank = new Promise((yes) => {

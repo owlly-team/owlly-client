@@ -25,6 +25,7 @@ import useLeaveParty from "../hooks/useLeaveParty";
 import { getChatRoomView, resolveChatRoom } from "../utils/chatRoomUtils";
 import { memberSettlementMock } from "../../settlement/mocks/memberSettlementMock";
 import useLiveRoom from "../hooks/useLiveRoom";
+import PageSkeleton from "../../../shared/components/PageSkeleton";
 import { getDisplayNow } from "../../../shared/utils/time";
 import {
   receiveMockPrepayments,
@@ -164,9 +165,12 @@ export default function ChatRoom({ csrfToken }) {
 
   if (live.loading && !previewRequested && !denied)
     return (
-      <p role="status" className="py-4">
-        채팅방 입장 권한을 확인하고 있어요.
-      </p>
+      <div className="flex flex-1 flex-col">
+        <div className="-mx-4">
+          <TopBar title="채팅방" onLeftClick={() => navigate("/home")} />
+        </div>
+        <PageSkeleton label="채팅방 입장 권한을 확인하고 있어요." />
+      </div>
     );
   if (!data)
     return (

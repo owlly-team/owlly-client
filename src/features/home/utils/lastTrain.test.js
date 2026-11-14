@@ -1,10 +1,44 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { toLastTrainView } from "./lastTrainView.js";
-import { loadLastTrain } from "./loadLastTrain.js";
+import { loadLastTrain, hasFreshTravelContext } from "./loadLastTrain.js";
 import { createBusAttempt, submitBusChoice } from "./busChoice.js";
 
 const now = Date.parse("2026-11-05T13:30:00Z");
+
+test("home travel response is reused for 15 seconds only for its own pickup and valid coordinates", async () => {
+  const source = {
+    pickupPoint: { id: "11" },
+    dropoff: { latitude: 37.33, longitude: 127.27 },
+    travelOptions: {
+      pickupPointId: "11",
+      destinationDongId: "105",
+      asOf: new Date(now).toISOString(),
+    },
+  };
+  assert.equal(hasFreshTravelContext(source, now + 14999), true);
+  assert.equal(await loadLastTrain({}, source, "101", now + 14999), source);
+  assert.equal(hasFreshTravelContext(source, now + 15000), false);
+  assert.equal(hasFreshTravelContext(source, now - 1), false);
+  assert.equal(
+    hasFreshTravelContext({ ...source, pickupPoint: { id: "other" } }, now),
+    false,
+  );
+  let calls = 0;
+  const refreshed = await loadLastTrain(
+    {
+      travelOptions: async () => {
+        calls++;
+        return { data: { destinationDongId: "105" } };
+      },
+    },
+    source,
+    "101",
+    now + 15000,
+  );
+  assert.equal(calls, 1);
+  assert.notEqual(refreshed.travelOptions, source.travelOptions);
+});
 const context = {
   pickupPoint: { id: "11", name: "단국대 정문", universityId: "1" },
   dropoff: { latitude: 37.33, longitude: 127.27 },
