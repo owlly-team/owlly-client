@@ -1,11 +1,11 @@
 export const ACTION_OPTIONS = [
   {
-    value: "shuttle",
+    value: "SHUTTLE_EXTENSION",
     title: "셔틀 연장 검토",
     description: "학교가 직접 할 수 있어요",
   },
   {
-    value: "city",
+    value: "CITY_PROPOSAL",
     title: "용인시에 노선 건의",
     description: "학교 밖 구간이라 시의 판단이 필요해요",
   },
@@ -45,7 +45,7 @@ export const routeCandidates = [
         value: "일 312회",
       },
     ],
-    action: "shuttle",
+    action: "SHUTTLE_EXTENSION",
     supply: "N1 하루 1회",
   },
   {
@@ -76,7 +76,7 @@ export const routeCandidates = [
         value: "일 1,210명",
       },
     ],
-    action: "city",
+    action: "CITY_PROPOSAL",
     supply: "없음",
   },
   {
@@ -102,7 +102,7 @@ export const routeCandidates = [
         value: "일 980명",
       },
     ],
-    action: "city",
+    action: "CITY_PROPOSAL",
     supply: "없음",
   },
   {
@@ -123,7 +123,7 @@ export const routeCandidates = [
       { title: "매칭 실패", subtitle: "서비스 귀가 기록", value: "9건" },
       { title: "혼자 택시 선택", subtitle: "서비스 귀가 기록", value: "11건" },
     ],
-    action: "city",
+    action: "CITY_PROPOSAL",
     supply: "1101N 평일 2회",
   },
 ];

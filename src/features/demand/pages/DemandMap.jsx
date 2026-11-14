@@ -61,7 +61,7 @@ export default function DemandMap() {
   useEffect(() => {
     if (!hasApiBaseUrl) return;
     fetchDemandCandidates({ candidateOnly: true, limit: 5 })
-      .then((candidates) => setRoutes(candidates.map(toRouteSummary)))
+      .then(({ data: candidates }) => setRoutes(candidates.map(toRouteSummary)))
       .catch(() => {});
   }, []);
 
