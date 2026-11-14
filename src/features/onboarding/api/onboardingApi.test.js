@@ -61,12 +61,12 @@ test("live authentication POSTs forward a restored session's CSRF token only in 
   }
 });
 
-test("mock onboarding only performs the verification and registration actions explicitly requested", async () => {
+test("production mock onboarding only performs the verification and registration actions explicitly requested", async () => {
   const server = await createServer({
     server: { middlewareMode: true, hmr: false },
     appType: "custom",
     define: {
-      "import.meta.env.DEV": "true",
+      "import.meta.env.DEV": "false",
       "import.meta.env.VITE_API_BASE_URL": '""',
     },
   });
