@@ -16,6 +16,7 @@ import Start from "../features/onboarding/pages/Start";
 import SchoolVerification from "../features/onboarding/pages/SchoolVerification";
 import PermissionNotice from "../features/onboarding/pages/PermissionNotice";
 import Profile from "../features/onboarding/pages/Profile";
+import DropoffLocation from "../features/onboarding/pages/DropoffLocation";
 import MatchNotification from "../features/onboarding/pages/MatchNotification";
 import StartTime from "../features/matching/pages/StartTime";
 import CarpoolRegistration from "../features/matching/pages/CarpoolRegistration";
@@ -56,6 +57,10 @@ export default function AppRouter() {
           />
           <Route path="onboarding/permissions" element={<PermissionNotice />} />
           <Route path="onboarding/profile" element={<Profile />} />
+          <Route
+            path="onboarding/dropoff-location"
+            element={<DropoffLocation />}
+          />
           <Route
             path="onboarding/match-notification"
             element={<MatchNotification />}
