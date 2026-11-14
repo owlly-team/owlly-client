@@ -13,6 +13,7 @@ import { getMockProfile } from "../../onboarding/mocks/onboardingMockSession";
 import useHome from "../hooks/useHome";
 import useHomeData from "../hooks/useHomeData";
 import Button from "../../../shared/components/Button";
+import PageSkeleton from "../../../shared/components/PageSkeleton";
 import HomeRideProgress from "../components/HomeRideProgress";
 import useHomeRideRoom from "../hooks/useHomeRideRoom";
 import {
@@ -61,11 +62,7 @@ function LiveHome() {
   const pickupDialog = useRef(null);
   const pickupTitleId = useId();
   if (home.status === "loading")
-    return (
-      <p role="status" className="py-6">
-        로그인 상태를 확인하고 있어요.
-      </p>
-    );
+    return <PageSkeleton label="로그인 상태를 확인하고 있어요." />;
   if (home.status === "guest")
     return (
       <div className="flex flex-col gap-4 py-6">
@@ -84,6 +81,7 @@ function LiveHome() {
       <HomeContent
         data={home.data ?? { isPreview: false }}
         departureLabel={home.departureLabel}
+        comparisonLoading={home.loading || home.refreshing}
         onChoosePickup={() => pickupDialog.current?.showModal()}
         statusSlot={
           <>
@@ -188,6 +186,7 @@ function HomeContent({
   onChoosePickup,
   departureLabel,
   statusSlot,
+  comparisonLoading = false,
 }) {
   const { state } = useLocation();
   const [notice, setNotice] = useState("");
@@ -283,6 +282,11 @@ function HomeContent({
           {currentData.slotsError}
         </p>
       )}
+      {currentData.slotsLoading && !isRideInProgress && (
+        <p role="status" className="text-label2 text-label-neutral mt-3">
+          동승 출발 시간과 대기 인원을 확인하고 있어요.
+        </p>
+      )}
       {!isRideInProgress && currentData.travelOptions?.warnings?.length > 0 && (
         <p role="status" className="text-label2 text-label-neutral mt-3">
           일부 교통 정보가 부족해요. 요금과 시간은 추정값이에요.
@@ -311,7 +315,7 @@ function HomeContent({
           }
         />
       )}
-      {!isRideInProgress && (
+      {!isRideInProgress && !comparisonLoading && (
         <div className="mt-5">
           {lastTransit && (
             <LastDepartureCard {...lastTransit} available={transitAvailable} />
@@ -328,7 +332,10 @@ function HomeContent({
           확정하지 않으면 막차를 타도 돼요.
         </p>
       )}
-      {showTransportOptions && (
+      {showTransportOptions && comparisonLoading && (
+        <PageSkeleton label="귀가 방법을 불러오고 있어요." />
+      )}
+      {showTransportOptions && !comparisonLoading && (
         <div className="mt-5 flex flex-col gap-2">
           <h2 className="text-heading2 mb-1.4 font-bold">귀가 방법 비교</h2>
           {transportOptions.map(({ id, ...option }) => (

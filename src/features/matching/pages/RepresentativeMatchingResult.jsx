@@ -11,6 +11,7 @@ export default function RepresentativeMatchingResult({
   onBack,
   retry,
   banks = [],
+  banksLoading = false,
   onOpenChat,
   isPreview = false,
 }) {
@@ -41,6 +42,7 @@ export default function RepresentativeMatchingResult({
       <RepresentativeAccountForm
         roomId={party.roomId}
         banks={banks}
+        banksLoading={banksLoading}
         onOpenChat={onOpenChat}
         isPreview={isPreview}
       />

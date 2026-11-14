@@ -21,6 +21,7 @@ export default function useMatchingFailure(
   const operation = useRef(null);
   const keys = useRef({});
   const revision = useRef(0);
+  const loadedScope = useRef(null);
   const current = snapshot?.scope === scope ? snapshot : null;
   useEffect(() => () => operation.current?.abort(), [scope]);
   useEffect(() => {
@@ -42,13 +43,27 @@ export default function useMatchingFailure(
           createMatchingApi(csrfToken, controller.signal),
           requestId,
           selection,
+          Date.now(),
+          {
+            onUpdate: (data) => {
+              if (
+                !controller.signal.aborted &&
+                !operation.current &&
+                version === revision.current &&
+                loadedScope.current !== scope
+              )
+                setSnapshot({ scope, data });
+            },
+          },
         );
         if (
           !controller.signal.aborted &&
           !operation.current &&
           version === revision.current
-        )
+        ) {
+          loadedScope.current = scope;
           setSnapshot({ scope, data });
+        }
       } catch (error) {
         if (controller.signal.aborted || version !== revision.current) return;
         setSnapshot({ scope, error });

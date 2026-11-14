@@ -28,6 +28,7 @@ export default function useStartTime(selection) {
   const destinationDongId = selection?.destination?.id;
   const sameGenderOnly = selection?.sameGenderOnly;
   const key = JSON.stringify([
+    user?.id,
     pickupPointId,
     destinationDongId,
     sameGenderOnly,

@@ -1,3 +1,5 @@
+import { referenceCache, referenceTtl } from "./referenceCache";
+
 const configuredBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? "").trim();
 // 개발 중에는 Vite가 같은 출처의 /api를 실제 서버로 중계한다.
 // 외부 IP로 직접 요청하면 SameSite=Lax 세션 쿠키가 전달되지 않는다.
@@ -9,7 +11,31 @@ const baseUrl =
 export const hasApiBaseUrl = Boolean(configuredBaseUrl);
 export const useMockApi = !hasApiBaseUrl;
 
-export async function apiResponse(
+export async function apiResponse(path, options = {}) {
+  const method = options.method ?? "GET";
+  const ttl = referenceTtl(path);
+  if (method === "GET" && ttl != null && options.cache !== "no-store")
+    return referenceCache.load(
+      path,
+      (signal) => fetchApiResponse(path, { ...options, signal }),
+      {
+        signal: options.signal,
+        ttl,
+        force: options.cache === "reload",
+      },
+    );
+  // 변경 전 진행 중이던 프로필 GET과 변경 후 재조회가 섞이지 않도록 한다.
+  if (method !== "GET" && path === "/me/profile")
+    referenceCache.invalidate(path);
+  try {
+    return await fetchApiResponse(path, options);
+  } finally {
+    if (method !== "GET" && path === "/me/profile")
+      referenceCache.invalidate(path);
+  }
+}
+
+async function fetchApiResponse(
   path,
   { method = "GET", body, headers, signal, cache } = {},
 ) {
@@ -51,15 +77,8 @@ export function apiGet(path) {
 // If-Match 재수정에 필요한 ETag까지 함께 봐야 하는 호출용. apiGet은 간단한
 // 조회용으로 그대로 두고, 이 함수만 헤더를 들여다본다.
 export async function apiGetWithEtag(path) {
-  const response = await fetch(`${baseUrl}/api/v1${path}`, { credentials: "include" });
-  const payload = await response.json().catch(() => null);
-  if (!response.ok) {
-    const error = new Error(payload?.error?.message ?? "요청에 실패했어요.");
-    error.code = payload?.error?.code;
-    error.status = response.status;
-    throw error;
-  }
-  return { data: payload?.data, etag: response.headers.get("ETag") };
+  const { data, etag } = await apiResponse(path);
+  return { data, etag };
 }
 
 export function apiPost(path, body, { headers } = {}) {

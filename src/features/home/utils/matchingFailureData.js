@@ -36,6 +36,7 @@ export async function loadMatchingFailure(
   requestId,
   previousSelection,
   now = Date.now(),
+  { onUpdate } = {},
 ) {
   const { data: rideRequest } = await api.rideRequest(requestId);
   if (rideRequest?.id !== String(requestId) || !rideRequest.journeyId)
@@ -43,6 +44,18 @@ export async function loadMatchingFailure(
   const journey = await findMyJourney(api, rideRequest.journeyId);
   const context = { isPreview: false, journey, rideRequest };
   if (!canResolveFailure(context)) return context;
+  onUpdate?.({
+    ...context,
+    pickupPoint: {
+      id: rideRequest.pickupPointId,
+      name:
+        rideRequest.pickupPointName ?? journey.pickupPointName ?? "출발 거점",
+    },
+    selectionLoading: true,
+    travelLoading: true,
+    slotsLoading: true,
+    warnings: [],
+  });
   const warnings = [];
   async function optional(load, message) {
     try {
@@ -77,7 +90,9 @@ export async function loadMatchingFailure(
           isPoint(profile.defaultDropoff)
         ? profile.defaultDropoff
         : null;
-  const usingDefaultDropoff = Boolean(point && point === profile?.defaultDropoff);
+  const usingDefaultDropoff = Boolean(
+    point && point === profile?.defaultDropoff,
+  );
   const destination = {
     id: rideRequest.destinationDongId,
     name: rideRequest.destinationDongName ?? journey.destinationDongName,
@@ -94,61 +109,86 @@ export async function loadMatchingFailure(
     universityId: journey.universityId,
     universityName: journey.universityName,
   };
-  const [travelOptions, pages] = await Promise.all([
-    point
-      ? optional(async () => {
-          const result = await api.travelOptions({
-            pickupPointId: pickupPoint.id,
-            dropoff: point,
-            departureAt: new Date(now).toISOString(),
-          });
-          if (result.data?.destinationDongId !== destination.id)
-            throw new Error("하차 위치가 달라졌어요. 다시 선택해 주세요.");
-          return result;
-        }, "최신 교통 정보를 불러오지 못했어요. 잠시 후 다시 확인해 주세요.")
-      : null,
-    Promise.all(
-      getSlotDates(new Date(now)).map((date) =>
-        optional(
-          () =>
-            api.slots({
-              pickupPointId: pickupPoint.id,
-              destinationDongId: destination.id,
-              sameGenderOnly: String(rideRequest.sameGenderOnly),
-              date,
-            }),
-          "다음 출발 시간대를 불러오지 못했어요.",
-        ),
-      ),
-    ),
-  ]);
-  if (pages.some((page) => page != null && !Array.isArray(page)))
-    throw new Error("출발 시간대 응답을 확인할 수 없어요.");
-  const matchingSlots = applySlotDeadlines(
-    upcomingSlots(
-      pages.flatMap((page) => page ?? []),
-      now,
-    ),
-    now,
-  );
-  return {
+  let result = {
     ...context,
     pickupPoint,
     selection,
-    travelOptions,
-    matchingSlots,
-    nextSlot: matchingSlots.find(
-      (slot) =>
-        slot.registrationAllowed &&
-        Date.parse(slot.departureAt) > Date.parse(rideRequest.departureAt),
-    ),
+    travelOptions: null,
+    matchingSlots: [],
+    nextSlot: null,
     presentation: {
       directionLabel: rideRequest.districtName ?? journey.destinationDongName,
     },
     needsDestinationSelection: !point,
     usingDefaultDropoff,
     warnings: [...new Set(warnings)],
+    selectionLoading: false,
+    travelLoading: Boolean(point),
+    slotsLoading: true,
   };
+  let active = true;
+  const publish = (fields) => {
+    if (!active) return;
+    result = { ...result, ...fields, warnings: [...new Set(warnings)] };
+    onUpdate?.(result);
+  };
+  onUpdate?.(result);
+  try {
+    await Promise.all([
+      (point
+        ? optional(async () => {
+            const result = await api.travelOptions({
+              pickupPointId: pickupPoint.id,
+              dropoff: point,
+              departureAt: new Date(now).toISOString(),
+            });
+            if (result.data?.destinationDongId !== destination.id)
+              throw new Error("하차 위치가 달라졌어요. 다시 선택해 주세요.");
+            return result;
+          }, "최신 교통 정보를 불러오지 못했어요. 잠시 후 다시 확인해 주세요.")
+        : Promise.resolve(null)
+      ).then((travelOptions) =>
+        publish({ travelOptions, travelLoading: false }),
+      ),
+      Promise.all(
+        getSlotDates(new Date(now)).map((date) =>
+          optional(
+            () =>
+              api.slots({
+                pickupPointId: pickupPoint.id,
+                destinationDongId: destination.id,
+                sameGenderOnly: String(rideRequest.sameGenderOnly),
+                date,
+              }),
+            "다음 출발 시간대를 불러오지 못했어요.",
+          ),
+        ),
+      ).then((pages) => {
+        if (pages.some((page) => page != null && !Array.isArray(page)))
+          throw new Error("출발 시간대 응답을 확인할 수 없어요.");
+        const matchingSlots = applySlotDeadlines(
+          upcomingSlots(
+            pages.flatMap((page) => page ?? []),
+            now,
+          ),
+          now,
+        );
+        publish({
+          matchingSlots,
+          slotsLoading: false,
+          nextSlot: matchingSlots.find(
+            (slot) =>
+              slot.registrationAllowed &&
+              Date.parse(slot.departureAt) >
+                Date.parse(rideRequest.departureAt),
+          ),
+        });
+      }),
+    ]);
+    return result;
+  } finally {
+    active = false;
+  }
 }
 
 export async function recordJourneyChoice(api, data, mode, key) {

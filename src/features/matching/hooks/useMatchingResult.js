@@ -22,6 +22,7 @@ export default function useMatchingResult(partyId, preview, isPreview = false) {
   const operation = useRef(null);
   const version = useRef(0);
   const keys = useRef({});
+  const loadedScope = useRef(null);
   const previewData =
     updated?.source === source ? { ...source, party: updated.party } : source;
   const current = snapshot?.scope === scope ? snapshot : null;
@@ -62,10 +63,22 @@ export default function useMatchingResult(partyId, preview, isPreview = false) {
         const result = await loadMatchingResult(
           createMatchingApi(csrfToken, controller.signal),
           partyId,
-          { forceParty: attempt > 0 },
+          {
+            forceParty: attempt > 0,
+            onUpdate: (data) => {
+              if (
+                !controller.signal.aborted &&
+                requestVersion === version.current &&
+                loadedScope.current !== scope
+              )
+                setSnapshot({ scope, data });
+            },
+          },
         );
-        if (!controller.signal.aborted && requestVersion === version.current)
+        if (!controller.signal.aborted && requestVersion === version.current) {
+          loadedScope.current = scope;
           setSnapshot({ scope, data: result });
+        }
       } catch (error) {
         if (controller.signal.aborted) return;
         if (requestVersion === version.current)
