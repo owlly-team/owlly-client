@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef } from "react";
 import ChatBubble from "./ChatBubble";
 import ChatInput from "./ChatInput";
-import { toChatBubble } from "../hooks/useChatMessages";
+import { toChatBubble } from "../utils/chatMessageUtils";
 
 export default function RoomConversation({
   room,

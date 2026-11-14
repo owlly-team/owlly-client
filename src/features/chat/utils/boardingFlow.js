@@ -53,7 +53,8 @@ export async function recordBoarding(
   if (
     updated.members.find((member) => member.memberId === party.myMemberId)
       ?.boardingStatus !== status ||
-    (status === "BOARDED" && updated.status !== "RIDING")
+    (status === "BOARDED" &&
+      !["RIDING", "SETTLING", "COMPLETED"].includes(updated.status))
   )
     throw new Error("탑승 기록 결과를 확인할 수 없어요. 다시 확인해 주세요.");
   return { party: updated, etag: response.etag };

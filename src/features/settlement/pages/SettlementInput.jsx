@@ -21,7 +21,11 @@ export default function SettlementInput({
     data: settlement,
     party,
     isPreview,
-  } = resolveRepresentativeSettlement({ partyId, state });
+  } = resolveRepresentativeSettlement({
+    partyId,
+    state,
+    allowPreview: import.meta.env.DEV,
+  });
   const validContext = Boolean(settlement);
   const initialAmount =
     settlement?.actualTotalWon ?? settlement?.estimatedTotalWon;

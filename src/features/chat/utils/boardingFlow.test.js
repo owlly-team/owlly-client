@@ -82,3 +82,45 @@ test("다른 팟·멤버·기록되지 않은 응답을 성공으로 처리하�
       ),
     );
 });
+
+test("탑승 기록 재시도 응답이 정산 단계로 진행됐어도 본인 BOARDED를 반영한다", async () => {
+  for (const status of ["SETTLING", "COMPLETED"]) {
+    const updated = {
+      ...party,
+      status,
+      allowedActions: [],
+      members: [{ ...party.members[0], boardingStatus: "BOARDED" }],
+    };
+    const result = await recordBoarding(
+      { confirmBoarding: async () => ({ data: updated, etag: '"v3"' }) },
+      { party },
+      "BOARDED",
+      "retry-key",
+      departure,
+    );
+    assert.equal(result.party, updated);
+    assert.equal(result.etag, '"v3"');
+  }
+});
+
+test("BOARDED 기록이 있어도 탑승 이전이나 취소 상태 응답은 허용하지 않는다", async () => {
+  for (const status of ["PREPAYING", "READY", "CANCELLED"]) {
+    await assert.rejects(
+      recordBoarding(
+        {
+          confirmBoarding: async () => ({
+            data: {
+              ...party,
+              status,
+              members: [{ ...party.members[0], boardingStatus: "BOARDED" }],
+            },
+          }),
+        },
+        { party },
+        "BOARDED",
+        "key",
+        departure,
+      ),
+    );
+  }
+});

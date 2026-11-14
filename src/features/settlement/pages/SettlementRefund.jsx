@@ -21,6 +21,7 @@ export default function SettlementRefund() {
   const live = useSettlementData(partyId, !isPreview);
   const { data, party } = resolveRepresentativeSettlement({
     partyId,
+    allowPreview: import.meta.env.DEV,
     state: isPreview
       ? state
       : {
