@@ -51,7 +51,13 @@ export default function useLeaveParty({
       setError(
         failure.status === 412
           ? "팟 정보가 변경됐어요. 최신 정보를 확인한 뒤 다시 시도해 주세요."
-          : failure.message,
+          : failure.code === "CANCELLATION_DEADLINE_PASSED"
+            ? "출발 15분 전이 지나 지금은 나갈 수 없어요."
+            : failure.code === "FUNDS_ALREADY_IN_FLIGHT"
+              ? "주고받은 송금이 있어 자동으로 나갈 수 없어요."
+              : failure.code === "POLICY_NOT_CONFIGURED"
+                ? "지금은 팟 나가기를 처리할 수 없어요. 잠시 후 다시 시도해 주세요."
+                : failure.message,
       );
       // 확정적으로 거절된 요청은 새 키로 재시도하고, 응답 손실 시 키를 유지한다.
       if (

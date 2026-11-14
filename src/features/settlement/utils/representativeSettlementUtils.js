@@ -1,19 +1,29 @@
 import { representativeSettlementMock } from "../mocks/memberSettlementMock.js";
 import { getSettlementIdentity, isFinalSettlement } from "./settlementUtils.js";
 
-export function resolveRepresentativeSettlement({ partyId, state }) {
+export function resolveRepresentativeSettlement({
+  partyId,
+  state,
+  allowPreview = false,
+}) {
   const party = state?.matchingResult?.party;
   const supplied = state?.settlement ?? state?.matchingResult?.settlement;
   const preview =
+    allowPreview &&
+    state?.isPreview === true &&
     supplied == null &&
-    partyId === "401" &&
-    (!party || state?.isPreview === true);
-  const data = preview ? representativeSettlementMock : supplied;
+    partyId === "401";
+  const data =
+    state?.isPreview === true && !allowPreview
+      ? null
+      : preview
+        ? representativeSettlementMock
+        : supplied;
   const identity = getSettlementIdentity(data, partyId, party);
   return {
     data: identity?.mine.isRepresentative ? data : null,
     party,
-    isPreview: preview || state?.isPreview === true,
+    isPreview: allowPreview && state?.isPreview === true,
   };
 }
 

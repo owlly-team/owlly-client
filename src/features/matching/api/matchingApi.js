@@ -69,9 +69,12 @@ export function createMatchingApi(csrfToken, signal) {
       }),
     party: (id, options) => fetchParty(id, { signal, ...options }),
     settlement: (id) =>
-      request(`/parties/${encodeURIComponent(id)}/settlement`),
+      request(`/parties/${encodeURIComponent(id)}/settlement`, {
+        cache: "no-store",
+      }),
     banks: () => request("/banks"),
-    room: (id) => request(`/parties/${encodeURIComponent(id)}/room`),
+    room: (id) =>
+      request(`/parties/${encodeURIComponent(id)}/room`, { cache: "no-store" }),
     confirmParty: (id, etag, key) =>
       changeParty(id, () =>
         post(`/parties/${encodeURIComponent(id)}/confirm`, undefined, key, {
@@ -83,6 +86,19 @@ export function createMatchingApi(csrfToken, signal) {
         post(`/parties/${encodeURIComponent(id)}/leave`, undefined, key, {
           "If-Match": etag,
         }),
+      ),
+    confirmBoarding: (id, status, key) =>
+      changeParty(id, () =>
+        post(`/parties/${encodeURIComponent(id)}/boarding`, { status }, key),
+      ),
+    confirmTaxiCall: (id, etag, key) =>
+      changeParty(id, () =>
+        post(
+          `/parties/${encodeURIComponent(id)}/taxi-call-confirmation`,
+          undefined,
+          key,
+          { "If-Match": etag },
+        ),
       ),
     registerAccount: (roomId, purpose, body, key) =>
       request(`/rooms/${encodeURIComponent(roomId)}/accounts/${purpose}`, {

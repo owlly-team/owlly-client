@@ -168,3 +168,41 @@ test("대표 반환 합계는 응답의 refundDueWon을 사용하고 계좌는 �
     null,
   );
 });
+
+test("대표 정산 목업은 개발 환경의 명시적 미리보기에서만 사용한다", () => {
+  for (const options of [
+    {},
+    { allowPreview: true },
+    { state: { isPreview: true } },
+    { state: { isPreview: false }, allowPreview: true },
+    { state: { isPreview: true, settlement: representativeSettlementMock } },
+  ]) {
+    const result = resolveRepresentativeSettlement({
+      partyId: "401",
+      ...options,
+    });
+    assert.equal(result.data, null);
+    assert.equal(result.isPreview, false);
+  }
+  const preview = resolveRepresentativeSettlement({
+    partyId: "401",
+    state: { isPreview: true },
+    allowPreview: true,
+  });
+  assert.equal(preview.data, representativeSettlementMock);
+  assert.equal(preview.isPreview, true);
+  assert.equal(
+    resolveRepresentativeSettlement({
+      partyId: "999",
+      state: { isPreview: true },
+      allowPreview: true,
+    }).data,
+    null,
+  );
+  const live = resolveRepresentativeSettlement({
+    partyId: "401",
+    state: { isPreview: false, settlement: representativeSettlementMock },
+  });
+  assert.equal(live.data, representativeSettlementMock);
+  assert.equal(live.isPreview, false);
+});
