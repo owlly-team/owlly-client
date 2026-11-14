@@ -36,9 +36,10 @@ function createPickupMarker(point, { selected, isNearest, onSelect }) {
 
 //지도 표시와 이벤트만 담당. 선택값과 가까운 거점 계산은 usePickupLocation에서 관리
 export default function PickupMap({
-  points, selectedId, nearestId, destinationMode, destination, currentPosition, onSelect, onDestination,
+  points, selectedId, nearestId, destinationMode, destination, currentPosition, onSelect, onDestination, initialCenter,
 }) {
   const container = useRef(null);
+  const startingCenter = useRef(initialCenter);
   const [map, setMap] = useState(null);
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
@@ -51,7 +52,9 @@ export default function PickupMap({
     loadKakaoMaps().then((maps) => {
       if (!active) return;
       const instance = new maps.Map(container.current, {
-        center: new maps.LatLng(37.5665, 126.978), level: 5,
+        center: isPoint(startingCenter.current)
+          ? new maps.LatLng(startingCenter.current.latitude, startingCenter.current.longitude)
+          : new maps.LatLng(37.5665, 126.978), level: 5,
       });
       observer = new ResizeObserver(() => instance.relayout());
       observer.observe(container.current);
