@@ -24,6 +24,20 @@ export function createHomeApi(csrfToken, signal) {
         signal,
         headers: { "X-CSRF-Token": csrfToken },
       }),
+    createJourney: (body, key) =>
+      apiResponse("/journeys", {
+        method: "POST",
+        body,
+        signal,
+        headers: { "X-CSRF-Token": csrfToken, "Idempotency-Key": key },
+      }),
+    chooseJourney: (id, mode, key) =>
+      apiResponse(`/journeys/${encodeURIComponent(id)}/choice`, {
+        method: "PUT",
+        body: { mode },
+        signal,
+        headers: { "X-CSRF-Token": csrfToken, "Idempotency-Key": key },
+      }),
     slots: (query) => get(`/matching-slots?${new URLSearchParams(query)}`),
   };
 }

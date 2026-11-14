@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useBottomTabNavigation from "../../../shared/hooks/useBottomTabNavigation";
+import useSessionStore from "../../../shared/stores/sessionStore";
 import iconBus from "../../../assets/icons/transport-bus.svg";
 import iconCarpool from "../../../assets/icons/transport-carpool.svg";
 import iconTaxi from "../../../assets/icons/transport-taxi.svg";
@@ -65,6 +66,22 @@ export default function useHome(data, { onPendingFeature } = {}) {
 
   //귀가 방법 카드 눌렀을 때 처리
   function handleTransportSelect(id) {
+    if (id === "bus") {
+      navigate("/train", {
+        state: {
+          isPreview: data.isPreview !== false,
+          userId: useSessionStore.getState().user?.id,
+          travelContext: {
+            pickupPoint: data.pickupPoint,
+            dropoff: data.profile?.defaultDropoff,
+            travelOptions,
+            journey: data.journey,
+            sameGenderDefault: data.profile?.sameGenderDefault,
+          },
+        },
+      });
+      return;
+    }
     if (data.isPreview === false) return onPendingFeature?.();
     if (id === "carpool") {
       handleStartRegistration();
