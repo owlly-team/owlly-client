@@ -99,6 +99,7 @@ export default function Profile({ data = defaultProfileData }) {
         state?.defaultDropoff ??
         (mock ? FALLBACK_DROPOFF : await getDropoffPoint());
       const session = await registerStudent({
+        csrfToken: useSessionStore.getState().csrfToken,
         verificationToken: state.verificationToken,
         email: state.email,
         profile: {
