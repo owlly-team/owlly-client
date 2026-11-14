@@ -97,10 +97,10 @@ export default function MatchingResult({ banks, onOpenChat }) {
     transfers,
     onLeft: (party) => {
       if (mockResult) useMockJourneyStore.getState().cancel();
-      navigate("/", { replace: true, state: { leftParty: party } });
+      navigate("/home", { replace: true, state: { leftParty: party } });
     },
   });
-  const goHome = () => navigate("/");
+  const goHome = () => navigate("/home");
   const openChat = async (roomId, account, matchingResult = data) => {
     if (!isPreview) {
       const context = await result.openRoom(matchingResult, roomId);
@@ -206,7 +206,7 @@ export default function MatchingResult({ banks, onOpenChat }) {
       const party = await result.leave();
       if (party) {
         leaveDialog.current?.close();
-        navigate("/", { replace: true });
+        navigate("/home", { replace: true });
       }
     } catch (failure) {
       setActionError(failure.message);

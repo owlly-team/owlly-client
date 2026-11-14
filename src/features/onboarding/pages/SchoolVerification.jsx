@@ -73,7 +73,7 @@ export default function SchoolVerification() {
           verificationToken: result.verificationToken,
         });
         useSessionStore.getState().setSession(session);
-        navigate("/");
+        navigate("/home");
       } catch (loginError) {
         if (loginError.code !== "ACCOUNT_NOT_FOUND") throw loginError;
         navigate("/onboarding/permissions", {

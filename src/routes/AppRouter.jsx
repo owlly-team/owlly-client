@@ -29,73 +29,70 @@ import SettlementRefund from "../features/settlement/pages/SettlementRefund";
 import MemberSettlement from "../features/settlement/pages/MemberSettlement";
 
 export default function AppRouter() {
-  const sessionStatus = useSessionStore((store) => store.status);
   useEffect(() => {
     useSessionStore.getState().hydrate();
   }, []);
 
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route
-            index
-            element={sessionStatus === "authenticated" ? <Home /> : <Start />}
-          />
-          <Route path="matching/failed" element={<MatchingFailure />} />
-          <Route path="train" element={<LastTrain />} />
-          <Route path="solo-taxi" element={<SoloTaxi />} />
-          <Route path="admin/login" element={<AdminLogin />} />
-          <Route path="admin" element={<DemandMapAdmin />} />
-          <Route
-            path="admin/routes/:routeId"
-            element={<RouteCandidateDetail />}
-          />
-          <Route path="admin/report" element={<ReportExport />} />
-          <Route path="my-info" element={<MyInfo />} />
-          <Route path="demand-map" element={<DemandMap />} />
-          <Route path="onboarding" element={<Start />} />
-          <Route
-            path="onboarding/school-verification"
-            element={<SchoolVerification />}
-          />
-          <Route path="onboarding/permissions" element={<PermissionNotice />} />
-          <Route path="onboarding/profile" element={<Profile />} />
-          <Route
-            path="onboarding/dropoff-location"
-            element={<DropoffLocation />}
-          />
-          <Route
-            path="onboarding/match-notification"
-            element={<MatchNotification />}
-          />
-          <Route path="pickup" element={<PickupLocation />} />
-          <Route path="start-time" element={<StartTime />} />
-          <Route
-            path="carpool-registration"
-            element={<CarpoolRegistration />}
-          />
-          <Route path="matching/result/:partyId" element={<MatchingResult />} />
-          <Route path="parties/:partyId/room" element={<ChatRoom />} />
-          <Route path="rooms/:roomId" element={<ChatRoom />} />
-          <Route
-            path="parties/:partyId/room/report"
-            element={<ReportMember />}
-          />
-          <Route
-            path="parties/:partyId/settlement"
-            element={<SettlementInput />}
-          />
-          <Route
-            path="parties/:partyId/settlement/refund"
-            element={<SettlementRefund />}
-          />
-          <Route
-            path="parties/:partyId/settlement/result"
-            element={<MemberSettlement />}
-          />
-        </Route>
-      </Routes>
+      <AppRoutes />
     </BrowserRouter>
+  );
+}
+
+export function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/" element={<Layout />}>
+        <Route index element={<Start />} />
+        <Route path="home" element={<Home />} />
+        <Route path="matching/failed" element={<MatchingFailure />} />
+        <Route path="train" element={<LastTrain />} />
+        <Route path="solo-taxi" element={<SoloTaxi />} />
+        <Route path="admin/login" element={<AdminLogin />} />
+        <Route path="admin" element={<DemandMapAdmin />} />
+        <Route
+          path="admin/routes/:routeId"
+          element={<RouteCandidateDetail />}
+        />
+        <Route path="admin/report" element={<ReportExport />} />
+        <Route path="my-info" element={<MyInfo />} />
+        <Route path="demand-map" element={<DemandMap />} />
+        <Route path="onboarding" element={<Start />} />
+        <Route
+          path="onboarding/school-verification"
+          element={<SchoolVerification />}
+        />
+        <Route path="onboarding/permissions" element={<PermissionNotice />} />
+        <Route path="onboarding/profile" element={<Profile />} />
+        <Route
+          path="onboarding/dropoff-location"
+          element={<DropoffLocation />}
+        />
+        <Route
+          path="onboarding/match-notification"
+          element={<MatchNotification />}
+        />
+        <Route path="pickup" element={<PickupLocation />} />
+        <Route path="start-time" element={<StartTime />} />
+        <Route path="carpool-registration" element={<CarpoolRegistration />} />
+        <Route path="matching/result/:partyId" element={<MatchingResult />} />
+        <Route path="parties/:partyId/room" element={<ChatRoom />} />
+        <Route path="rooms/:roomId" element={<ChatRoom />} />
+        <Route path="parties/:partyId/room/report" element={<ReportMember />} />
+        <Route
+          path="parties/:partyId/settlement"
+          element={<SettlementInput />}
+        />
+        <Route
+          path="parties/:partyId/settlement/refund"
+          element={<SettlementRefund />}
+        />
+        <Route
+          path="parties/:partyId/settlement/result"
+          element={<MemberSettlement />}
+        />
+      </Route>
+    </Routes>
   );
 }

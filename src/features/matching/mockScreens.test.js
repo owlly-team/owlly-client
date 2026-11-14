@@ -81,7 +81,7 @@ test("mock screens render both roles through registration, confirmation, prepay 
     }
     for (const role of ["representative", "member"]) {
       useMockJourneyStore.setState({ journey: createMockJourney(role) });
-      assert.match(render(Home, "/"), /귀가 방법 비교/);
+      assert.match(render(Home, "/home"), /귀가 방법 비교/);
       const pickupPoint =
         useMockJourneyStore.getState().journey.home.pickupPoint;
       const selection = {
@@ -97,10 +97,10 @@ test("mock screens render both roles through registration, confirmation, prepay 
           ),
           selection,
         );
-      assert.match(render(Home, "/"), /매칭 대기 중/);
+      assert.match(render(Home, "/home"), /매칭 대기 중/);
       assert.match(render(Registration, "/carpool-registration"), /등록 취소/);
       useMockJourneyStore.getState().match();
-      assert.match(render(Home, "/"), /매칭됐어요/);
+      assert.match(render(Home, "/home"), /매칭됐어요/);
       assert.match(
         render(Matching, "/matching/result/401", "/matching/result/:partyId"),
         /매칭됐어요/,
@@ -114,7 +114,7 @@ test("mock screens render both roles through registration, confirmation, prepay 
           decision: "ACCEPTED",
         })),
       });
-      const ongoingHome = render(Home, "/");
+      const ongoingHome = render(Home, "/home");
       assert.match(ongoingHome, /진행 중인 동승/);
       assert.match(ongoingHome, /오늘 귀가 순서/);
       assert.match(ongoingHome, /확인 코드 4821/);
@@ -185,7 +185,7 @@ test("mock screens render both roles through registration, confirmation, prepay 
     }
     assert.equal(requests.length, 0);
     useMockJourneyStore.getState().clear();
-    assert.match(render(Home, "/"), /귀가 방법 비교/);
+    assert.match(render(Home, "/home"), /귀가 방법 비교/);
     assert.match(
       render(Matching, "/matching/result/401", "/matching/result/:partyId"),
       /매칭됐어요/,

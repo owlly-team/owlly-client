@@ -112,7 +112,7 @@ export default function Profile({ data = defaultProfileData }) {
         },
       });
       useSessionStore.getState().setSession(session);
-      navigate("/");
+      navigate("/home");
     } catch (error) {
       setSubmitError(error.message);
     } finally {

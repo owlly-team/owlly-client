@@ -317,7 +317,7 @@ export default function usePickupLocation() {
       setResolving(false);
       setDestinationDraft(null);
       setStep("pickup");
-    } else navigate("/");
+    } else navigate("/home");
   }
 
   //지도 거점 마커를 누르면 출발 거점 선택 후 시트 열기
