@@ -37,7 +37,8 @@ export function getMatchingUiState(requestStatus, partyStatus) {
     }
   }
 
-  // FAILED, CANCELLED, EXPIRED 및 신청 없음은 일반 홈
+  if (requestStatus === "FAILED") return "MATCHING_FAILED";
+  // CANCELLED, EXPIRED 및 신청 없음은 일반 홈
   if (requestStatus === "MATCHED") return "MATCHING_RESULT";
   return requestStatus === "WAITING" ? "MATCHING_WAITING" : null;
 }

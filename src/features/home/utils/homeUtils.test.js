@@ -76,7 +76,8 @@ test("four home scenarios use API DTOs without changing screenshot values", () =
 
 test("matched request renders while party loads; terminal requests return to comparison", () => {
   assert.equal(getMatchingUiState("MATCHED", null), "MATCHING_RESULT");
-  for (const status of ["FAILED", "CANCELLED", "EXPIRED", null]) {
+  assert.equal(getMatchingUiState("FAILED", null), "MATCHING_FAILED");
+  for (const status of ["CANCELLED", "EXPIRED", null]) {
     assert.equal(getMatchingUiState(status, null), null);
   }
   assert.equal(getMatchingUiState("MATCHED", "READY"), "RIDE_IN_PROGRESS");
