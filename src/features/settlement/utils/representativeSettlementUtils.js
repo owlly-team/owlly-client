@@ -5,6 +5,7 @@ export function resolveRepresentativeSettlement({ partyId, state }) {
   const party = state?.matchingResult?.party;
   const supplied = state?.settlement ?? state?.matchingResult?.settlement;
   const preview =
+    state?.isPreview !== false &&
     supplied == null &&
     partyId === "401" &&
     (!party || state?.isPreview === true);

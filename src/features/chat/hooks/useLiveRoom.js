@@ -7,6 +7,8 @@ import {
 } from "../../matching/utils/partyFlow";
 import { loadCurrentRide } from "../../home/utils/loadHomeData";
 import useCachedParty from "../../matching/hooks/useCachedParty";
+import { getSettlementRefreshKey } from "../../settlement/utils/settlementLifecycle";
+import { getRoomPhase } from "../utils/prepayUtils";
 
 export default function useLiveRoom({
   enabled,
@@ -23,12 +25,21 @@ export default function useLiveRoom({
     current?.data?.context.party.id ?? partyId ?? contextPartyId,
     enabled,
   );
+  const latestParty = cached?.response?.data ?? current?.data?.context.party;
+  const refreshKey = getSettlementRefreshKey(
+    latestParty,
+    latestParty ? getRoomPhase(latestParty, Date.now(), false) : "",
+  );
   useEffect(() => {
     if (!enabled || status === "loading") return;
     const controller = new AbortController();
     const api = createMatchingApi(csrfToken, controller.signal);
     let timer;
+    let refreshing = false;
     async function refresh() {
+      if (refreshing || controller.signal.aborted) return;
+      clearTimeout(timer);
+      refreshing = true;
       try {
         if (status !== "authenticated")
           throw new Error("로그인 후 채팅방을 확인해 주세요.");
@@ -82,12 +93,21 @@ export default function useLiveRoom({
           error.code !== "ROOM_ACCESS_EXPIRED"
         )
           timer = setTimeout(refresh, 30000);
+      } finally {
+        refreshing = false;
       }
     }
+    const wake = () => {
+      if (document.visibilityState !== "hidden") refresh();
+    };
+    window.addEventListener("focus", wake);
+    document.addEventListener("visibilitychange", wake);
     refresh();
     return () => {
       controller.abort();
       clearTimeout(timer);
+      window.removeEventListener("focus", wake);
+      document.removeEventListener("visibilitychange", wake);
     };
   }, [
     enabled,
@@ -99,6 +119,7 @@ export default function useLiveRoom({
     roomId,
     contextPartyId,
     attempt,
+    refreshKey,
   ]);
   return {
     data:

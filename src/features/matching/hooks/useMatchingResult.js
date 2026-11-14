@@ -3,6 +3,7 @@ import { mockRepresentativeMatchingResult } from "../mocks/matchingMockData";
 import useSessionStore from "../../../shared/stores/sessionStore";
 import { createMatchingApi } from "../api/matchingApi";
 import useCachedParty from "./useCachedParty";
+import { getSettlementRefreshKey } from "../../settlement/utils/settlementLifecycle";
 import {
   confirmMembership,
   loadMatchingResult,
@@ -25,6 +26,7 @@ export default function useMatchingResult(partyId, preview, isPreview = false) {
     updated?.source === source ? { ...source, party: updated.party } : source;
   const current = snapshot?.scope === scope ? snapshot : null;
   const cached = useCachedParty(partyId, !isPreview);
+  const settlementRefreshKey = getSettlementRefreshKey(cached?.response?.data);
   const data = isPreview
     ? previewData.party?.id === partyId
       ? previewData
@@ -44,12 +46,16 @@ export default function useMatchingResult(partyId, preview, isPreview = false) {
     if (isPreview || status === "loading") return;
     const controller = new AbortController();
     let timer;
+    let refreshing = false;
     async function refresh() {
+      if (refreshing || controller.signal.aborted) return;
+      clearTimeout(timer);
       if (operation.current) {
         timer = setTimeout(refresh, 1000);
         return;
       }
       const requestVersion = version.current;
+      refreshing = true;
       try {
         if (status !== "authenticated")
           throw new Error("로그인 후 매칭 결과를 확인해 주세요.");
@@ -78,15 +84,32 @@ export default function useMatchingResult(partyId, preview, isPreview = false) {
               : { error }),
           }));
         if ([401, 403, 404].includes(error.status)) return;
+      } finally {
+        refreshing = false;
       }
       if (!controller.signal.aborted) timer = setTimeout(refresh, 15000);
     }
     refresh();
+    const wake = () => {
+      if (document.visibilityState !== "hidden") refresh();
+    };
+    window.addEventListener("focus", wake);
+    document.addEventListener("visibilitychange", wake);
     return () => {
       controller.abort();
       clearTimeout(timer);
+      window.removeEventListener("focus", wake);
+      document.removeEventListener("visibilitychange", wake);
     };
-  }, [partyId, scope, csrfToken, status, isPreview, attempt]);
+  }, [
+    partyId,
+    scope,
+    csrfToken,
+    status,
+    isPreview,
+    attempt,
+    settlementRefreshKey,
+  ]);
 
   const actionKey = (action) => {
     const id = `${scope}:${action}`;

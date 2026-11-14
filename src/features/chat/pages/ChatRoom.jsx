@@ -341,7 +341,11 @@ function RoomContent({
         isRepresentative ? (
           <RepresentativePrepayScreen
             party={party}
-            settlement={settlement}
+            settlement={
+              context.settlementError || context.refreshError
+                ? null
+                : settlement
+            }
             account={account}
             onTaxiCalled={isPreview ? handleTaxiCalled : undefined}
           />
@@ -349,6 +353,10 @@ function RoomContent({
           <MemberPrepayScreen
             party={party}
             settlement={settlement}
+            settlementError={
+              context.settlementError || Boolean(context.refreshError)
+            }
+            settlementNotReady={context.settlementNotReady}
             isPreview={isPreview}
             previewAccount={isPreview ? account : undefined}
             onRefresh={() =>

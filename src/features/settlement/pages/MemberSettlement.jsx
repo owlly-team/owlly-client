@@ -8,15 +8,30 @@ import {
   resolveMemberSettlementData,
   toMemberSettlementView,
 } from "../utils/memberSettlementUtils";
+import useSettlementData from "../hooks/useSettlementData";
 
 export default function MemberSettlement() {
   const { partyId } = useParams();
   const { state, search } = useLocation();
   const navigate = useNavigate();
+  const previewRequested =
+    import.meta.env.DEV &&
+    state?.isPreview !== false &&
+    (state?.isPreview === true ||
+      ["refund", "additional", "even"].includes(
+        new URLSearchParams(search).get("preview"),
+      ));
+  const live = useSettlementData(partyId, !previewRequested);
   const { data, isPreview, party, representativeAccount } =
     resolveMemberSettlementData({
       partyId,
-      state,
+      state: previewRequested
+        ? state
+        : {
+            isPreview: false,
+            matchingResult: { party: live.data?.party },
+            memberSettlement: live.data?.settlement,
+          },
       search,
     });
   const view = toMemberSettlementView(data, partyId, {
@@ -29,7 +44,10 @@ export default function MemberSettlement() {
         { pathname: state.returnTo.pathname, search: state.returnTo.search },
         { state: state.returnTo.state },
       );
-    else navigate(`/parties/${partyId}/room?preview=member`);
+    else
+      navigate(`/parties/${partyId}/room`, {
+        state: { isPreview: previewRequested },
+      });
   }
 
   if (!view)
@@ -39,7 +57,13 @@ export default function MemberSettlement() {
           <TopBar title="정산 결과" onLeftClick={() => navigate("/")} />
         </div>
         <p role="status" className="text-body2 text-label-neutral">
-          정산 정보를 확인할 수 없어요. 일반 멤버의 채팅방에서 다시 열어 주세요.
+          {!previewRequested && live.loading
+            ? "정산 정보를 확인하고 있어요."
+            : !previewRequested &&
+                live.data?.settlement &&
+                live.data.settlement.actualTotalWon == null
+              ? "대표가 아직 최종 정산을 확정하지 않았어요."
+              : "정산 정보를 확인할 수 없어요. 일반 멤버의 채팅방에서 다시 열어 주세요."}
         </p>
         <Button onClick={() => navigate("/")}>홈으로</Button>
       </div>

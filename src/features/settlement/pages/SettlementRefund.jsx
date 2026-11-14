@@ -5,6 +5,7 @@ import TopBar from "../../../shared/components/TopBar";
 import IconButton from "../../../shared/components/IconButton";
 import iconKebab from "../../../assets/icons/kebab.svg";
 import TransferRow from "../components/TransferRow";
+import useSettlementData from "../hooks/useSettlementData";
 import {
   resolveRepresentativeSettlement,
   toRepresentativeRefundView,
@@ -16,7 +17,20 @@ export default function SettlementRefund() {
   const { state } = useLocation();
   const [copiedMemberId, setCopiedMemberId] = useState(null);
   const [notice, setNotice] = useState("");
-  const { data, party } = resolveRepresentativeSettlement({ partyId, state });
+  const isPreview = import.meta.env.DEV && state?.isPreview === true;
+  const live = useSettlementData(partyId, !isPreview);
+  const { data, party } = resolveRepresentativeSettlement({
+    partyId,
+    state: isPreview
+      ? state
+      : {
+          isPreview: false,
+          matchingResult: {
+            party: live.data?.party,
+            settlement: live.data?.settlement,
+          },
+        },
+  });
   const view = toRepresentativeRefundView(data, partyId, {
     party,
     refundAccounts: state?.refundAccounts,

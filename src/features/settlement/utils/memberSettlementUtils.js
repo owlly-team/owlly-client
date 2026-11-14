@@ -15,7 +15,11 @@ export function resolveMemberSettlementData({ partyId, state, search = "" }) {
     state?.settlement ??
     state?.matchingResult?.settlement;
   const kind = new URLSearchParams(search).get("preview");
-  const preview = supplied == null && !party && partyId === "401";
+  const preview =
+    state?.isPreview !== false &&
+    supplied == null &&
+    !party &&
+    partyId === "401";
   const data = preview ? getMemberSettlementPreview(kind) : supplied;
   if (party && !getSettlementIdentity(data, partyId, party)) {
     return { data: null, isPreview: false };

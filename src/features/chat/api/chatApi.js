@@ -11,6 +11,8 @@ export function createChatApi(csrfToken, signal) {
     return { ...response, data: normalizeMatchingIds(response.data) };
   };
   return {
+    recipientAccount: (transferId) =>
+      request(`/transfers/${encodeURIComponent(transferId)}/recipient-account`),
     report: (roomId, body, key) =>
       request(`/rooms/${encodeURIComponent(roomId)}/reports`, {
         method: "POST",
