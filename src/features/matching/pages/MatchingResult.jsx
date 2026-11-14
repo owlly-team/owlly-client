@@ -19,6 +19,8 @@ import {
 import { mockMatchingResult } from "../mocks/matchingMockData";
 import { getMyDecision } from "../utils/partyFlow";
 import { getDisplayNow } from "../../../shared/utils/time";
+import useMatchingTravel from "../hooks/useMatchingTravel";
+import { getMatchingTransitNotice } from "../utils/matchingTravel";
 
 export default function MatchingResult({ banks, onOpenChat }) {
   const navigate = useNavigate();
@@ -41,6 +43,16 @@ export default function MatchingResult({ banks, onOpenChat }) {
     previewRequested,
   );
   const { data, loading, error, retry, isPreview, updateParty } = result;
+  const comparison = useMatchingTravel(
+    partyId,
+    !isPreview &&
+      Boolean(data?.party) &&
+      !(
+        data.party.myMemberId === data.party.representativeMemberId &&
+        getMyDecision(data.party) === "ACCEPTED"
+      ),
+    state?.matchingContext,
+  );
   const [actionError, setActionError] = useState("");
   const leaveDialog = useRef(null);
   const leaveTitleId = useId();
@@ -209,11 +221,14 @@ export default function MatchingResult({ banks, onOpenChat }) {
     mySettlementItem,
     isRepresentative,
   } = toMatchingResultView(party, settlement);
-  const context = state?.matchingContext ?? data;
+  const context = isPreview
+    ? (state?.matchingContext ?? data)
+    : comparison.data;
+  const transitNotice = getMatchingTransitNotice(context?.travelOptions, clock);
   const destinationLabel =
     party.districtName ??
-    context.rideRequest?.districtName ??
-    context.rideRequest?.destinationDongName;
+    context?.rideRequest?.districtName ??
+    context?.rideRequest?.destinationDongName;
 
   const decision = getMyDecision(party);
   if (isRepresentative && decision === "ACCEPTED")
@@ -259,9 +274,33 @@ export default function MatchingResult({ banks, onOpenChat }) {
         className="mt-4"
         shareLabel="예상 1인 부담액"
         sharePrice={formatWon(mySettlementItem?.estimatedShareWon)}
-        aloneLabel="혼자 택시"
-        alonePrice={formatWon(context.travelOptions?.soloTaxiEstimatedWon)}
+        aloneLabel="혼자 택시 · 지금 출발"
+        alonePrice={formatWon(context?.travelOptions?.soloTaxiEstimatedWon)}
       />
+      <div className="text-label2 text-label-neutral mt-2" aria-live="polite">
+        <p>
+          {comparison.loading
+            ? "최신 교통 정보를 확인하고 있어요."
+            : transitNotice.status === "available"
+              ? `막차를 이용하려면 ${formatTime(transitNotice.lastLeaveAt)}까지 거점에서 출발해야 해요.`
+              : transitNotice.status === "unavailable"
+                ? "현재 이용 가능한 막차 경로가 없어요."
+                : "막차 이용 가능 여부를 확인할 수 없어요."}
+        </p>
+        {comparison.data?.usingDefaultDropoff && (
+          <p>교통 비교는 같은 행정동의 프로필 기본 하차 위치 기준이에요.</p>
+        )}
+        {comparison.error && <p role="alert">{comparison.error}</p>}
+        {!isPreview && (
+          <button
+            type="button"
+            className="text-primary-normal mt-1 underline"
+            onClick={comparison.retry}
+          >
+            교통 정보 다시 확인
+          </button>
+        )}
+      </div>
       <section
         aria-label="대표에게 보낼 금액"
         className="rounded-8 border-primary-normal mt-4 border-[1.5px] p-3"
@@ -330,7 +369,7 @@ export default function MatchingResult({ banks, onOpenChat }) {
       </section>
       <p className="text-caption1 text-label-alternative mt-4">
         {party.confirmDeadlineAt
-          ? `${formatTime(party.confirmDeadlineAt)}까지 확정하지 않고 막차를 타도 돼요. `
+          ? `팟 참여 확정 마감은 ${formatTime(party.confirmDeadlineAt)}예요. `
           : "확정 마감 시간은 아직 정해지지 않았어요. "}
         확정하면 채팅방이 열려요.
       </p>

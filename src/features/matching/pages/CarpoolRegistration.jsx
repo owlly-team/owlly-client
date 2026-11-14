@@ -79,7 +79,13 @@ export default function CarpoolRegistration({ data, onViewMatchingResult }) {
               onViewMatchingResult
                 ? onViewMatchingResult(view.partyId)
                 : navigate(`/matching/result/${view.partyId}`, {
-                    state: { isPreview: !active.live },
+                    state: {
+                      isPreview: !active.live,
+                      matchingContext: {
+                        rideRequest: active.rideRequest,
+                        selection: registration,
+                      },
+                    },
                   })
             }
           >
