@@ -4,11 +4,13 @@ import DefinitionList from "../components/DefinitionList";
 import Button from "../../../shared/components/Button";
 import { toRegistrationView } from "../utils/registrationUtils";
 import useRideRegistration from "../hooks/useRideRegistration";
+import useSessionStore from "../../../shared/stores/sessionStore";
 
 //동승 등록 완료 페이지
 export default function CarpoolRegistration({ data, onViewMatchingResult }) {
   const navigate = useNavigate();
   const { state } = useLocation();
+  const userId = useSessionStore((session) => session.user?.id);
   const registration = data ?? state ?? {};
   const active = useRideRegistration(registration, () =>
     navigate("/", { replace: true }),
@@ -82,6 +84,20 @@ export default function CarpoolRegistration({ data, onViewMatchingResult }) {
             }
           >
             매칭 결과 보기
+          </Button>
+        )}
+        {active.live && active.rideRequest?.status === "FAILED" && (
+          <Button
+            className="w-full"
+            variant="secondary"
+            onClick={() =>
+              navigate(
+                `/matching/failed?requestId=${encodeURIComponent(active.rideRequest.id)}`,
+                { state: { userId, selection: registration } },
+              )
+            }
+          >
+            실패 결과와 귀가 방법 보기
           </Button>
         )}
         {view.canRetry && (

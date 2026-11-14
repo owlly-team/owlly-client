@@ -8,8 +8,29 @@ export default function HomeMatchingCard({
   display,
   onViewRegistration,
   onViewMatchingResult,
+  onViewFailure,
 }) {
   switch (uiState) {
+    case "MATCHING_FAILED":
+      return (
+        <section className="rounded-16 border-line-normal mt-5 border p-4">
+          <Badge variant="cautionary">매칭 실패</Badge>
+          <h2 className="text-heading2 mt-2 font-bold">
+            이번엔 매칭되지 않았어요
+          </h2>
+          <p className="text-label2 text-label-neutral mt-1">
+            다음 시간대와 다른 귀가 방법을 확인해 주세요.
+          </p>
+          <button
+            type="button"
+            onClick={onViewFailure}
+            disabled={!onViewFailure}
+            className="text-label1 text-primary-normal mt-3 min-h-12 w-full text-right font-semibold"
+          >
+            실패 결과와 귀가 방법 보기
+          </button>
+        </section>
+      );
     //매칭 대기
     case "MATCHING_WAITING":
       return (

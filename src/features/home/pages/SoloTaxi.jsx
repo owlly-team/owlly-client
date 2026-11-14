@@ -1,4 +1,5 @@
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import LiveTravelDetails from "../components/LiveTravelDetails";
 import Badge from "../../../shared/components/Badge";
 import TopBar from "../../../shared/components/TopBar";
 import RouteSteps from "../components/RouteSteps";
@@ -46,6 +47,16 @@ const SoloTaxiData = {
 
 //혼자 택시
 export default function SoloTaxi() {
+  const { search } = useLocation();
+  return import.meta.env.DEV &&
+    new URLSearchParams(search).get("preview") === "taxi" ? (
+    <PreviewSoloTaxi />
+  ) : (
+    <LiveTravelDetails mode="SOLO" />
+  );
+}
+
+function PreviewSoloTaxi() {
   const navigate = useNavigate();
   const goHome = () => navigate("/");
 
@@ -106,7 +117,7 @@ export default function SoloTaxi() {
           size="md"
           variant="secondary"
           className="w-full"
-          onClick={() => navigate("/pickup")}
+          onClick={() => navigate("/pickup", { state: { isPreview: true } })}
         >
           동승도 알아볼래요
         </Button>

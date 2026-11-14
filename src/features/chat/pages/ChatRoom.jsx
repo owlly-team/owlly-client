@@ -273,6 +273,8 @@ function RoomContent({
     party,
     now,
     transfers,
+    isPreview,
+    etag: context.partyEtag,
     onLeft: (updatedParty) =>
       navigate("/", { replace: true, state: { leftParty: updatedParty } }),
   });
@@ -292,12 +294,9 @@ function RoomContent({
           onLeftClick={() => navigate("/")}
           rightSlot={
             <ChatRoomMoreMenu
-              canLeave={isPreview && view.canLeave}
-              leaveDisabledReason={
-                isPreview
-                  ? view.leaveDisabledReason
-                  : "방 나가기 기능은 준비 중이에요."
-              }
+              canLeave={view.canLeave}
+              leaveDisabledReason={view.leaveDisabledReason}
+              leaveSaving={leaveParty.saving}
               onLeave={leaveParty.leave}
               leaveError={leaveParty.error}
               onReport={isPreview ? onReport : undefined}

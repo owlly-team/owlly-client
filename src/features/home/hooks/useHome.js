@@ -77,7 +77,7 @@ export default function useHome(data, { onPendingFeature } = {}) {
     }
     if (data.isPreview === false) return onPendingFeature?.();
     const route = TRANSPORT_ROUTES[id];
-    if (route) navigate(route);
+    if (route) navigate(`${route}?preview=${id === "bus" ? "train" : "taxi"}`);
   }
   //출발 거점과 하차 위치 선택
   function handleStartRegistration() {
@@ -135,6 +135,13 @@ export default function useHome(data, { onPendingFeature } = {}) {
     });
   }
 
+  function handleViewFailure() {
+    if (!rideRequest?.id) return;
+    navigate(
+      `/matching/failed?requestId=${encodeURIComponent(rideRequest.id)}`,
+    );
+  }
+
   return {
     viewData,
     matchingUiState,
@@ -147,5 +154,6 @@ export default function useHome(data, { onPendingFeature } = {}) {
     handleTransportSelect,
     handleViewRegistration,
     handleViewMatchingResult,
+    handleViewFailure,
   };
 }

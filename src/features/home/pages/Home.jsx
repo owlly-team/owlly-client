@@ -190,6 +190,7 @@ function HomeContent({
     handleTransportSelect,
     handleViewRegistration,
     handleViewMatchingResult,
+    handleViewFailure,
   } = useHome(currentData, {
     onPendingFeature: () => setNotice("상세 안내는 준비 중이에요."),
   });
@@ -249,6 +250,7 @@ function HomeContent({
         uiState={matchingUiState}
         display={matchingDisplay}
         onViewRegistration={handleViewRegistration}
+        onViewFailure={handleViewFailure}
         onViewMatchingResult={
           currentData.rideRequest?.status === "MATCHED" &&
           currentData.rideRequest?.partyId

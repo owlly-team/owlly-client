@@ -1,4 +1,5 @@
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import LiveTravelDetails from "../components/LiveTravelDetails";
 import Badge from "../../../shared/components/Badge";
 import TopBar from "../../../shared/components/TopBar";
 import RouteSteps from "../components/RouteSteps";
@@ -57,6 +58,16 @@ const LastTrainData = {
 
 //막차경로
 export default function LastTrain() {
+  const { search } = useLocation();
+  return import.meta.env.DEV &&
+    new URLSearchParams(search).get("preview") === "train" ? (
+    <PreviewLastTrain />
+  ) : (
+    <LiveTravelDetails mode="BUS" />
+  );
+}
+
+function PreviewLastTrain() {
   const navigate = useNavigate();
   const goHome = () => navigate("/");
 
@@ -110,7 +121,7 @@ export default function LastTrain() {
           size="md"
           variant="secondary"
           className="w-full"
-          onClick={() => navigate("/pickup")}
+          onClick={() => navigate("/pickup", { state: { isPreview: true } })}
         >
           동승도 알아볼래요
         </Button>

@@ -13,6 +13,7 @@ import { isPoint } from "../../matching/utils/mapUtils";
 import useHomeLocation from "./useHomeLocation";
 import { nearestPickupPoint } from "../utils/homeLocation";
 import useCachedParty from "../../matching/hooks/useCachedParty";
+import { rideRequestIndex } from "../../matching/stores/rideRequestIndex";
 
 export default function useHomeData() {
   const { status, user, csrfToken } = useSessionStore();
@@ -65,7 +66,9 @@ export default function useHomeData() {
     async function refreshRide() {
       let delay = 15000;
       try {
-        const data = await loadCurrentRide(api);
+        const data = await loadCurrentRide(api, {
+          knownRequests: rideRequestIndex.list(userId),
+        });
         if (!controller.signal.aborted) setRideState({ userId, data });
       } catch (error) {
         if (controller.signal.aborted) return;

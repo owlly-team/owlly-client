@@ -11,6 +11,7 @@ export default function ChatRoomMoreMenu({
   canLeave,
   leaveDisabledReason,
   leaveError,
+  leaveSaving = false,
   onLeave,
   onReport,
 }) {
@@ -25,6 +26,7 @@ export default function ChatRoomMoreMenu({
   }
 
   function close() {
+    if (leaveSaving) return;
     dialog.current.close();
   }
 
@@ -39,9 +41,9 @@ export default function ChatRoomMoreMenu({
       close();
   }
 
-  function leave() {
-    if (!canLeave) return;
-    if (onLeave()) dialog.current?.close();
+  async function leave() {
+    if (!canLeave || leaveSaving) return;
+    if (await onLeave()) dialog.current?.close();
   }
 
   function report() {
@@ -63,6 +65,9 @@ export default function ChatRoomMoreMenu({
           aria-labelledby={titleId}
           aria-describedby={confirming ? descriptionId : undefined}
           onClick={dismissBackdrop}
+          onCancel={(event) => {
+            if (leaveSaving) event.preventDefault();
+          }}
           className="rounded-t-24 text-label-normal backdrop:bg-material-dimmer fixed inset-x-0 top-auto bottom-0 m-0 mx-auto max-h-[85dvh] w-full max-w-110 overflow-y-auto border-0 bg-transparent p-0"
         >
           <BottomSheet className="gap-2 px-4 shadow-none" onClose={close}>
@@ -94,11 +99,20 @@ export default function ChatRoomMoreMenu({
                   </p>
                 )}
                 <div className="mt-2 grid w-full grid-cols-2 gap-2">
-                  <Button variant="secondary" onClick={close}>
+                  <Button
+                    variant="secondary"
+                    disabled={leaveSaving}
+                    onClick={close}
+                  >
                     취소
                   </Button>
-                  <Button variant="danger" disabled={!canLeave} onClick={leave}>
-                    나가기
+                  <Button
+                    variant="danger"
+                    disabled={!canLeave || leaveSaving}
+                    aria-busy={leaveSaving}
+                    onClick={leave}
+                  >
+                    {leaveSaving ? "나가는 중" : "나가기"}
                   </Button>
                 </div>
               </>
