@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import FilterChip from "../../../shared/components/FilterChip";
 import StatGrid from "../../../shared/components/StatGrid";
@@ -7,11 +7,15 @@ import MapPlaceholder from "../../demand/components/MapPlaceholder";
 import RouteCandidateCard from "../components/RouteCandidateCard";
 import AdminTabBar from "../components/AdminTabBar";
 import iconStatBars from "../../../assets/icons/stat-bars.svg";
-import { routeCandidates } from "../mockData";
+import { routeCandidates as mockRouteCandidates } from "../mockData";
+import { fetchDemandCandidates, toRouteSummary } from "../../../shared/api/demandApi";
+import { hasApiBaseUrl } from "../../../shared/api/client";
 
 const PERIOD_OPTIONS = ["11.2~11.8", "10.26~11.1", "11.9~11.15"];
 const DAY_OPTIONS = ["금요일", "토요일", "일요일", "월요일"];
 const TIME_OPTIONS = ["23~01시", "21~23시", "00~02시"];
+const WEEKDAY_BY_LABEL = { 일요일: 0, 월요일: 1, 화요일: 2, 수요일: 3, 목요일: 4, 금요일: 5, 토요일: 6 };
+const SLOT_START_BY_LABEL = { "23~01시": "23:00", "21~23시": "21:00", "00~02시": "00:00" };
 
 const summaryStats = [
   { value: "1,284", label: "귀가 기록" },
@@ -26,10 +30,37 @@ export default function DemandMapAdmin() {
   const [day, setDay] = useState(DAY_OPTIONS[0]);
   const [time, setTime] = useState(TIME_OPTIONS[0]);
   const [activeTab, setActiveTab] = useState("map");
+  const [routes, setRoutes] = useState(
+    mockRouteCandidates.map((route) => ({
+      id: route.id,
+      rank: route.rank,
+      title: route.title,
+      subtitle: route.subtitle,
+      demand: route.demand,
+      progress: route.progress,
+    })),
+  );
+  const [notReady, setNotReady] = useState(false);
 
   const cycle = (list, current, setter) => () => {
     setter(list[(list.indexOf(current) + 1) % list.length]);
   };
+
+  useEffect(() => {
+    if (!hasApiBaseUrl) return;
+    fetchDemandCandidates({
+      weekday: WEEKDAY_BY_LABEL[day],
+      slotStart: SLOT_START_BY_LABEL[time],
+      limit: 20,
+    })
+      .then((candidates) => {
+        setRoutes(candidates.map(toRouteSummary));
+        setNotReady(false);
+      })
+      .catch((error) => {
+        if (error.code === "DEMAND_NOT_READY") setNotReady(true);
+      });
+  }, [day, time]);
 
   return (
     <div className="flex flex-1 flex-col justify-between">
@@ -62,19 +93,25 @@ export default function DemandMapAdmin() {
               AI 추정
             </Badge>
           </div>
-          <div className="flex flex-col gap-2">
-            {routeCandidates.map((route) => (
-              <RouteCandidateCard
-                key={route.id}
-                rank={route.rank}
-                title={route.title}
-                subtitle={route.subtitle}
-                demand={route.demand}
-                progress={route.progress}
-                onClick={() => navigate(`/admin/routes/${route.id}`)}
-              />
-            ))}
-          </div>
+          {notReady ? (
+            <p className="py-4 text-center text-caption1 text-label-alternative">
+              아직 이 조건으로 집계된 수요 데이터가 없어요.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {routes.map((route) => (
+                <RouteCandidateCard
+                  key={route.id}
+                  rank={route.rank}
+                  title={route.title}
+                  subtitle={route.subtitle}
+                  demand={route.demand}
+                  progress={route.progress}
+                  onClick={() => navigate(`/admin/routes/${route.id}`)}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

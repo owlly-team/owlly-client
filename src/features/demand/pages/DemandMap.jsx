@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import useBottomTabNavigation from "../../../shared/hooks/useBottomTabNavigation";
 import FilterChip from "../../../shared/components/FilterChip";
 import InfoBox from "../../../shared/components/InfoBox";
@@ -6,6 +6,8 @@ import BottomTabBar from "../../../shared/components/BottomTabBar";
 import MapPlaceholder from "../components/MapPlaceholder";
 import RouteRankRow from "../components/RouteRankRow";
 import iconStatBars from "../../../assets/icons/stat-bars.svg";
+import { fetchDemandCandidates, toRouteSummary } from "../../../shared/api/demandApi";
+import { hasApiBaseUrl } from "../../../shared/api/client";
 
 const DAY_OPTIONS = ["금요일", "토요일", "일요일", "월요일", "화요일", "수요일", "목요일"];
 const TIME_OPTIONS = ["23~01시", "21~23시", "00~02시"];
@@ -45,6 +47,7 @@ export default function DemandMap() {
   const [isCandidate, setIsCandidate] = useState(true);
   const [day, setDay] = useState(DAY_OPTIONS[0]);
   const [time, setTime] = useState(TIME_OPTIONS[0]);
+  const [routes, setRoutes] = useState(null);
 
   const data = isCandidate ? MOCK_DATA.isCandidate : MOCK_DATA.notCandidate;
 
@@ -52,6 +55,17 @@ export default function DemandMap() {
     const next = list[(list.indexOf(current) + 1) % list.length];
     setter(next);
   };
+
+  // 내 구간(pickupPointId) 선택 UI가 아직 없어서 개인화 배너(data.message)는
+  // QA 토글 목업을 유지하고, 전체 후보 순위 목록만 실제 데이터로 보여준다.
+  useEffect(() => {
+    if (!hasApiBaseUrl) return;
+    fetchDemandCandidates({ candidateOnly: true, limit: 5 })
+      .then((candidates) => setRoutes(candidates.map(toRouteSummary)))
+      .catch(() => {});
+  }, []);
+
+  const displayRoutes = routes ?? data.routes;
 
   return (
     <div className="flex flex-1 flex-col justify-between">
@@ -87,8 +101,8 @@ export default function DemandMap() {
         />
 
         <div className="flex flex-col gap-2">
-          {data.routes.map((route) => (
-            <RouteRankRow key={route.title} {...route} />
+          {displayRoutes.map((route) => (
+            <RouteRankRow key={route.id ?? route.title} {...route} />
           ))}
         </div>
 

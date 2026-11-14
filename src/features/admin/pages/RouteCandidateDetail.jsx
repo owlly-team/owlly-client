@@ -1,18 +1,59 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import TopBar from "../../../shared/components/TopBar";
 import StatGrid from "../../../shared/components/StatGrid";
 import MetricRow from "../../../shared/components/MetricRow";
 import Button from "../../../shared/components/Button";
 import SelectionCard from "../components/SelectionCard";
-import { routeCandidates, ACTION_OPTIONS } from "../mockData";
+import { routeCandidates as mockRouteCandidates, ACTION_OPTIONS } from "../mockData";
+import { fetchDemandCandidateDetail, formatWeekdaySlot } from "../../../shared/api/demandApi";
+import { hasApiBaseUrl } from "../../../shared/api/client";
+
+function toDetailView(candidate) {
+  const metrics = [
+    { title: "동승 등록", subtitle: "서비스 귀가 기록", value: `${candidate.journeyCount}건` },
+    { title: "탑승 확인", subtitle: "서비스 귀가 기록", value: `${candidate.pooledJourneyCount}건` },
+    { title: "매칭 실패", subtitle: "서비스 귀가 기록", value: `${candidate.failedJourneyCount}건` },
+    { title: "막차 선택", subtitle: "서비스 귀가 기록", value: `${candidate.busSelectedCount}건` },
+    { title: "혼자 택시 선택", subtitle: "서비스 귀가 기록", value: `${candidate.soloSelectedCount}건` },
+    ...candidate.evidence.map((item) => ({
+      title: item.sourceLabel,
+      subtitle: item.description,
+      value: item.kind === "OBSERVED" ? "관측" : "추정",
+    })),
+  ];
+  return {
+    rank: candidate.candidateRank ?? "–",
+    title: `${candidate.pickupPointName} → ${candidate.destinationDongName}`,
+    meta: formatWeekdaySlot(candidate.weekday, candidate.slotStart),
+    stats: [
+      {
+        value:
+          candidate.estimatedWeeklyDemand != null
+            ? `주 ${Math.round(candidate.estimatedWeeklyDemand)}회`
+            : "집계 중",
+        label: "AI 추정 수요",
+      },
+      { value: `${candidate.failedJourneyCount}건`, label: "매칭 실패" },
+      { value: `${candidate.soloSelectedCount}건`, label: "혼자 택시" },
+    ],
+    metrics,
+  };
+}
 
 export default function RouteCandidateDetail() {
   const navigate = useNavigate();
   const { routeId } = useParams();
-  const route =
-    routeCandidates.find((item) => item.id === routeId) ?? routeCandidates[0];
-  const [action, setAction] = useState(route.action);
+  const mockRoute = mockRouteCandidates.find((item) => item.id === routeId) ?? mockRouteCandidates[0];
+  const [route, setRoute] = useState(mockRoute);
+  const [action, setAction] = useState(mockRoute.action);
+
+  useEffect(() => {
+    if (!hasApiBaseUrl) return;
+    fetchDemandCandidateDetail(routeId)
+      .then((candidate) => setRoute(toDetailView(candidate)))
+      .catch(() => {});
+  }, [routeId]);
 
   return (
     <div className="flex flex-1 flex-col justify-between">
