@@ -84,9 +84,6 @@ test("mock onboarding only performs the verification and registration actions ex
     const { isMockMode } = await server.ssrLoadModule(
       "/src/shared/api/mockMode.js",
     );
-    const mock = await server.ssrLoadModule(
-      "/src/features/onboarding/mocks/onboardingMockSession.js",
-    );
     const mypage = await server.ssrLoadModule(
       "/src/features/mypage/api/mypageApi.js",
     );
@@ -103,7 +100,7 @@ test("mock onboarding only performs the verification and registration actions ex
     });
     const { verificationToken } = await onboarding.verifyEmailCode({
       verificationId,
-      code: mock.MOCK_VERIFICATION_CODE,
+      code: "654321",
     });
     await assert.rejects(
       auth.loginStudent({ verificationToken }),

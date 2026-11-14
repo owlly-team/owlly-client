@@ -10,7 +10,6 @@ import {
   getMockProfile,
   updateMockProfile,
   logoutMockStudent,
-  MOCK_VERIFICATION_CODE,
 } from "./onboardingMockSession.js";
 
 test("verification, first registration, profile edits and later login preserve the entered student's data", () => {
@@ -21,12 +20,12 @@ test("verification, first registration, profile edits and later login preserve t
     email: "student@khu.ac.kr",
   });
   assert.throws(
-    () => verifyMockCode({ verificationId, code: "999999" }),
+    () => verifyMockCode({ verificationId, code: "123" }),
     (error) => error.code === "INVALID_CODE",
   );
   const { verificationToken } = verifyMockCode({
     verificationId,
-    code: MOCK_VERIFICATION_CODE,
+    code: "999999",
   });
   assert.throws(
     () => loginMockStudent({ verificationToken }),
@@ -69,7 +68,7 @@ test("unverified/unknown tokens and an unrelated school's mail do not become suc
     (error) => error.code === "INVALID_EMAIL_DOMAIN",
   );
   assert.throws(() =>
-    verifyMockCode({ verificationId: "missing", code: MOCK_VERIFICATION_CODE }),
+    verifyMockCode({ verificationId: "missing", code: "000000" }),
   );
   assert.throws(() =>
     registerMockStudent({ verificationToken: "fake", profile: {} }),
@@ -80,7 +79,7 @@ test("unverified/unknown tokens and an unrelated school's mail do not become suc
   });
   const { verificationToken } = verifyMockCode({
     verificationId,
-    code: MOCK_VERIFICATION_CODE,
+    code: "000000",
   });
   assert.throws(
     () => registerMockStudent({ verificationToken, profile: {} }),

@@ -6,8 +6,8 @@ import IconButton from "../../../shared/components/IconButton";
 import iconLocation from "../../../assets/icons/location-pin.svg";
 import iconLeft from "../../../assets/icons/chevron-left.svg";
 
-// 지도 핀 선택 UI가 없던 자리. Figma 목업과 같은 영통2동 근방을 기본 중심으로 쓴다.
-const DEFAULT_POINT = { latitude: 37.33, longitude: 127.27 };
+// 첫 진입 시 영통2동 행정복지센터 근처를 표시한다. 선택한 위치가 있으면 그 위치를 유지한다.
+const DEFAULT_POINT = { latitude: 37.2469632, longitude: 127.0563198 };
 
 export default function DropoffLocation() {
   const navigate = useNavigate();
@@ -57,6 +57,7 @@ export default function DropoffLocation() {
         points={[]}
         destinationMode
         destination={draft}
+        initialCenter={draft.point}
         currentPosition={currentPosition}
         onSelect={() => {}}
         onDestination={handleDestination}

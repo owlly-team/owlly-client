@@ -30,7 +30,7 @@ export const defaultHomeData = {
         { mode: "BUS", routeName: null, fromName: "정문 정류장", toName: "영통역 정류장", departureAt: at("22:58"), arrivalAt: at("23:29") },
         { mode: "WALK", routeName: null, fromName: "영통역 정류장", toName: "영통2동", departureAt: at("23:29"), arrivalAt: at("23:41") },
       ],
-      sourceLabel: "목업 추정값", asOf: at("22:30"),
+      asOf: at("22:30"),
     },
     soloTaxiEstimatedWon: 27400, poolEstimatedShareWon: 7900,
     estimatedArrivalAt: at("23:05"), destinationDongId: "31", districtId: "21",
