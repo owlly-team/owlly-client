@@ -48,7 +48,10 @@ export async function loadHomePickupPoints(api, universityId) {
 }
 
 // 페이지 순서에 의존하지 않고 현재 신청을 가진 귀가를 찾는다.
-export async function loadCurrentRide(api, { knownRequests = [] } = {}) {
+export async function loadCurrentRide(
+  api,
+  { knownRequests = [], includeSettlement = true, onUpdate } = {},
+) {
   const journeys = [];
   const visited = new Set();
   let cursor;
@@ -107,6 +110,9 @@ export async function loadCurrentRide(api, { knownRequests = [] } = {}) {
     if (party?.id !== rideRequest.partyId)
       throw new Error("팟 정보가 일치하지 않아요.");
     if (["CANCELLED", "COMPLETED"].includes(party.status)) continue;
+    const context = { journey, rideRequest, party, partyEtag };
+    if (!includeSettlement) return context;
+    onUpdate?.({ ...context, settlement: null, settlementLoading: true });
     let settlement;
     let settlementError = null;
     try {
@@ -126,6 +132,7 @@ export async function loadCurrentRide(api, { knownRequests = [] } = {}) {
       partyEtag,
       settlement,
       settlementError,
+      settlementLoading: false,
       mySettlementItem: settlement?.items?.find(
         (item) => item.memberId === party.myMemberId,
       ),

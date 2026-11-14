@@ -2,6 +2,7 @@ import { canPreview } from "../../../shared/api/mockMode";
 import { useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import Button from "../../../shared/components/Button";
+import PageSkeleton from "../../../shared/components/PageSkeleton";
 import TopBar from "../../../shared/components/TopBar";
 import IconButton from "../../../shared/components/IconButton";
 import iconKebab from "../../../assets/icons/kebab.svg";
@@ -47,9 +48,14 @@ export default function SettlementRefund() {
         <div className="-mx-4">
           <TopBar title="정산" onLeftClick={() => navigate("/home")} />
         </div>
-        <p role="status" className="text-body2 text-label-neutral">
-          정산 정보를 확인할 수 없어요. 대표 계정의 채팅방에서 다시 열어 주세요.
-        </p>
+        {live.loading ? (
+          <PageSkeleton label="정산 정보를 불러오고 있어요." />
+        ) : (
+          <p role="status" className="text-body2 text-label-neutral">
+            정산 정보를 확인할 수 없어요. 대표 계정의 채팅방에서 다시 열어
+            주세요.
+          </p>
+        )}
         <Button onClick={() => navigate("/home")}>홈으로</Button>
       </div>
     );

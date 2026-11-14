@@ -31,7 +31,8 @@ export default function useFailureRoute() {
     canChoose: canResolveFailure(data),
     goHome: () => navigate("/home"),
     retryRegistration: () => {
-      if (!canResolveFailure(data) || failure.saving) return;
+      if (!canResolveFailure(data) || failure.saving || data.selectionLoading)
+        return;
       navigate(
         isPoint(data.selection?.destination?.point) && data.nextSlot
           ? "/start-time"

@@ -1,5 +1,5 @@
 /**
- * steps: { time, type: "walk" | "transit" | "home", icon, iconClassName?, title, description? }[]
+ * steps: { time, type: "walk" | "transit" | "home", state?: "past" | "current" | "upcoming", icon, iconClassName?, title, description? }[]
  */
 
 const STEP_BACKGROUNDS = {
@@ -20,15 +20,23 @@ export default function RouteSteps({ steps = [], className = "" }) {
       {steps.map((step, index) => {
         const isLast = index === steps.length - 1; //인덱스 배열의 마지막과 같으면 true
         return (
-          <li key={`${step.time}-${step.title}`} className="grid grid-cols-[2.75rem_1.75rem_minmax(0,1fr)] gap-x-2.5">
-            <span className="w-11 shrink-0 pt-0.5 text-right text-label1 font-semibold text-label-normal">
+          <li
+            key={`${step.time}-${step.title}`}
+            aria-current={step.state === "current" ? "step" : undefined}
+            className={`grid grid-cols-[2.75rem_1.75rem_minmax(0,1fr)] gap-x-2.5 ${step.state === "past" ? "opacity-40" : ""}`}
+          >
+            <span className="text-label1 text-label-normal w-11 shrink-0 pt-0.5 text-right font-semibold">
               {step.time}
             </span>
             <span className="relative" aria-hidden="true">
-              <span className={`flex size-7 items-center justify-center rounded-full 
-                    ${STEP_BACKGROUNDS[step.type] ?? STEP_BACKGROUNDS.walk}`}
+              <span
+                className={`flex size-7 items-center justify-center rounded-full ${STEP_BACKGROUNDS[step.type] ?? STEP_BACKGROUNDS.walk} ${step.state === "current" ? "ring-primary-normal ring-2 ring-offset-2" : ""}`}
               >
-                <img src={step.icon} alt="" className={`size-4 ${step.iconClassName ?? ""}`} />
+                <img
+                  src={step.icon}
+                  alt=""
+                  className={`size-4 ${step.iconClassName ?? ""}`}
+                />
               </span>
               {!isLast && (
                 <span
@@ -37,9 +45,15 @@ export default function RouteSteps({ steps = [], className = "" }) {
               )}
             </span>
             <div className="flex min-h-7 flex-col gap-0.5 pt-0.5 pb-4">
-              <p className="text-body2 font-semibold text-label-normal">{step.title}</p>
+              <p
+                className={`text-body2 font-semibold ${step.state === "current" ? "text-primary-normal" : "text-label-normal"}`}
+              >
+                {step.title}
+              </p>
               {step.description && (
-                <p className="text-label2 text-label-neutral">{step.description}</p>
+                <p className="text-label2 text-label-neutral">
+                  {step.description}
+                </p>
               )}
             </div>
           </li>

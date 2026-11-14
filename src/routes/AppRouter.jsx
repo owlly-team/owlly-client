@@ -1,32 +1,59 @@
-import { useEffect } from "react";
+import { lazy, useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from "../shared/layout/Layout";
 import useSessionStore from "../shared/stores/sessionStore";
 import Home from "../features/home/pages/Home";
-import MatchingFailure from "../features/home/pages/MatchingFailure";
-import LastTrain from "../features/home/pages/LastTrain";
-import SoloTaxi from "../features/home/pages/SoloTaxi";
-import AdminLogin from "../features/admin/pages/AdminLogin";
-import DemandMapAdmin from "../features/admin/pages/DemandMapAdmin";
-import RouteCandidateDetail from "../features/admin/pages/RouteCandidateDetail";
-import ReportExport from "../features/admin/pages/ReportExport";
-import MyInfo from "../features/mypage/pages/MyInfo";
-import DemandMap from "../features/demand/pages/DemandMap";
 import Start from "../features/onboarding/pages/Start";
-import SchoolVerification from "../features/onboarding/pages/SchoolVerification";
-import PermissionNotice from "../features/onboarding/pages/PermissionNotice";
-import Profile from "../features/onboarding/pages/Profile";
-import DropoffLocation from "../features/onboarding/pages/DropoffLocation";
-import MatchNotification from "../features/onboarding/pages/MatchNotification";
-import StartTime from "../features/matching/pages/StartTime";
-import CarpoolRegistration from "../features/matching/pages/CarpoolRegistration";
-import PickupLocation from "../features/matching/pages/PickupLocation";
-import MatchingResult from "../features/matching/pages/MatchingResult";
-import ChatRoom from "../features/chat/pages/ChatRoom";
-import ReportMember from "../features/chat/pages/ReportMember";
-import SettlementInput from "../features/settlement/pages/SettlementInput";
-import SettlementRefund from "../features/settlement/pages/SettlementRefund";
-import MemberSettlement from "../features/settlement/pages/MemberSettlement";
+
+const MatchingFailure = lazy(
+  () => import("../features/home/pages/MatchingFailure"),
+);
+const LastTrain = lazy(() => import("../features/home/pages/LastTrain"));
+const SoloTaxi = lazy(() => import("../features/home/pages/SoloTaxi"));
+const AdminLogin = lazy(() => import("../features/admin/pages/AdminLogin"));
+const DemandMapAdmin = lazy(
+  () => import("../features/admin/pages/DemandMapAdmin"),
+);
+const RouteCandidateDetail = lazy(
+  () => import("../features/admin/pages/RouteCandidateDetail"),
+);
+const ReportExport = lazy(() => import("../features/admin/pages/ReportExport"));
+const MyInfo = lazy(() => import("../features/mypage/pages/MyInfo"));
+const DemandMap = lazy(() => import("../features/demand/pages/DemandMap"));
+const SchoolVerification = lazy(
+  () => import("../features/onboarding/pages/SchoolVerification"),
+);
+const PermissionNotice = lazy(
+  () => import("../features/onboarding/pages/PermissionNotice"),
+);
+const Profile = lazy(() => import("../features/onboarding/pages/Profile"));
+const DropoffLocation = lazy(
+  () => import("../features/onboarding/pages/DropoffLocation"),
+);
+const MatchNotification = lazy(
+  () => import("../features/onboarding/pages/MatchNotification"),
+);
+const StartTime = lazy(() => import("../features/matching/pages/StartTime"));
+const CarpoolRegistration = lazy(
+  () => import("../features/matching/pages/CarpoolRegistration"),
+);
+const PickupLocation = lazy(
+  () => import("../features/matching/pages/PickupLocation"),
+);
+const MatchingResult = lazy(
+  () => import("../features/matching/pages/MatchingResult"),
+);
+const ChatRoom = lazy(() => import("../features/chat/pages/ChatRoom"));
+const ReportMember = lazy(() => import("../features/chat/pages/ReportMember"));
+const SettlementInput = lazy(
+  () => import("../features/settlement/pages/SettlementInput"),
+);
+const SettlementRefund = lazy(
+  () => import("../features/settlement/pages/SettlementRefund"),
+);
+const MemberSettlement = lazy(
+  () => import("../features/settlement/pages/MemberSettlement"),
+);
 
 export default function AppRouter() {
   useEffect(() => {

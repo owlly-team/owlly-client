@@ -10,49 +10,87 @@ export function validateParty(party, partyId, myMemberId) {
   return party;
 }
 
+export async function loadPartySettlement(api, partyId) {
+  try {
+    const response = await api.settlement(partyId);
+    if (response.data?.partyId !== partyId)
+      throw new Error("정산 정보가 일치하지 않아요.");
+    return {
+      settlement: response.data,
+      settlementEtag: response.etag,
+      settlementLoading: false,
+      settlementNotReady: false,
+      settlementError: false,
+    };
+  } catch (error) {
+    if ([401, 403].includes(error.status) || error.name === "AbortError")
+      throw error;
+    return {
+      settlement: null,
+      settlementEtag: undefined,
+      settlementLoading: false,
+      settlementNotReady: error.code === "SETTLEMENT_NOT_READY",
+      settlementError: error.code !== "SETTLEMENT_NOT_READY",
+    };
+  }
+}
+
+const reflect = (promise) =>
+  promise.then(
+    (value) => ({ value }),
+    (error) => ({ error }),
+  );
+
 export async function loadMatchingResult(
   api,
   partyId,
-  { includeBanks = true, forceParty = false } = {},
+  { includeBanks = true, forceParty = false, onUpdate } = {},
 ) {
-  const { data, etag } = await api.party(partyId, { force: forceParty });
+  const partyPromise = api.party(partyId, { force: forceParty });
+  const settlementPromise = reflect(loadPartySettlement(api, partyId));
+  const banksPromise = reflect(
+    includeBanks
+      ? Promise.resolve().then(() => api.banks())
+      : Promise.resolve({ data: [] }),
+  );
+  const { data, etag } = await partyPromise;
   const party = validateParty(data, partyId);
-  const [settlementResult, banksResult] = await Promise.allSettled([
-    api.settlement(partyId),
-    includeBanks ? api.banks() : Promise.resolve({ data: [] }),
-  ]);
-  for (const result of [settlementResult, banksResult]) {
-    if (
-      result.status === "rejected" &&
-      [401, 403].includes(result.reason.status)
-    )
-      throw result.reason;
-  }
-  const settlement =
-    settlementResult.status === "fulfilled" &&
-    settlementResult.value.data?.partyId === partyId
-      ? settlementResult.value.data
-      : null;
-  return {
+  let partial = {
     party,
     partyEtag: etag,
-    settlement,
-    settlementEtag: settlement ? settlementResult.value.etag : undefined,
-    settlementNotReady:
-      settlementResult.status === "rejected" &&
-      settlementResult.reason.code === "SETTLEMENT_NOT_READY",
-    settlementError:
-      !settlement &&
-      !(
-        settlementResult.status === "rejected" &&
-        settlementResult.reason.code === "SETTLEMENT_NOT_READY"
-      ),
-    banks:
-      banksResult.status === "fulfilled" &&
-      Array.isArray(banksResult.value.data)
-        ? banksResult.value.data
-        : [],
+    settlement: null,
+    banks: [],
+    settlementLoading: true,
+    banksLoading: includeBanks,
+    settlementNotReady: false,
+    settlementError: false,
   };
+  onUpdate?.(partial);
+  let active = true;
+  const publish = (fields) => {
+    if (!active) return;
+    partial = { ...partial, ...fields };
+    onUpdate?.(partial);
+  };
+  try {
+    await Promise.all([
+      settlementPromise.then(({ value, error }) => {
+        if (error) throw error;
+        publish(value);
+      }),
+      banksPromise.then(({ value, error }) => {
+        if ([401, 403].includes(error?.status) || error?.name === "AbortError")
+          throw error;
+        publish({
+          banks: Array.isArray(value?.data) ? value.data : [],
+          banksLoading: false,
+        });
+      }),
+    ]);
+    return partial;
+  } finally {
+    active = false;
+  }
 }
 
 export function getMyDecision(party) {

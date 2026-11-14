@@ -52,6 +52,11 @@ function LiveMatchingFailure() {
         />
       </div>
       <div className="flex flex-col gap-4 pt-1">
+        {(data.selectionLoading || data.travelLoading || data.slotsLoading) && (
+          <p role="status" className="text-label2 text-label-neutral">
+            귀가 방법과 다음 출발 시간을 확인하고 있어요.
+          </p>
+        )}
         <InfoBox
           variant="negative"
           title="이번엔 매칭되지 않았어요"
@@ -70,10 +75,12 @@ function LiveMatchingFailure() {
           </>
         ) : (
           <p className="text-body2 text-label-neutral">
-            {data.needsDestinationSelection
-              ? "하차 핀을 다시 선택하면 이 위치의 막차와 택시 요금을 확인할 수 있어요."
-              : (travelOptions?.transit?.sourceLabel ??
-                "현재 막차 정보를 확인할 수 없어요.")}
+            {data.travelLoading || data.selectionLoading
+              ? "막차 정보를 확인하고 있어요."
+              : data.needsDestinationSelection
+                ? "하차 핀을 다시 선택하면 이 위치의 막차와 택시 요금을 확인할 수 있어요."
+                : (travelOptions?.transit?.sourceLabel ??
+                  "현재 막차 정보를 확인할 수 없어요.")}
           </p>
         )}
         {data.warnings?.map((warning) => (

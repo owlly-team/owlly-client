@@ -263,6 +263,7 @@ export default function MatchingResult({ banks, onOpenChat }) {
         onBack={goHome}
         retry={retry}
         banks={banks ?? data.banks}
+        banksLoading={!banks && data.banksLoading}
         onOpenChat={openChat}
         isPreview={isPreview}
       />

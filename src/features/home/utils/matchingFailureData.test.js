@@ -75,6 +75,57 @@ function setup() {
   return { api, queries, bodies };
 }
 
+test("failure reason and transport appear before independent metadata and slow slots", async () => {
+  const { api } = setup();
+  let resolveProfile,
+    resolveTravel,
+    resolveSlots,
+    reasonShown,
+    selectionShown,
+    travelShown;
+  api.profile = () =>
+    new Promise((resolve) => {
+      resolveProfile = resolve;
+    });
+  api.travelOptions = () =>
+    new Promise((resolve) => {
+      resolveTravel = resolve;
+    });
+  const slots = new Promise((resolve) => {
+    resolveSlots = resolve;
+  });
+  api.slots = () => slots;
+  const reason = new Promise((resolve) => {
+    reasonShown = resolve;
+  });
+  const selection = new Promise((resolve) => {
+    selectionShown = resolve;
+  });
+  const travel = new Promise((resolve) => {
+    travelShown = resolve;
+  });
+  const updates = [];
+  const done = loadMatchingFailure(api, "301", undefined, now, {
+    onUpdate: (data) => {
+      updates.push(data);
+      reasonShown();
+      if (data.selectionLoading === false) selectionShown();
+      if (data.travelOptions) travelShown();
+    },
+  });
+  await reason;
+  assert.equal(canResolveFailure(updates[0]), true);
+  assert.equal(updates[0].selectionLoading, true);
+  resolveProfile({ data: { defaultDongId: "31", defaultDropoff: point } });
+  await selection;
+  resolveTravel({ data: { destinationDongId: "31", soloTaxiEstimatedWon: 0 } });
+  await travel;
+  assert.equal(updates.at(-1).slotsLoading, true);
+  assert.equal(updates.at(-1).travelOptions.soloTaxiEstimatedWon, 0);
+  resolveSlots({ data: [slot("2026-11-15T00:30:00+09:00", true, 2)] });
+  assert.equal((await done).nextSlot.waitingCount, 2);
+});
+
 test("failed result uses real request, exact dropoff and Korean date slots, excluding closed and previous slots", async () => {
   const { api, queries, bodies } = setup();
   const result = await loadMatchingFailure(api, "301", undefined, now);

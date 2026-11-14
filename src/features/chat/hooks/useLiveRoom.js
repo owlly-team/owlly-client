@@ -1,10 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import useSessionStore from "../../../shared/stores/sessionStore";
 import { createMatchingApi } from "../../matching/api/matchingApi";
-import {
-  loadMatchingResult,
-  loadPartyRoom,
-} from "../../matching/utils/partyFlow";
+import { loadLiveRoomData } from "../utils/loadLiveRoomData";
 import { loadCurrentRide } from "../../home/utils/loadHomeData";
 import useCachedParty from "../../matching/hooks/useCachedParty";
 import { getSettlementRefreshKey } from "../../settlement/utils/settlementLifecycle";
@@ -19,6 +16,7 @@ export default function useLiveRoom({
   const { status, user, csrfToken } = useSessionStore();
   const [snapshot, setSnapshot] = useState(null);
   const [attempt, setAttempt] = useState(0);
+  const loadedScope = useRef(null);
   const scope = `${user?.id}:${partyId ?? contextPartyId ?? ""}:${roomId ?? ""}`;
   const current = snapshot?.scope === scope ? snapshot : null;
   const cached = useCachedParty(
@@ -45,27 +43,21 @@ export default function useLiveRoom({
           throw new Error("로그인 후 채팅방을 확인해 주세요.");
         let id = partyId ?? contextPartyId;
         if (!id) {
-          const ride = await loadCurrentRide(api);
+          const ride = await loadCurrentRide(api, { includeSettlement: false });
           if (!roomId || ride.party?.roomId !== roomId)
             throw new Error("이 채팅방의 팟 정보를 확인할 수 없어요.");
           id = ride.party.id;
         }
-        const context = await loadMatchingResult(api, id, {
-          includeBanks: false,
-        });
-        const room = await loadPartyRoom(api, context.party, roomId);
-        if (controller.signal.aborted) return;
-        setSnapshot({
-          scope,
-          data: {
-            context: {
-              ...context,
-              party: { ...context.party, roomId: room.id },
-            },
-            room,
-            isPreview: false,
+        const data = await loadLiveRoomData(api, id, roomId, {
+          signal: controller.signal,
+          onUpdate: (data) => {
+            if (!controller.signal.aborted && loadedScope.current !== scope)
+              setSnapshot({ scope, data });
           },
         });
+        if (controller.signal.aborted) return;
+        loadedScope.current = scope;
+        setSnapshot({ scope, data });
         timer = setTimeout(refresh, 15000);
       } catch (error) {
         if (controller.signal.aborted) return;

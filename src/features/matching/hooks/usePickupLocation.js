@@ -9,7 +9,7 @@ import {
 } from "../mocks/matchingMockData";
 import useSessionStore from "../../../shared/stores/sessionStore";
 import { createMatchingApi } from "../api/matchingApi";
-import { loadHomePickupPoints } from "../../home/utils/loadHomeData";
+import { loadPickupContext } from "../utils/loadPickupContext";
 import {
   canSubmitDestination,
   resolveDestinationDraft,
@@ -84,14 +84,11 @@ export default function usePickupLocation() {
       if (session.status !== "authenticated")
         throw new Error("로그인한 뒤 출발 거점을 선택해 주세요.");
       const api = createMatchingApi(session.csrfToken, controller.signal);
-      const { data: loadedProfile } = await api.profile();
-      if (loadedProfile?.user?.id !== String(session.user.id))
-        throw new Error("프로필 정보를 확인할 수 없어요.");
-      const loaded = await loadHomePickupPoints(
-        api,
-        loadedProfile.user.universityId,
-      );
-      return { points: loaded.pickupPoints, profile: loadedProfile };
+      const loaded = await loadPickupContext(api, {
+        id: session.user?.id,
+        universityId: session.user?.universityId,
+      });
+      return { points: loaded.pickupPoints, profile: loaded.profile };
     })();
     source
       .then(({ points: data, profile: loadedProfile }) => {
@@ -143,6 +140,7 @@ export default function usePickupLocation() {
     isPreview,
     session.status,
     session.user?.id,
+    session.user?.universityId,
     session.csrfToken,
   ]);
 

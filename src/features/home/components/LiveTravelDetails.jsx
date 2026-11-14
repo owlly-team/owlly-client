@@ -64,6 +64,11 @@ export default function LiveTravelDetails({ mode }) {
         />
       </div>
       <div className="flex flex-col gap-4 pt-2">
+        {(data.selectionLoading || data.travelLoading) && (
+          <p role="status" className="text-label2 text-label-neutral">
+            최신 교통 정보를 확인하고 있어요.
+          </p>
+        )}
         <p className="text-label2 text-label-neutral">
           {data.pickupPoint.name} →{" "}
           {data.rideRequest.destinationDongName ?? "선택한 하차 지점"}
@@ -104,7 +109,11 @@ export default function LiveTravelDetails({ mode }) {
             {warning}
           </p>
         ))}
-      {data.usingDefaultDropoff && <p className="text-caption1 text-label-alternative">교통 정보는 기본 하차 위치 기준 추정값이에요.</p>}
+        {data.usingDefaultDropoff && (
+          <p className="text-caption1 text-label-alternative">
+            교통 정보는 기본 하차 위치 기준 추정값이에요.
+          </p>
+        )}
         {travel?.warnings?.map((warning) => (
           <p key={warning} className="text-caption1 text-label-alternative">
             {warning}

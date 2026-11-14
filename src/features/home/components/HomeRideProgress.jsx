@@ -12,6 +12,7 @@ const ICONS = {
   taxi: iconTaxi,
   dropoff: iconLocation,
   home: iconHome,
+  settlement: iconHome,
 };
 
 export default function HomeRideProgress({ view, onOpenRoom, roomError }) {
@@ -20,7 +21,7 @@ export default function HomeRideProgress({ view, onOpenRoom, roomError }) {
     <>
       <section
         aria-labelledby="ride-progress-title"
-        className="rounded-16 border-primary-normal bg-primary-tint mt-5 overflow-hidden border p-4 pb-0"
+        className="rounded-16 border-primary-normal bg-primary-tint relative mt-5 overflow-hidden border p-4 pb-0"
       >
         <div className="flex min-h-6 items-center justify-between gap-2">
           <p className="text-caption1 text-primary-normal font-semibold">
@@ -63,11 +64,16 @@ export default function HomeRideProgress({ view, onOpenRoom, roomError }) {
         <button
           type="button"
           onClick={onOpenRoom}
+          aria-label={`${view.title} 동승 채팅방으로 이동`}
+          className="rounded-16 focus-visible:outline-primary-normal absolute inset-0 focus-visible:outline-2 focus-visible:-outline-offset-4"
+        />
+        <div
+          aria-hidden="true"
           className="border-line-alternative text-label2 text-primary-normal mt-3 flex min-h-12 w-full items-center justify-end gap-1 border-t font-semibold"
         >
           채팅방으로{" "}
           <ChevronRight aria-hidden="true" className="size-4 shrink-0" />
-        </button>
+        </div>
       </section>
       <section aria-labelledby="ride-order-title" className="mt-5 pb-6">
         <h2
