@@ -1,4 +1,5 @@
-import { canPreview, useDemoStore } from "../../demo/demoStore";
+import { canPreview, isMockMode } from "../../../shared/api/mockMode";
+import { useMockJourneyStore } from "../../matching/stores/mockJourneyStore";
 import LastDepartureCard from "../components/LastDepartureCard";
 import TransportOptionCard from "../components/TransportOptionCard";
 import { useId, useRef, useState } from "react";
@@ -7,7 +8,8 @@ import HomeMatchingCard from "../components/HomeMatchingCard";
 import iconLocation from "../../../assets/icons/location.svg";
 import HomeIcon from "../../../assets/icons/nav-home.svg?react";
 import BottomTabBar from "../../../shared/components/BottomTabBar";
-import { homeScenarios } from "../mocks/homeMockData";
+import { defaultHomeData, homeScenarios } from "../mocks/homeMockData";
+import { getMockProfile } from "../../onboarding/mocks/onboardingMockSession";
 import useHome from "../hooks/useHome";
 import useHomeData from "../hooks/useHomeData";
 import Button from "../../../shared/components/Button";
@@ -20,15 +22,25 @@ import {
 
 export default function Home({ data, onViewMatchingResult }) {
   const { search } = useLocation();
-  const session = useDemoStore((store) => store.session);
+  const session = useMockJourneyStore((store) => store.journey);
   const params = new URLSearchParams(search);
   const previewHome = canPreview() && params.get("preview") === "home";
   const scenario = params.get("scenario");
   const scenarioData = Object.hasOwn(homeScenarios, scenario)
     ? homeScenarios[scenario]
     : homeScenarios.matched;
-  if (session && !data && !previewHome)
-    return <HomeContent data={session.home} />;
+  if (isMockMode() && !data && !previewHome) {
+    const source = session?.home ?? defaultHomeData;
+    return (
+      <HomeContent
+        data={{
+          ...source,
+          profile: getMockProfile() ?? source.profile,
+          isPreview: true,
+        }}
+      />
+    );
+  }
   if (data || previewHome) {
     return (
       <HomeContent

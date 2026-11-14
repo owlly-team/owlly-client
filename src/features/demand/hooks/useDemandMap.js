@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { useDemoStore } from "../../demo/demoStore";
 import { useMockApi } from "../../../shared/api/client";
 import {
   fetchDemandCandidates,
@@ -9,8 +8,7 @@ import { getMockDemandMap } from "../mocks/demandMapData";
 import { demandQuery } from "../utils/demandMapUtils";
 
 export default function useDemandMap(day, time) {
-  const demoActive = useDemoStore((store) => Boolean(store.session));
-  const mock = useMockApi || demoActive;
+  const mock = useMockApi;
   const [snapshot, setSnapshot] = useState(null);
   const [revision, setRevision] = useState(0);
   const key = `${day}:${time}:${revision}`;

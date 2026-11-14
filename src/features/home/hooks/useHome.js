@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useBottomTabNavigation from "../../../shared/hooks/useBottomTabNavigation";
 import useSessionStore from "../../../shared/stores/sessionStore";
+import { getDisplayNow } from "../../../shared/utils/time";
+import { useMockJourneyStore } from "../../matching/stores/mockJourneyStore";
+import useMockMatchingTransition from "../../matching/hooks/useMockMatchingTransition";
 import iconBus from "../../../assets/icons/transport-bus.svg";
 import iconCarpool from "../../../assets/icons/transport-carpool.svg";
 import iconTaxi from "../../../assets/icons/transport-taxi.svg";
@@ -23,6 +26,7 @@ const TRANSPORT_ROUTES = {
 };
 
 export default function useHome(data, { onPendingFeature } = {}) {
+  useMockMatchingTransition(data.rideRequest, data.isPreview === true);
   const navigate = useNavigate();
   const [now, setNow] = useState(() => Date.now());
 
@@ -149,21 +153,21 @@ export default function useHome(data, { onPendingFeature } = {}) {
 
   //MATCHED 신청의 partyId로 매칭 결과 화면 이동
   function handleViewMatchingResult(partyId) {
-    const demoResult =
+    const mockResult =
       data.isPreview === true
-        ? useDemoStore.getState().session?.matchingResult
+        ? useMockJourneyStore.getState().journey?.matchingResult
         : null;
-    const myDecision = demoResult?.party.members.find(
-      (member) => member.memberId === demoResult.party.myMemberId,
+    const myDecision = mockResult?.party.members.find(
+      (member) => member.memberId === mockResult.party.myMemberId,
     )?.decision;
     if (
-      demoResult?.party.id === partyId &&
+      mockResult?.party.id === partyId &&
       myDecision === "ACCEPTED" &&
-      (demoResult.party.myMemberId !==
-        demoResult.party.representativeMemberId ||
-        useDemoStore.getState().session.account)
+      (mockResult.party.myMemberId !==
+        mockResult.party.representativeMemberId ||
+        useMockJourneyStore.getState().journey.account)
     ) {
-      navigate(`/rooms/${demoResult.party.roomId}`, {
+      navigate(`/rooms/${mockResult.party.roomId}`, {
         state: { isPreview: true },
       });
       return;
@@ -192,6 +196,9 @@ export default function useHome(data, { onPendingFeature } = {}) {
     navigate(roomId ? `/rooms/${roomId}` : `/parties/${party.id}/room`, {
       state: {
         isPreview: data.isPreview === true,
+        ...(data.isPreview === true
+          ? { previewNow: data.previewNow, mockClock: true }
+          : {}),
         matchingResult: { party, rideRequest, settlement: data.settlement },
         ...(room?.partyId === party.id && room.id === roomId ? { room } : {}),
       },

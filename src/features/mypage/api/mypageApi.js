@@ -1,6 +1,9 @@
-import { apiGetWithEtag, apiPatch, hasApiBaseUrl } from "../../../shared/api/client";
-
-const useMock = import.meta.env.DEV && !hasApiBaseUrl;
+import { apiGetWithEtag, apiPatch } from "../../../shared/api/client";
+import { isMockMode } from "../../../shared/api/mockMode";
+import {
+  getMockProfile,
+  updateMockProfile,
+} from "../../onboarding/mocks/onboardingMockSession";
 
 const mockProfile = {
   user: {
@@ -20,12 +23,21 @@ const mockProfile = {
 };
 
 export async function fetchMyProfile() {
-  if (useMock) return { data: mockProfile, etag: "mock-etag" };
+  if (isMockMode()) {
+    return {
+      data: getMockProfile() ?? structuredClone(mockProfile),
+      etag: "mock-etag",
+    };
+  }
   return apiGetWithEtag("/me/profile");
 }
 
 export async function updateMyProfile(patch, { etag, csrfToken }) {
-  if (useMock) return { ...mockProfile, ...patch };
+  if (isMockMode()) {
+    const current = (await fetchMyProfile()).data;
+    const updated = updateMockProfile(patch) ?? { ...current, ...patch };
+    return updated;
+  }
   return apiPatch("/me/profile", patch, {
     headers: { "If-Match": etag, "X-CSRF-Token": csrfToken },
   });
