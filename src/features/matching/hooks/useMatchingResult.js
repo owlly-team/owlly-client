@@ -133,8 +133,12 @@ export default function useMatchingResult(partyId, preview, isPreview = false) {
   const confirm = () =>
     run(async (api) => {
       const result = await confirmMembership(api, data, actionKey("confirm"));
-      if (!operation.current.signal.aborted)
+      if (!operation.current.signal.aborted) {
         setSnapshot({ scope, data: result });
+        // 대표 안내 진입 시 API-33을 다시 조회해 확정 후 정산을 표시한다.
+        if (result.party.myMemberId === result.party.representativeMemberId)
+          setAttempt((value) => value + 1);
+      }
       return result;
     });
   const leave = () =>

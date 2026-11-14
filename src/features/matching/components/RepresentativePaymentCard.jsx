@@ -4,6 +4,8 @@ import { toRepresentativePayments } from "../utils/matchingResultUtils";
 export default function RepresentativePaymentCard({
   party,
   settlement,
+  settlementNotReady,
+  settlementError,
   retry,
 }) {
   const { payments, totalWon } = toRepresentativePayments(party, settlement);
@@ -51,7 +53,11 @@ export default function RepresentativePaymentCard({
       </div>
       {totalWon == null && (
         <p role="status" className="text-label2 text-label-alternative mt-3">
-          받을 금액을 아직 확인할 수 없어요.{" "}
+          {settlementError
+            ? "받을 금액을 불러오지 못했어요."
+            : settlementNotReady
+              ? "정산 금액이 아직 준비되지 않았어요."
+              : "받을 금액을 아직 확인할 수 없어요."}{" "}
           <button
             type="button"
             onClick={retry}

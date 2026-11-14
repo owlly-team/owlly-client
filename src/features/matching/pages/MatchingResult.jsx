@@ -236,6 +236,8 @@ export default function MatchingResult({ banks, onOpenChat }) {
         key={party.id}
         party={party}
         settlement={settlement}
+        settlementNotReady={settlementNotReady}
+        settlementError={settlementError}
         onBack={goHome}
         retry={retry}
         banks={banks ?? data.banks}

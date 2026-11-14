@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import useSessionStore from "../../../shared/stores/sessionStore";
 import { createMatchingApi } from "../api/matchingApi";
+import { registerRepresentativeAccount } from "../utils/representativeAccount";
 
 export default function useRepresentativeAccount({
   roomId,
@@ -68,33 +69,12 @@ export default function useRepresentativeAccount({
           const fingerprint = JSON.stringify([roomId, account]);
           if (command.current?.fingerprint !== fingerprint)
             command.current = { fingerprint, key: crypto.randomUUID() };
-          result = (
-            await createMatchingApi(
-              csrfToken,
-              controller.signal,
-            ).registerAccount(
-              roomId,
-              "PREPAY_RECEIVE",
-              account,
-              command.current.key,
-            )
-          ).data;
-          if (
-            !result?.id ||
-            result.purpose !== "PREPAY_RECEIVE" ||
-            result.bankCode !== account.bankCode ||
-            !result.maskedAccountNumber ||
-            !result.maskedHolderName
-          )
-            throw new Error("계좌 등록 결과를 확인할 수 없어요.");
-          result = {
-            id: result.id,
-            purpose: result.purpose,
-            bankCode: result.bankCode,
-            maskedAccountNumber: result.maskedAccountNumber,
-            maskedHolderName: result.maskedHolderName,
-            deleteAfter: result.deleteAfter ?? null,
-          };
+          result = await registerRepresentativeAccount(
+            createMatchingApi(csrfToken, controller.signal),
+            roomId,
+            account,
+            command.current.key,
+          );
         }
         if (controller.signal.aborted) return;
         // 실제 계좌 원문은 라우터 state나 성공 상태에 보관하지 않는다.

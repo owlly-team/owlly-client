@@ -6,6 +6,8 @@ import RepresentativeAccountForm from "../components/RepresentativeAccountForm";
 export default function RepresentativeMatchingResult({
   party,
   settlement,
+  settlementNotReady,
+  settlementError,
   onBack,
   retry,
   banks = [],
@@ -37,6 +39,8 @@ export default function RepresentativeMatchingResult({
       <RepresentativePaymentCard
         party={party}
         settlement={settlement}
+        settlementNotReady={settlementNotReady}
+        settlementError={settlementError}
         retry={retry}
       />
       <RepresentativeAccountForm
