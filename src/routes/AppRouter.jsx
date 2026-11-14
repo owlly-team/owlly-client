@@ -37,7 +37,7 @@ export default function AppRouter() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Layout />}>
-          <Route index element={<Home />} />
+          <Route index element={<Start />} />
           <Route path="matching/failed" element={<MatchingFailure />} />
           <Route path="train" element={<LastTrain />} />
           <Route path="solo-taxi" element={<SoloTaxi />} />
