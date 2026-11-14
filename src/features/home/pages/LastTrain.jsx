@@ -1,7 +1,5 @@
-import { canPreview } from "../../demo/demoStore";
-import { useMockApi } from "../../../shared/api/client";
 import { useLocation, useNavigate } from "react-router-dom";
-import LiveTravelDetails from "../components/LiveTravelDetails";
+import { isMockMode } from "../../../shared/api/mockMode";
 import Badge from "../../../shared/components/Badge";
 import TopBar from "../../../shared/components/TopBar";
 import RouteSteps from "../components/RouteSteps";
@@ -19,15 +17,16 @@ export default function LastTrain() {
   const navigate = useNavigate();
   const { state, search } = useLocation();
   const isPreview =
-    import.meta.env.DEV &&
     state?.isPreview !== false &&
-    (state?.isPreview === true ||
-      new URLSearchParams(search).get("preview") === "train");
+    (isMockMode() ||
+      (import.meta.env.DEV &&
+        (state?.isPreview === true ||
+          new URLSearchParams(search).get("preview") === "train")));
   const live = useLastTrain(state, isPreview);
   const data = isPreview
     ? (state?.travelContext ?? defaultHomeData)
     : live.data;
-  const view = toLastTrainView(data);
+  const view = toLastTrainView(data ?? {});
   const goHome = () => navigate("/");
   const canShow = Boolean(data) && !live.error;
   function openPickup() {
@@ -56,11 +55,6 @@ export default function LastTrain() {
       <div className="-mx-4">
         <TopBar title="막차 경로" onLeftClick={goHome} />
       </div>
-      {isPreview && (
-        <p className="text-caption1 text-primary-normal">
-          미리보기 · 예시 데이터
-        </p>
-      )}
       {live.loading && (
         <p role="status" className="py-4">
           막차 경로를 불러오고 있어요.

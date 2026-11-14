@@ -5,14 +5,14 @@ import Button from "../../../shared/components/Button";
 import { toRegistrationView } from "../utils/registrationUtils";
 import useRideRegistration from "../hooks/useRideRegistration";
 import useSessionStore from "../../../shared/stores/sessionStore";
-import { useDemoStore } from "../../demo/demoStore";
+import { useMockJourneyStore } from "../stores/mockJourneyStore";
 
 //동승 등록 완료 페이지
 export default function CarpoolRegistration({ data, onViewMatchingResult }) {
   const navigate = useNavigate();
   const { state } = useLocation();
   const userId = useSessionStore((session) => session.user?.id);
-  const demo = useDemoStore((store) => store.session);
+  const demo = useMockJourneyStore((store) => store.journey);
   const demoRegistration =
     state?.isPreview !== false ? demo?.registration : null;
   const registration = data ?? demoRegistration ?? state ?? {};
@@ -76,7 +76,7 @@ export default function CarpoolRegistration({ data, onViewMatchingResult }) {
             onClick={
               demoRegistration
                 ? () => {
-                    useDemoStore.getState().cancel();
+                    useMockJourneyStore.getState().cancel();
                     goHome();
                   }
                 : active.cancel

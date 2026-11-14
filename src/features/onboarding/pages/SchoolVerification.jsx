@@ -26,7 +26,9 @@ export default function SchoolVerification() {
   const [verifyError, setVerifyError] = useState("");
 
   useEffect(() => {
-    fetchUniversities().then(setUniversities).catch(() => setUniversities([]));
+    fetchUniversities()
+      .then(setUniversities)
+      .catch(() => setUniversities([]));
   }, []);
 
   const domain = email.split("@")[1] ?? "";
@@ -37,7 +39,9 @@ export default function SchoolVerification() {
   const showDomainError = email.length > 0 && !isValidDomain;
   const canSend = isValidDomain && !sending;
   const canVerify = codeSent && code.length === 6 && !verifying;
-  const schoolNames = universities.map((university) => university.name).join(" · ");
+  const schoolNames = universities
+    .map((university) => university.name)
+    .join(" · ");
 
   const handleSendCode = async () => {
     if (!isValidDomain || sending) return;
@@ -65,7 +69,9 @@ export default function SchoolVerification() {
       const result = await verifyEmailCode({ verificationId, code });
       // 기존 학생이면 같은 증표로 바로 로그인하고, 계정이 없으면(신규) 프로필 가입으로 이어간다.
       try {
-        const session = await loginStudent({ verificationToken: result.verificationToken });
+        const session = await loginStudent({
+          verificationToken: result.verificationToken,
+        });
         useSessionStore.getState().setSession(session);
         navigate("/");
       } catch (loginError) {
@@ -94,7 +100,7 @@ export default function SchoolVerification() {
         </div>
         <div className="flex flex-col gap-4 pt-1">
           <div className="flex flex-col gap-2">
-            <h1 className="text-title3 font-bold tracking-tight text-label-normal">
+            <h1 className="text-title3 text-label-normal font-bold tracking-tight">
               학교 메일로 인증해요
             </h1>
             <p className="text-body2 text-label-neutral">
@@ -122,12 +128,16 @@ export default function SchoolVerification() {
               <Button
                 variant="primary"
                 size="sm"
-                className="h-10 shrink-0 rounded-12 px-4"
+                className="rounded-12 h-10 shrink-0 px-4"
                 style={{ backgroundColor: "#3a3a3c" }}
                 disabled={!canSend}
                 onClick={handleSendCode}
               >
-                {sending ? "보내는 중..." : codeSent ? "다시 보내기" : "코드 보내기"}
+                {sending
+                  ? "보내는 중..."
+                  : codeSent
+                    ? "다시 보내기"
+                    : "코드 보내기"}
               </Button>
             }
           />
@@ -142,17 +152,21 @@ export default function SchoolVerification() {
               onChange={(event) =>
                 setCode(event.target.value.replace(/[^0-9]/g, "").slice(0, 6))
               }
-              helperText={verifyError || "메일로 보낸 코드예요 · 10분 안에 입력해 주세요"}
+              helperText={
+                verifyError || "메일로 보낸 코드예요 · 10분 안에 입력해 주세요"
+              }
               inputClassName={
                 "text-center text-title3 font-bold tracking-[0.3em]" +
-                (verifyError ? " shadow-[inset_0_0_0_1px_var(--color-status-negative)]" : "")
+                (verifyError
+                  ? " shadow-[inset_0_0_0_1px_var(--color-status-negative)]"
+                  : "")
               }
             />
           )}
         </div>
       </div>
 
-      <div className="pb-[max(1rem,env(safe-area-inset-bottom))] pt-4">
+      <div className="pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
         <Button
           size="md"
           variant="primary"

@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from "../shared/layout/Layout";
 import useSessionStore from "../shared/stores/sessionStore";
-import { useDemoStore } from "../features/demo/demoStore";
 import Home from "../features/home/pages/Home";
 import MatchingFailure from "../features/home/pages/MatchingFailure";
 import LastTrain from "../features/home/pages/LastTrain";
@@ -30,16 +29,19 @@ import SettlementRefund from "../features/settlement/pages/SettlementRefund";
 import MemberSettlement from "../features/settlement/pages/MemberSettlement";
 
 export default function AppRouter() {
-  const demoActive = useDemoStore((store) => Boolean(store.session));
+  const sessionStatus = useSessionStore((store) => store.status);
   useEffect(() => {
-    if (!demoActive) useSessionStore.getState().hydrate();
-  }, [demoActive]);
+    useSessionStore.getState().hydrate();
+  }, []);
 
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Layout />}>
-          <Route index element={<Start />} />
+          <Route
+            index
+            element={sessionStatus === "authenticated" ? <Home /> : <Start />}
+          />
           <Route path="matching/failed" element={<MatchingFailure />} />
           <Route path="train" element={<LastTrain />} />
           <Route path="solo-taxi" element={<SoloTaxi />} />

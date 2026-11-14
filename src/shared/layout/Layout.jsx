@@ -1,5 +1,4 @@
 import { Outlet } from "react-router-dom";
-import DemoControls from "../../features/demo/DemoControls";
 
 export default function Layout() {
   return (
@@ -7,7 +6,6 @@ export default function Layout() {
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto px-4">
         <Outlet />
       </div>
-      <DemoControls />
     </div>
   );
 }

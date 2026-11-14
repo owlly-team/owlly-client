@@ -1,4 +1,4 @@
-import { canPreview } from "../../demo/demoStore";
+import { canPreview } from "../../../shared/api/mockMode";
 import { useMockApi } from "../../../shared/api/client";
 import { useLocation, useNavigate } from "react-router-dom";
 import LiveTravelDetails from "../components/LiveTravelDetails";

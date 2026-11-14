@@ -1,5 +1,5 @@
-import { canPreview, isDemoActive } from "../../demo/demoStore";
-import { finalizeDemoSettlement } from "../../demo/demoFlow";
+import { canPreview, isMockMode } from "../../../shared/api/mockMode";
+import { finalizeMockSettlement } from "../../matching/mocks/mockJourneyFlow";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import TopBar from "../../../shared/components/TopBar";
@@ -148,8 +148,8 @@ function SettlementForm({
   const submitting = isSubmitting || fare.saving || route.saving;
   const finalized = !isPreview && settlement.finalizedAt != null;
   const demoSettlement =
-    isPreview && isDemoActive()
-      ? finalizeDemoSettlement(
+    isPreview && isMockMode()
+      ? finalizeMockSettlement(
           context,
           Number(amount),
           rows.map((row) => row.memberId),

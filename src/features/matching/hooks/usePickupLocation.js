@@ -1,4 +1,5 @@
-import { canPreview, useDemoStore } from "../../demo/demoStore";
+import { canPreview, isMockMode } from "../../../shared/api/mockMode";
+import { useMockJourneyStore } from "../stores/mockJourneyStore";
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { distanceMeters, isPoint } from "../utils/mapUtils";
@@ -17,11 +18,11 @@ import {
 //PickupLocation 페이지의 지도·하단 시트에서 사용하는 상태와 동작
 export default function usePickupLocation() {
   const { state, search } = useLocation();
-  const demoSession = useDemoStore((store) => store.session);
+  const mockJourney = useMockJourneyStore((store) => store.journey);
   const isPreview =
     canPreview() &&
     state?.isPreview !== false &&
-    (Boolean(demoSession) ||
+    (isMockMode() ||
       state?.isPreview === true ||
       new URLSearchParams(search).get("preview") === "pickup");
   const session = useSessionStore();
@@ -32,13 +33,13 @@ export default function usePickupLocation() {
   //처음에는 프로필 기본 하차 지점 사용, 시간 선택 화면에서 돌아오면 오늘 선택값 유지
   const [defaultDestination, setDefaultDestination] = useState(
     state?.defaultDestination ??
-      (demoSession
+      (mockJourney
         ? {
             id: "31",
             name: "영통2동",
             districtId: "21",
             districtName: "수원시 영통구",
-            point: demoSession.home.profile.defaultDropoff,
+            point: mockJourney.home.profile.defaultDropoff,
           }
         : null),
   );
@@ -96,7 +97,8 @@ export default function usePickupLocation() {
       .then(({ points: data, profile: loadedProfile }) => {
         if (controller.signal.aborted) return;
         const valid = data.filter((item) => isPoint(item.point));
-        if (isPreview && valid[0]) useDemoStore.getState().resolvePickup(valid[0]);
+        if (isPreview && valid[0])
+          useMockJourneyStore.getState().resolvePickup(valid[0]);
         setPoints(valid);
         setPickup(
           (previous) =>

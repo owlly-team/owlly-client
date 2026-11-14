@@ -12,6 +12,7 @@ import { fetchProfileOptions } from "../api/onboardingApi";
 import { mockProfileOptions } from "../mocks/onboardingMockData";
 import { registerStudent } from "../../../shared/api/authApi";
 import useSessionStore from "../../../shared/stores/sessionStore";
+import { isMockMode } from "../../../shared/api/mockMode";
 
 const defaultProfileData = {
   school: "단국대",
@@ -30,7 +31,10 @@ function getDropoffPoint() {
     }
     navigator.geolocation.getCurrentPosition(
       (position) =>
-        resolve({ latitude: position.coords.latitude, longitude: position.coords.longitude }),
+        resolve({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        }),
       () => resolve(FALLBACK_DROPOFF),
       { timeout: 5000 },
     );
@@ -49,7 +53,9 @@ export default function Profile({ data = defaultProfileData }) {
   );
   const [name, setName] = useState(state?.name ?? "");
   const [gender, setGender] = useState(state?.gender ?? null);
-  const [sameGenderOnly, setSameGenderOnly] = useState(state?.sameGenderOnly ?? true);
+  const [sameGenderOnly, setSameGenderOnly] = useState(
+    state?.sameGenderOnly ?? true,
+  );
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const dropoffLabel = state?.dropoffDongName
@@ -60,9 +66,13 @@ export default function Profile({ data = defaultProfileData }) {
     fetchProfileOptions()
       .then((options) => {
         setGenderOptions(
-          options.genderOptions.map((option) => ({ value: option.code, label: option.label })),
+          options.genderOptions.map((option) => ({
+            value: option.code,
+            label: option.label,
+          })),
         );
-        if (state?.sameGenderOnly === undefined) setSameGenderOnly(options.sameGenderDefault);
+        if (state?.sameGenderOnly === undefined)
+          setSameGenderOnly(options.sameGenderDefault);
       })
       .catch(() => {});
   }, [state?.sameGenderOnly]);
@@ -78,13 +88,16 @@ export default function Profile({ data = defaultProfileData }) {
   const handleSubmit = async () => {
     if (!canStart) return;
     if (!state?.verificationToken) {
-      navigate("/");
+      navigate("/onboarding/school-verification");
       return;
     }
     setSubmitting(true);
     setSubmitError("");
     try {
-      const defaultDropoff = state?.defaultDropoff ?? (await getDropoffPoint());
+      const mock = isMockMode();
+      const defaultDropoff =
+        state?.defaultDropoff ??
+        (mock ? FALLBACK_DROPOFF : await getDropoffPoint());
       const session = await registerStudent({
         verificationToken: state.verificationToken,
         email: state.email,
@@ -93,6 +106,9 @@ export default function Profile({ data = defaultProfileData }) {
           genderCode: gender,
           sameGenderDefault: sameGenderOnly,
           defaultDropoff,
+          ...(mock && state?.dropoffDongName
+            ? { defaultDongName: state.dropoffDongName }
+            : {}),
         },
       });
       useSessionStore.getState().setSession(session);
@@ -116,7 +132,7 @@ export default function Profile({ data = defaultProfileData }) {
           </Badge>
 
           <div className="flex flex-col gap-2">
-            <span className="text-label2 font-semibold text-label-neutral">
+            <span className="text-label2 text-label-neutral font-semibold">
               이름
             </span>
             <TextField
@@ -128,17 +144,21 @@ export default function Profile({ data = defaultProfileData }) {
           </div>
 
           <div className="flex flex-col gap-2">
-            <span className="text-label2 font-semibold text-label-alternative">
+            <span className="text-label2 text-label-alternative font-semibold">
               성별
             </span>
-            <GenderToggle value={gender} onChange={setGender} options={genderOptions} />
+            <GenderToggle
+              value={gender}
+              onChange={setGender}
+              options={genderOptions}
+            />
             <p className="text-caption1 text-label-alternative">
               동성 매칭에 쓰여요. 가입 후에는 바꿀 수 없어요.
             </p>
           </div>
 
           <div className="flex flex-col gap-2">
-            <span className="text-label2 font-semibold text-label-alternative">
+            <span className="text-label2 text-label-alternative font-semibold">
               집 근처 하차 지점
             </span>
             <LocationPreview label={dropoffLabel} onClick={openDropoffPicker} />
@@ -150,7 +170,7 @@ export default function Profile({ data = defaultProfileData }) {
 
           <div className="flex items-center justify-between gap-3">
             <div className="flex flex-col gap-0.5">
-              <p className="text-body1 font-semibold text-label-normal">
+              <p className="text-body1 text-label-normal font-semibold">
                 동성끼리만 매칭
               </p>
               <p className="text-label2 text-label-alternative">
@@ -162,9 +182,11 @@ export default function Profile({ data = defaultProfileData }) {
         </div>
       </div>
 
-      <div className="pb-[max(1rem,env(safe-area-inset-bottom))] pt-4">
+      <div className="pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
         {submitError && (
-          <p className="pb-2 text-center text-caption1 text-status-negative">{submitError}</p>
+          <p className="text-caption1 text-status-negative pb-2 text-center">
+            {submitError}
+          </p>
         )}
         <Button
           size="md"

@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import useSessionStore from "../../../shared/stores/sessionStore";
 import { createMatchingApi } from "../api/matchingApi";
+import useMockMatchingTransition from "./useMockMatchingTransition";
 
 export default function useRideRegistration(source, onCancelled) {
+  useMockMatchingTransition(source?.rideRequest, source?.isPreview === true);
   const { csrfToken, user } = useSessionStore();
   const id = source?.rideRequest?.id ? String(source.rideRequest.id) : null;
   const live = source?.isPreview === false;

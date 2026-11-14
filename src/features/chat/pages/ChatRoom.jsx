@@ -1,4 +1,5 @@
-import { canPreview, useDemoStore } from "../../demo/demoStore";
+import { canPreview, isMockMode } from "../../../shared/api/mockMode";
+import { useMockJourneyStore } from "../../matching/stores/mockJourneyStore";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import TopBar from "../../../shared/components/TopBar";
@@ -13,7 +14,10 @@ import MemberPrepayScreen from "./MemberPrepayScreen";
 import { getRoomPhase } from "../utils/prepayUtils";
 import { toMatchingResultView } from "../../matching/utils/matchingResultUtils";
 import { formatTime } from "../../home/utils/homeUtils";
-import { mockRepresentativeMatchingResult } from "../../matching/mocks/matchingMockData";
+import {
+  mockMatchingResult,
+  mockRepresentativeMatchingResult,
+} from "../../matching/mocks/matchingMockData";
 import useChatMessages from "../hooks/useChatMessages";
 import useBoarding from "../hooks/useBoarding";
 import useTaxiCall from "../hooks/useTaxiCall";
@@ -23,9 +27,9 @@ import { memberSettlementMock } from "../../settlement/mocks/memberSettlementMoc
 import useLiveRoom from "../hooks/useLiveRoom";
 import { getDisplayNow } from "../../../shared/utils/time";
 import {
-  receiveDemoPrepayments,
-  finalizeDemoSettlement,
-} from "../../demo/demoFlow";
+  receiveMockPrepayments,
+  finalizeMockSettlement,
+} from "../../matching/mocks/mockJourneyFlow";
 
 const previewAccount = {
   bankName: "KB국민은행",
@@ -36,46 +40,58 @@ const previewAccount = {
 export default function ChatRoom({ csrfToken }) {
   const { roomId, partyId } = useParams();
   const { state: routeState, search, pathname } = useLocation();
-  const demoSession = useDemoStore((store) => store.session);
-  const demoResult =
+  const mockJourney = useMockJourneyStore((store) => store.journey);
+  const previewRole = new URLSearchParams(search).get("preview");
+  const queryPreview =
+    canPreview() && ["member", "representative"].includes(previewRole);
+  const previewRequested =
+    canPreview() &&
     routeState?.isPreview !== false &&
-    demoSession?.matchingResult &&
-    (roomId === demoSession.matchingResult.party.roomId ||
-      partyId === demoSession.matchingResult.party.id)
-      ? demoSession.matchingResult
-      : null;
+    (isMockMode() || routeState?.isPreview === true || queryPreview);
+  const fixture =
+    previewRole === "member"
+      ? mockMatchingResult
+      : mockRepresentativeMatchingResult;
+  const supplied = routeState?.matchingResult;
+  const matchesRoute = (context) =>
+    context?.party &&
+    (roomId === context.party.roomId || partyId === context.party.id);
+  const mockResult = previewRequested
+    ? matchesRoute(mockJourney?.matchingResult)
+      ? mockJourney.matchingResult
+      : matchesRoute(supplied)
+        ? supplied
+        : matchesRoute(fixture)
+          ? fixture
+          : null
+    : null;
   const state = useMemo(
     () =>
-      demoResult
+      mockResult
         ? {
             ...routeState,
             isPreview: true,
-            demoSession: true,
-            matchingResult: demoResult,
-            previewNow: demoResult.previewNow,
-            account: demoSession.account ?? routeState?.account,
+            mockClock: true,
+            matchingResult: mockResult,
+            previewNow:
+              routeState?.previewNow ??
+              mockResult.previewNow ??
+              new Date(
+                Date.parse(mockResult.party.departureAt) - 30 * 60000,
+              ).toISOString(),
+            account: mockJourney?.account ?? routeState?.account,
           }
         : routeState,
-    [demoResult, demoSession, routeState],
+    [mockResult, mockJourney, routeState],
   );
   const navigate = useNavigate();
   const [messageFailure, setMessageFailure] = useState(null);
   const denied =
     messageFailure?.pathname === pathname ? messageFailure.error : null;
-  const queryPreview =
-    canPreview() &&
-    ["member", "representative"].includes(
-      new URLSearchParams(search).get("preview"),
-    );
   const demo =
     queryPreview && roomId === mockRepresentativeMatchingResult.party.roomId
       ? mockRepresentativeMatchingResult
       : null;
-  // 역할 전환은 개발용 미리보기에서만 허용한다.
-  const previewRequested =
-    canPreview() &&
-    state?.isPreview !== false &&
-    (state?.isPreview === true || queryPreview);
   const live = useLiveRoom({
     enabled: !previewRequested && !denied,
     partyId,
@@ -95,14 +111,28 @@ export default function ChatRoom({ csrfToken }) {
       : live.data;
   const roomError = denied ?? live.error;
   const [now, setNow] = useState(Date.now);
-  const demoDeparture = demoResult?.party.departureAt;
-  const demoClock = demoResult?.previewNow;
+  const departure = mockResult?.party.departureAt;
+  const clock = state?.previewNow;
   useEffect(() => {
-    if (!demoDeparture || Date.parse(demoClock) >= Date.parse(demoDeparture))
+    if (
+      !previewRequested ||
+      !departure ||
+      Date.parse(clock) >= Date.parse(departure)
+    )
       return;
-    const timer = setTimeout(() => useDemoStore.getState().prepay(), 20000);
+    const timer = setTimeout(
+      () =>
+        navigate(
+          { pathname, search },
+          {
+            replace: true,
+            state: { ...state, previewNow: departure, mockClock: true },
+          },
+        ),
+      20000,
+    );
     return () => clearTimeout(timer);
-  }, [demoDeparture, demoClock]);
+  }, [previewRequested, departure, clock, state, pathname, search, navigate]);
 
   useEffect(() => {
     if (!state?.reportPreview && !state?.reportCompleted) return;
@@ -178,10 +208,10 @@ export default function ChatRoom({ csrfToken }) {
     previewNow,
   };
   function openSettlement(updatedState = roomState) {
-    if (demoResult)
+    if (mockResult)
       updatedState = {
         ...updatedState,
-        matchingResult: receiveDemoPrepayments(updatedState.matchingResult),
+        matchingResult: receiveMockPrepayments(updatedState.matchingResult),
       };
     const updatedParty = updatedState.matchingResult.party;
     // 뒤로가기로 복귀해도 탑승 응답과 전달받은 ETag를 보존한다.
@@ -217,8 +247,8 @@ export default function ChatRoom({ csrfToken }) {
                   ...roomState,
                   memberSettlement:
                     state?.memberSettlement ??
-                    (demoResult
-                      ? finalizeDemoSettlement(
+                    (mockResult
+                      ? finalizeMockSettlement(
                           context,
                           context.settlement.estimatedTotalWon,
                         )
@@ -243,11 +273,11 @@ export default function ChatRoom({ csrfToken }) {
       }
       boardingStarted={state?.boardingStarted}
       onBoardingStarted={() => {
-        if (demoResult)
-          useDemoStore.getState().updateParty({
+        if (mockResult)
+          useMockJourneyStore.getState().updateParty({
             ...currentParty,
             status: "READY",
-            taxiCalledAt: demoResult.previewNow,
+            taxiCalledAt: state.previewNow,
           });
         navigate(
           { pathname, search },
@@ -268,7 +298,8 @@ export default function ChatRoom({ csrfToken }) {
         })
       }
       onBoardingRecorded={({ party: updatedParty, etag }) => {
-        if (demoResult) useDemoStore.getState().updateParty(updatedParty);
+        if (mockResult)
+          useMockJourneyStore.getState().updateParty(updatedParty);
         const updatedState = {
           ...roomState,
           matchingResult: {
@@ -351,8 +382,8 @@ function RoomContent({
     isPreview,
     etag: context.partyEtag,
     onLeft: (updatedParty) => {
-      if (isPreview && useDemoStore.getState().session)
-        useDemoStore.getState().cancel();
+      if (isPreview && useMockJourneyStore.getState().journey)
+        useMockJourneyStore.getState().cancel();
       navigate("/", { replace: true, state: { leftParty: updatedParty } });
     },
   });
