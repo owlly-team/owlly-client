@@ -83,12 +83,17 @@ export default function MemberSettlement() {
             key={`${partyId}:${view.myMemberId}`}
             view={view}
             isPreview={isPreview}
+            party={party}
+            settlement={data}
+            onSaved={live.refresh}
           />
         ) : view.differenceWon < 0 ? (
           <AdditionalPaymentCard
             key={`${partyId}:${view.myMemberId}:${view.differenceWon}`}
             view={view}
             isPreview={isPreview}
+            party={party}
+            settlement={data}
           />
         ) : (
           <section className="rounded-16 bg-primary-tint p-4">

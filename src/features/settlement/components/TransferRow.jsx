@@ -4,6 +4,7 @@ import Badge from "../../../shared/components/Badge";
 export default function TransferRow({
   name,
   account,
+  accountNote,
   amount,
   received = false,
   onCopy,
@@ -18,7 +19,7 @@ export default function TransferRow({
         <div className="flex min-w-0 flex-col gap-0.5">
           <p className="text-body2 text-label-normal font-semibold">{name}</p>
           <p className="text-caption1 text-label-alternative">
-            {account ?? "반환 계좌 등록 대기"}
+            {account ?? accountNote ?? "반환 계좌 등록 대기"}
           </p>
         </div>
         <span className="text-headline2 text-label-normal shrink-0 font-bold">

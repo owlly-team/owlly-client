@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import TopBar from "../../../shared/components/TopBar";
 import Button from "../../../shared/components/Button";
@@ -6,7 +6,11 @@ import SettlementAmountField from "../components/SettlementAmountField";
 import SettleTable from "../components/SettleTable";
 import DropoffOrderSheet from "../components/DropoffOrderSheet";
 import { resolveRepresentativeSettlement } from "../utils/representativeSettlementUtils";
-import { isWon, toSettlementRows } from "../utils/settlementUtils";
+import {
+  isFinalSettlement,
+  isWon,
+  toSettlementRows,
+} from "../utils/settlementUtils";
 import { toFareRows } from "../utils/fareFlow";
 import useSettlementData from "../hooks/useSettlementData";
 import useFareSettlement from "../hooks/useFareSettlement";
@@ -40,6 +44,19 @@ export default function SettlementInput(props) {
     }),
     [party, settlement, live.data?.settlementEtag],
   );
+  useEffect(() => {
+    if (!previewRequested && isFinalSettlement(settlement, partyId)) {
+      navigate(`/parties/${partyId}/settlement/refund`, {
+        replace: true,
+        state: {
+          ...state,
+          isPreview: false,
+          settlement,
+          matchingResult: context,
+        },
+      });
+    }
+  }, [previewRequested, settlement, partyId, context, navigate, state]);
 
   if (!settlement)
     return (
