@@ -1,6 +1,6 @@
-import { apiGet, apiResponse, hasApiBaseUrl } from "./client";
+import { apiGet, apiResponse, useMockApi } from "./client";
 
-const useMock = import.meta.env.DEV && !hasApiBaseUrl;
+const useMock = useMockApi;
 
 const WEEKDAY_LABEL = ["일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일"];
 

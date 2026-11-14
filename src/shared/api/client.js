@@ -1,4 +1,4 @@
-const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "";
+const configuredBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? "").trim();
 // 개발 중에는 Vite가 같은 출처의 /api를 실제 서버로 중계한다.
 // 외부 IP로 직접 요청하면 SameSite=Lax 세션 쿠키가 전달되지 않는다.
 const baseUrl =
@@ -7,7 +7,7 @@ const baseUrl =
     : configuredBaseUrl;
 
 export const hasApiBaseUrl = Boolean(configuredBaseUrl);
-export const useMockApi = import.meta.env.DEV && !hasApiBaseUrl;
+export const useMockApi = !hasApiBaseUrl;
 
 export async function apiResponse(
   path,
