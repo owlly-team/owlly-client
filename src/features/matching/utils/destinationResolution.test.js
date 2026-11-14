@@ -1,12 +1,54 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { resolveDestinationDraft } from "./destinationResolution.js";
+import {
+  canSubmitDestination,
+  resolveDestinationDraft,
+} from "./destinationResolution.js";
 
 const point = { latitude: 37.32, longitude: 127.09 };
 const region = {
   region_3depth_name: "풍덕천1동",
   region_2depth_name: "용인시 수지구",
 };
+
+test("서버 ID·카카오 이름이 없는 좌표도 확정 요청할 수 있고 오류 후 재시도할 수 있다", () => {
+  const pickup = { id: "11" };
+  assert.equal(canSubmitDestination({ point }, pickup), true);
+  assert.equal(
+    canSubmitDestination({ point, error: "등록된 권역 없음" }, pickup),
+    true,
+  );
+  assert.equal(canSubmitDestination({ point }, pickup, true), false);
+  assert.equal(canSubmitDestination({ point }, null), false);
+  assert.equal(
+    canSubmitDestination({ point: { latitude: 91, longitude: 127 } }, pickup),
+    false,
+  );
+  assert.equal(canSubmitDestination(null, pickup), false);
+});
+
+test("카카오 행정동 조회 없이도 서버가 좌표에서 반환한 ID와 이름으로 확정한다", async () => {
+  let calls = 0;
+  const draft = await resolveDestinationDraft({
+    point,
+    load: async () => {
+      calls++;
+      return {
+        data: {
+          destinationDongId: "42",
+          districtId: "8",
+          destinationDongName: "새 하차 동",
+          districtName: "새 권역",
+        },
+      };
+    },
+  });
+  assert.equal(calls, 1);
+  assert.equal(draft.id, "42");
+  assert.equal(draft.name, "새 하차 동");
+  assert.equal(draft.districtId, "8");
+  assert.deepEqual(draft.point, point);
+});
 
 test("500 이후에도 선택한 핀과 지도 이름을 유지하고 등록 ID는 만들지 않는다", async () => {
   const draft = await resolveDestinationDraft({

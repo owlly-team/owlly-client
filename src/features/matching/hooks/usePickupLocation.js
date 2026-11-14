@@ -8,7 +8,10 @@ import {
 import useSessionStore from "../../../shared/stores/sessionStore";
 import { createMatchingApi } from "../api/matchingApi";
 import { loadHomePickupPoints } from "../../home/utils/loadHomeData";
-import { resolveDestinationDraft } from "../utils/destinationResolution";
+import {
+  canSubmitDestination,
+  resolveDestinationDraft,
+} from "../utils/destinationResolution";
 
 //PickupLocation 페이지의 지도·하단 시트에서 사용하는 상태와 동작
 export default function usePickupLocation() {
@@ -44,7 +47,6 @@ export default function usePickupLocation() {
   const resolution = useRef(0);
   const mounted = useRef(false);
   const destinationRequest = useRef(null);
-  const destinationMaps = useRef(null);
   const initialized = useRef(false);
   //페이지를 떠난 뒤 도착한 하차 위치 조회 결과는 무시
   useEffect(() => {
@@ -160,38 +162,26 @@ export default function usePickupLocation() {
     );
   }
 
-  //하차 선택 지도에서 클릭하거나 드래그한 좌표의 행정동 확인
+  // 지도에서는 좌표와 표시용 이름만 선택한다. 서버 ID는 확정 버튼에서 조회한다.
   function selectDestination(point, maps) {
-    destinationMaps.current = maps;
     setSheetOpen(true);
     const version = ++resolution.current;
-    setResolving(true);
+    setResolving(false);
     setDestinationDraft({ point });
     destinationRequest.current?.abort();
-    const controller = new AbortController();
-    destinationRequest.current = controller;
-    if (!isPreview && !pickup) {
-      setDestinationDraft({ point, error: "출발 거점을 먼저 선택해 주세요." });
-      setResolving(false);
-      return;
-    }
     new maps.services.Geocoder().coord2RegionCode(
       point.longitude,
       point.latitude,
       (regions, status) => {
         //빠르게 위치를 바꿨을 때 이전 조회 결과가 덮어쓰지 않도록 처리
-        if (version !== resolution.current) return;
+        if (!mounted.current || version !== resolution.current) return;
         const region =
           status === maps.services.Status.OK
             ? regions.find((item) => item.region_type === "H")
             : null;
         if (!region) {
-          setDestinationDraft({
-            point,
-            error:
-              "이 위치의 행정동을 확인할 수 없어요. 다른 위치를 선택해 주세요.",
-          });
-          setResolving(false);
+          // 카카오 이름 조회 실패가 서버의 좌표 판별을 막지 않도록 한다.
+          setDestinationDraft({ point });
           return;
         }
         if (!isPreview) {
@@ -200,37 +190,6 @@ export default function usePickupLocation() {
             name: region.region_3depth_name,
             districtName: region.region_2depth_name,
           });
-          resolveDestinationDraft({
-            point,
-            region,
-            load: () =>
-              createMatchingApi(
-                session.csrfToken,
-                controller.signal,
-              ).travelOptions({
-                pickupPointId: pickup.id,
-                dropoff: point,
-                departureAt: new Date().toISOString(),
-              }),
-          })
-            .then((draft) => {
-              if (version !== resolution.current || controller.signal.aborted)
-                return;
-              setDestinationDraft(draft);
-            })
-            .catch((error) => {
-              if (version === resolution.current && !controller.signal.aborted)
-                setDestinationDraft({
-                  point,
-                  name: region.region_3depth_name,
-                  districtName: region.region_2depth_name,
-                  error: error.message,
-                });
-            })
-            .finally(() => {
-              if (version === resolution.current && !controller.signal.aborted)
-                setResolving(false);
-            });
           return;
         }
         // 미리보기에서만 목업 행정동 ID를 사용한다.
@@ -258,16 +217,78 @@ export default function usePickupLocation() {
     setSheetOpen(false);
   }
   //'이 위치로 할게요' 버튼: 편집한 위치를 오늘 동승에만 적용
-  function confirmDestination() {
+  async function confirmDestination() {
     if (
-      !destinationDraft?.id ||
-      !destinationDraft?.name ||
-      destinationDraft.error ||
-      resolving
+      !canSubmitDestination(destinationDraft, pickup, resolving) ||
+      (destinationRequest.current && !destinationRequest.current.signal.aborted)
     )
       return;
-    setDestination(destinationDraft);
-    setStep("pickup");
+    const draft = destinationDraft;
+    const version = ++resolution.current;
+    const controller = new AbortController();
+    destinationRequest.current = controller;
+    setResolving(true);
+    setDestinationDraft({ ...draft, error: undefined });
+    try {
+      const mock = isPreview
+        ? resolveMockDestination({
+            region: {
+              region_1depth_name: "",
+              region_2depth_name: draft.districtName,
+              region_3depth_name: draft.name,
+            },
+          })
+        : null;
+      const resolved = isPreview
+        ? {
+            ...draft,
+            id: draft.id ?? mock.destinationDongId,
+            districtId: draft.districtId ?? mock.districtId,
+          }
+        : await resolveDestinationDraft({
+            point: draft.point,
+            region: {
+              region_3depth_name: draft.name,
+              region_2depth_name: draft.districtName,
+            },
+            load: () =>
+              createMatchingApi(
+                session.csrfToken,
+                controller.signal,
+              ).travelOptions({
+                pickupPointId: pickup.id,
+                dropoff: draft.point,
+                departureAt: new Date().toISOString(),
+              }),
+          });
+      if (
+        !mounted.current ||
+        version !== resolution.current ||
+        controller.signal.aborted
+      )
+        return;
+      setDestinationDraft(resolved);
+      if (!resolved.error) {
+        setDestination(resolved);
+        setStep("pickup");
+      }
+    } catch (error) {
+      if (
+        mounted.current &&
+        version === resolution.current &&
+        !controller.signal.aborted
+      )
+        setDestinationDraft({ ...draft, error: error.message });
+    } finally {
+      if (destinationRequest.current === controller)
+        destinationRequest.current = null;
+      if (
+        mounted.current &&
+        version === resolution.current &&
+        !controller.signal.aborted
+      )
+        setResolving(false);
+    }
   }
   //뒤로 가기: 하차 편집 중이면 변경 취소, 출발 선택 중이면 홈으로 이동
   function back() {
@@ -349,6 +370,11 @@ export default function usePickupLocation() {
       request,
       locationError,
       resolving,
+      canConfirmDestination: canSubmitDestination(
+        destinationDraft,
+        pickup,
+        resolving,
+      ),
       isNearest: pickup?.id === nearestId,
       hasPoints: points.length > 0,
       canContinue:
@@ -363,14 +389,6 @@ export default function usePickupLocation() {
       onConfirmDestination: confirmDestination,
       onContinue: continueToStartTime,
       onRetry: retry,
-      onRetryDestination: () => {
-        if (
-          !resolving &&
-          isPoint(destinationDraft?.point) &&
-          destinationMaps.current
-        )
-          selectDestination(destinationDraft.point, destinationMaps.current);
-      },
     },
   };
 }

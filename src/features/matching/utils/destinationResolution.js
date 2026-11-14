@@ -1,4 +1,10 @@
+import { isPoint } from "./mapUtils.js";
+
 const validId = (value) => /^[1-9][0-9]*$/.test(value ?? "");
+
+export function canSubmitDestination(draft, pickup, busy = false) {
+  return isPoint(draft?.point) && validId(pickup?.id) && !busy;
+}
 
 export function destinationErrorMessage(error) {
   if (error.status === 401) return "로그인이 만료됐어요. 다시 로그인해 주세요.";
@@ -11,7 +17,7 @@ export function destinationErrorMessage(error) {
 
 // 지도에서 확인한 이름과 서버의 등록용 ID는 구분한다.
 // 서버가 실패해도 핀과 이름은 유지하지만, 확인되지 않은 ID는 사용하지 않는다.
-export async function resolveDestinationDraft({ point, region, load }) {
+export async function resolveDestinationDraft({ point, region = {}, load }) {
   const draft = {
     point,
     name: region.region_3depth_name,

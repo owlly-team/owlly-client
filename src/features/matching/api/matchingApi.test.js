@@ -1,6 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "vite";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 
 test("API-23 sends a bodyless POST with session, CSRF, Party ETag and the same retry UUID", async () => {
   const server = await createServer({
@@ -107,6 +109,81 @@ test("API-23 sends a bodyless POST with session, CSRF, Party ETag and the same r
   } finally {
     globalThis.fetch = originalFetch;
     session?.getState().clearSession();
+    await server.close();
+  }
+});
+
+test("unregistered destination keeps confirm enabled and API-14 receives coordinates before IDs exist", async () => {
+  const server = await createServer({
+    server: { middlewareMode: true, hmr: false },
+    appType: "custom",
+  });
+  const originalFetch = globalThis.fetch;
+  try {
+    const { createMatchingApi } = await server.ssrLoadModule(
+      "/src/features/matching/api/matchingApi.js",
+    );
+    const { canSubmitDestination, resolveDestinationDraft } =
+      await server.ssrLoadModule(
+        "/src/features/matching/utils/destinationResolution.js",
+      );
+    const { default: PickupSheetContent } = await server.ssrLoadModule(
+      "/src/features/matching/components/PickupSheetContent.jsx",
+    );
+    const pickup = { id: "11" };
+    const draft = {
+      point: { latitude: 37.32, longitude: 127.09 },
+      error: "이전 조회 실패",
+    };
+    const markup = renderToStaticMarkup(
+      createElement(PickupSheetContent, {
+        pickup,
+        destination: draft,
+        destinationMode: true,
+        canConfirmDestination: canSubmitDestination(draft, pickup),
+        resolving: false,
+      }),
+    );
+    assert.match(markup, /이 위치로 다시 시도/);
+    assert.doesNotMatch(markup, /disabled=""/);
+    let calls = 0;
+    globalThis.fetch = async (url, options) => {
+      calls++;
+      assert.ok(url.endsWith("/api/v1/travel-options"));
+      assert.equal(options.method, "POST");
+      assert.equal(options.credentials, "include");
+      assert.equal(options.headers["X-CSRF-Token"], "test-csrf");
+      assert.deepEqual(JSON.parse(options.body), {
+        pickupPointId: "11",
+        dropoff: draft.point,
+        departureAt: "2026-11-14T14:00:00.000Z",
+      });
+      return new Response(
+        JSON.stringify({
+          data: {
+            destinationDongId: "42",
+            districtId: "8",
+            destinationDongName: "새 하차 동",
+            districtName: "새 권역",
+          },
+        }),
+        { status: 200 },
+      );
+    };
+    const resolved = await resolveDestinationDraft({
+      point: draft.point,
+      load: () =>
+        createMatchingApi("test-csrf").travelOptions({
+          pickupPointId: pickup.id,
+          dropoff: draft.point,
+          departureAt: "2026-11-14T14:00:00.000Z",
+        }),
+    });
+    assert.equal(calls, 1);
+    assert.equal(resolved.id, "42");
+    assert.equal(resolved.districtId, "8");
+  } finally {
+    globalThis.fetch = originalFetch;
     await server.close();
   }
 });

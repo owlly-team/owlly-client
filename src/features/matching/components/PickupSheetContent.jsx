@@ -13,6 +13,7 @@ export default function PickupSheetContent({
   request,
   locationError,
   resolving,
+  canConfirmDestination,
   isNearest,
   hasPoints,
   canContinue,
@@ -21,12 +22,14 @@ export default function PickupSheetContent({
   onConfirmDestination,
   onContinue,
   onRetry,
-  onRetryDestination,
 }) {
   //하차 위치 조회 중에는 로딩, 실패하면 오류, 그 외에는 지도 조작 안내
-  const destinationMessage = resolving
-    ? "하차 지점을 확인하고 있어요…"
-    : (destination?.error ?? "지도를 움직이거나 눌러 위치를 바꿀 수 있어요.");
+  const destinationMessage = !pickup
+    ? "출발 거점을 먼저 선택해 주세요."
+    : resolving
+      ? "하차 지점을 확인하고 있어요…"
+      : (destination?.error ??
+        "이 위치로 할게요를 누르면 선택한 좌표로 도착 권역을 확인해요.");
 
   return (
     <>
@@ -53,27 +56,17 @@ export default function PickupSheetContent({
           >
             {destinationMessage}
           </div>
-          {destination?.error && onRetryDestination && (
-            <Button
-              variant="text"
-              className="mb-2 w-full"
-              disabled={resolving}
-              onClick={onRetryDestination}
-            >
-              이 위치 다시 확인하기
-            </Button>
-          )}
           <Button
             className="w-full"
-            disabled={
-              !destination?.id ||
-              !destination?.name ||
-              resolving ||
-              !!destination?.error
-            }
+            disabled={!canConfirmDestination}
+            aria-busy={resolving}
             onClick={onConfirmDestination}
           >
-            이 위치로 할게요
+            {resolving
+              ? "하차 위치 확인 중"
+              : destination?.error
+                ? "이 위치로 다시 시도"
+                : "이 위치로 할게요"}
           </Button>
         </>
       ) : (
