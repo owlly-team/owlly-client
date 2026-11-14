@@ -22,7 +22,8 @@ export function resolveChatRoom({ roomId, partyId, state, demo, previewMember = 
   if (!currentParty || !room || room.partyId !== currentParty.id || room.id !== currentParty.roomId
     || (roomId && currentParty.roomId !== roomId) || (partyId && currentParty.id !== partyId)) return null;
   // 모든 미리보기 경로는 목업의 현재 시각을 사용한다. 이전 방문에 저장된 시각은 사용하지 않는다.
-  const previewNow = isPreview ? Date.parse(chatRoomMockData.previewNow) : undefined;
+  const demoNow = state?.demoSession === true ? Date.parse(state.previewNow) : NaN;
+  const previewNow = isPreview ? (Number.isFinite(demoNow) ? demoNow : Date.parse(chatRoomMockData.previewNow)) : undefined;
   const context = { ...result, party: currentParty,
     ...(demo && !state?.matchingResult && previewMember && result.settlement ? {
       settlement: { ...result.settlement, items: result.settlement.items.map((item) => ({ ...item, isMe: item.memberId === currentParty.myMemberId })) },

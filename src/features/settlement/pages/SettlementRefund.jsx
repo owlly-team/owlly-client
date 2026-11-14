@@ -1,3 +1,4 @@
+import { canPreview } from "../../demo/demoStore";
 import { useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import Button from "../../../shared/components/Button";
@@ -16,11 +17,11 @@ export default function SettlementRefund() {
   const { partyId } = useParams();
   const { state } = useLocation();
   const [notice, setNotice] = useState("");
-  const isPreview = import.meta.env.DEV && state?.isPreview === true;
+  const isPreview = canPreview() && state?.isPreview === true;
   const live = useSettlementData(partyId, !isPreview);
   const { data, party } = resolveRepresentativeSettlement({
     partyId,
-    allowPreview: import.meta.env.DEV,
+    allowPreview: canPreview(),
     state: isPreview
       ? state
       : {
@@ -107,8 +108,12 @@ export default function SettlementRefund() {
         {notice}
       </p>
       <footer className="bg-background-normal sticky bottom-0 mt-auto pt-6 pb-[max(16px,env(safe-area-inset-bottom))]">
-        <Button variant="secondary" className="w-full" disabled>
-          한*윤 화면 보기
+        <Button
+          variant="secondary"
+          className="w-full"
+          onClick={() => navigate("/demand-map")}
+        >
+          수요 지도에서 내 귀가 보기
         </Button>
       </footer>
     </div>

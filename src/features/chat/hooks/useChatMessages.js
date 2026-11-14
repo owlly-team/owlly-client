@@ -1,13 +1,18 @@
-import { useMemo, useState } from "react";
-import { chatRoomMockData } from "../mocks/chatRoomMockData.js";
+import { useEffect, useMemo, useState } from "react";
 import { useRoomMessagesStore } from "../stores/roomMessagesStore.js";
 import useLiveMessages from "./useLiveMessages";
+import {
+  createPreviewConversation,
+  schedulePreviewConversation,
+} from "../utils/previewConversation";
 
 export default function useChatMessages({
   room,
   myMemberId,
   isPreview = true,
   onUnavailable,
+  members,
+  previewNow,
 }) {
   const live = useLiveMessages({
     room,
@@ -15,21 +20,41 @@ export default function useChatMessages({
     enabled: !isPreview,
     onUnavailable,
   });
-  const scope = `${isPreview ? "preview" : "live"}:${room.id}`;
-  const initialMessages = useMemo(
+  const scope = isPreview
+    ? `preview:${room.id}:${myMemberId ?? "unknown"}`
+    : `live:${room.id}`;
+  const conversation = useMemo(
     () =>
       isPreview
-        ? chatRoomMockData.messages.filter(
-            (message) => message.roomId === room.id,
-          )
-        : [],
-    [isPreview, room.id],
+        ? createPreviewConversation({ room, myMemberId, members, previewNow })
+        : { initialMessages: [], deliveries: [] },
+    [isPreview, room, myMemberId, members, previewNow],
   );
+  const initialMessages = conversation.initialMessages;
+  useEffect(() => {
+    if (!isPreview || !myMemberId) return;
+    return schedulePreviewConversation({
+      room,
+      scope,
+      conversation,
+      store: useRoomMessagesStore,
+    });
+  }, [isPreview, myMemberId, room, scope, conversation]);
   const messages = useRoomMessagesStore(
     (state) => state.messagesByRoom[scope] ?? initialMessages,
   );
   const appendMessage = useRoomMessagesStore((state) => state.appendMessage);
   const [draft, setDraft] = useState("");
+
+  function previewTimestamp() {
+    const session =
+      useRoomMessagesStore.getState().previewSessionsByRoom[scope];
+    return new Date(
+      session
+        ? session.clock + Date.now() - session.startedAt
+        : (previewNow ?? Date.now()),
+    ).toISOString();
+  }
 
   async function send() {
     if (
@@ -45,16 +70,17 @@ export default function useChatMessages({
         setDraft((current) => (current === text ? "" : current));
       return;
     }
+    if (!myMemberId) return;
     const message = {
       id: `preview-${crypto.randomUUID()}`,
       roomId: room.id,
-      senderMemberId: myMemberId ?? chatRoomMockData.context.party.myMemberId,
+      senderMemberId: myMemberId,
       messageType: "USER",
       body: draft.replace(
         /https?:\/\/\S+|www\.\S+|(?:\d[\s-]*){7,}/gi,
         "[가려진 정보]",
       ),
-      createdAt: new Date().toISOString(),
+      createdAt: previewTimestamp(),
     };
     appendMessage(scope, initialMessages, message);
     setDraft("");
@@ -68,7 +94,7 @@ export default function useChatMessages({
       senderMemberId: null,
       messageType: "SYSTEM",
       body,
-      createdAt: new Date().toISOString(),
+      createdAt: previewTimestamp(),
     });
   }
 

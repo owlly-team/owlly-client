@@ -1,3 +1,4 @@
+import { canPreview, useDemoStore } from "../../demo/demoStore";
 import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
@@ -26,20 +27,29 @@ export default function MatchingResult({ banks, onOpenChat }) {
   const navigate = useNavigate();
   const { partyId } = useParams();
   const { state, search } = useLocation();
+  const demoSession = useDemoStore((store) => store.session);
+  const demoResult =
+    state?.isPreview !== false &&
+    demoSession?.matchingResult?.party.id === partyId
+      ? demoSession.matchingResult
+      : null;
   const memberPreview =
     new URLSearchParams(search).get("preview") === "member"
       ? mockMatchingResult
       : undefined;
   const previewRequested =
-    import.meta.env.DEV &&
+    canPreview() &&
     state?.isPreview !== false &&
-    (state?.isPreview === true ||
+    (Boolean(demoResult) ||
+      state?.isPreview === true ||
       ["member", "representative"].includes(
         new URLSearchParams(search).get("preview"),
       ));
   const result = useMatchingResult(
     partyId,
-    previewRequested ? (state?.matchingResult ?? memberPreview) : undefined,
+    previewRequested
+      ? (demoResult ?? state?.matchingResult ?? memberPreview)
+      : undefined,
     previewRequested,
   );
   const { data, loading, error, retry, isPreview, updateParty } = result;
@@ -64,7 +74,10 @@ export default function MatchingResult({ banks, onOpenChat }) {
     return () => clearInterval(timer);
   }, [isPreview]);
   const clock = getDisplayNow(
-    { isPreview, previewNow: chatRoomMockData.previewNow },
+    {
+      isPreview,
+      previewNow: demoResult?.previewNow ?? chatRoomMockData.previewNow,
+    },
     now,
   );
   const previewParty =
@@ -80,8 +93,10 @@ export default function MatchingResult({ banks, onOpenChat }) {
     party: previewParty,
     now: clock,
     transfers,
-    onLeft: (party) =>
-      navigate("/", { replace: true, state: { leftParty: party } }),
+    onLeft: (party) => {
+      if (demoResult) useDemoStore.getState().cancel();
+      navigate("/", { replace: true, state: { leftParty: party } });
+    },
   });
   const goHome = () => navigate("/");
   const openChat = async (roomId, account, matchingResult = data) => {
@@ -118,6 +133,10 @@ export default function MatchingResult({ banks, onOpenChat }) {
             )?.name,
         }
       : undefined;
+    if (demoResult) {
+      useDemoStore.getState().updateParty(matchingResult.party);
+      if (roomAccount) useDemoStore.getState().setAccount(roomAccount);
+    }
     navigate(`/rooms/${roomId}`, {
       state: { account: roomAccount, isPreview, matchingResult },
     });
@@ -167,6 +186,7 @@ export default function MatchingResult({ banks, onOpenChat }) {
       };
       if (!party.roomId) throw new Error("채팅방 정보를 확인할 수 없어요.");
       updateParty({ party });
+      if (demoResult) useDemoStore.getState().updateParty(party);
       if (party.myMemberId !== party.representativeMemberId)
         await openChat(party.roomId, undefined, { ...data, party });
     } catch (failure) {
@@ -248,11 +268,6 @@ export default function MatchingResult({ banks, onOpenChat }) {
 
   return (
     <div className="flex flex-1 flex-col">
-      {isPreview && (
-        <p role="status" className="text-caption1 text-primary-normal">
-          미리보기 · 예시 매칭 결과
-        </p>
-      )}
       <div className="-mx-4">
         <TopBar title="매칭 결과" leftAction="close" onLeftClick={goHome} />
       </div>

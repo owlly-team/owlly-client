@@ -5,13 +5,17 @@ import Button from "../../../shared/components/Button";
 import { toRegistrationView } from "../utils/registrationUtils";
 import useRideRegistration from "../hooks/useRideRegistration";
 import useSessionStore from "../../../shared/stores/sessionStore";
+import { useDemoStore } from "../../demo/demoStore";
 
 //동승 등록 완료 페이지
 export default function CarpoolRegistration({ data, onViewMatchingResult }) {
   const navigate = useNavigate();
   const { state } = useLocation();
   const userId = useSessionStore((session) => session.user?.id);
-  const registration = data ?? state ?? {};
+  const demo = useDemoStore((store) => store.session);
+  const demoRegistration =
+    state?.isPreview !== false ? demo?.registration : null;
+  const registration = data ?? demoRegistration ?? state ?? {};
   const active = useRideRegistration(registration, () =>
     navigate("/", { replace: true }),
   );
@@ -64,8 +68,19 @@ export default function CarpoolRegistration({ data, onViewMatchingResult }) {
             size="md"
             variant="secondary"
             className="w-full"
-            disabled={!active.live || active.saving || active.checking}
-            onClick={active.cancel}
+            disabled={
+              (!active.live && !demoRegistration) ||
+              active.saving ||
+              active.checking
+            }
+            onClick={
+              demoRegistration
+                ? () => {
+                    useDemoStore.getState().cancel();
+                    goHome();
+                  }
+                : active.cancel
+            }
           >
             {active.saving ? "등록 취소 중" : "등록 취소"}
           </Button>

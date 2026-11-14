@@ -1,3 +1,4 @@
+import { canPreview } from "../../demo/demoStore";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import TopBar from "../../../shared/components/TopBar";
 import Button from "../../../shared/components/Button";
@@ -15,7 +16,7 @@ export default function MemberSettlement() {
   const { state, search } = useLocation();
   const navigate = useNavigate();
   const previewRequested =
-    import.meta.env.DEV &&
+    canPreview() &&
     state?.isPreview !== false &&
     (state?.isPreview === true ||
       ["refund", "additional", "even"].includes(

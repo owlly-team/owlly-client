@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { canPreview, useDemoStore } from "../../demo/demoStore";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import TopBar from "../../../shared/components/TopBar";
 import Button from "../../../shared/components/Button";
@@ -21,6 +22,10 @@ import { getChatRoomView, resolveChatRoom } from "../utils/chatRoomUtils";
 import { memberSettlementMock } from "../../settlement/mocks/memberSettlementMock";
 import useLiveRoom from "../hooks/useLiveRoom";
 import { getDisplayNow } from "../../../shared/utils/time";
+import {
+  receiveDemoPrepayments,
+  finalizeDemoSettlement,
+} from "../../demo/demoFlow";
 
 const previewAccount = {
   bankName: "KB국민은행",
@@ -30,13 +35,35 @@ const previewAccount = {
 
 export default function ChatRoom({ csrfToken }) {
   const { roomId, partyId } = useParams();
-  const { state, search, pathname } = useLocation();
+  const { state: routeState, search, pathname } = useLocation();
+  const demoSession = useDemoStore((store) => store.session);
+  const demoResult =
+    routeState?.isPreview !== false &&
+    demoSession?.matchingResult &&
+    (roomId === demoSession.matchingResult.party.roomId ||
+      partyId === demoSession.matchingResult.party.id)
+      ? demoSession.matchingResult
+      : null;
+  const state = useMemo(
+    () =>
+      demoResult
+        ? {
+            ...routeState,
+            isPreview: true,
+            demoSession: true,
+            matchingResult: demoResult,
+            previewNow: demoResult.previewNow,
+            account: demoSession.account ?? routeState?.account,
+          }
+        : routeState,
+    [demoResult, demoSession, routeState],
+  );
   const navigate = useNavigate();
   const [messageFailure, setMessageFailure] = useState(null);
   const denied =
     messageFailure?.pathname === pathname ? messageFailure.error : null;
   const queryPreview =
-    import.meta.env.DEV &&
+    canPreview() &&
     ["member", "representative"].includes(
       new URLSearchParams(search).get("preview"),
     );
@@ -46,7 +73,7 @@ export default function ChatRoom({ csrfToken }) {
       : null;
   // 역할 전환은 개발용 미리보기에서만 허용한다.
   const previewRequested =
-    import.meta.env.DEV &&
+    canPreview() &&
     state?.isPreview !== false &&
     (state?.isPreview === true || queryPreview);
   const live = useLiveRoom({
@@ -68,6 +95,14 @@ export default function ChatRoom({ csrfToken }) {
       : live.data;
   const roomError = denied ?? live.error;
   const [now, setNow] = useState(Date.now);
+  const demoDeparture = demoResult?.party.departureAt;
+  const demoClock = demoResult?.previewNow;
+  useEffect(() => {
+    if (!demoDeparture || Date.parse(demoClock) >= Date.parse(demoDeparture))
+      return;
+    const timer = setTimeout(() => useDemoStore.getState().prepay(), 20000);
+    return () => clearTimeout(timer);
+  }, [demoDeparture, demoClock]);
 
   useEffect(() => {
     if (!state?.reportPreview && !state?.reportCompleted) return;
@@ -143,6 +178,11 @@ export default function ChatRoom({ csrfToken }) {
     previewNow,
   };
   function openSettlement(updatedState = roomState) {
+    if (demoResult)
+      updatedState = {
+        ...updatedState,
+        matchingResult: receiveDemoPrepayments(updatedState.matchingResult),
+      };
     const updatedParty = updatedState.matchingResult.party;
     // 뒤로가기로 복귀해도 탑승 응답과 전달받은 ETag를 보존한다.
     navigate({ pathname, search }, { replace: true, state: updatedState });
@@ -177,6 +217,12 @@ export default function ChatRoom({ csrfToken }) {
                   ...roomState,
                   memberSettlement:
                     state?.memberSettlement ??
+                    (demoResult
+                      ? finalizeDemoSettlement(
+                          context,
+                          context.settlement.estimatedTotalWon,
+                        )
+                      : undefined) ??
                     (context.settlement?.actualTotalWon != null
                       ? context.settlement
                       : isPreview
@@ -196,15 +242,21 @@ export default function ChatRoom({ csrfToken }) {
           : undefined
       }
       boardingStarted={state?.boardingStarted}
-      onBoardingStarted={() =>
+      onBoardingStarted={() => {
+        if (demoResult)
+          useDemoStore.getState().updateParty({
+            ...currentParty,
+            status: "READY",
+            taxiCalledAt: demoResult.previewNow,
+          });
         navigate(
           { pathname, search },
           {
             replace: true,
             state: { ...roomState, boardingStarted: true },
           },
-        )
-      }
+        );
+      }}
       onReport={() =>
         navigate(`/parties/${currentParty.id}/room/report`, {
           state: {
@@ -216,6 +268,7 @@ export default function ChatRoom({ csrfToken }) {
         })
       }
       onBoardingRecorded={({ party: updatedParty, etag }) => {
+        if (demoResult) useDemoStore.getState().updateParty(updatedParty);
         const updatedState = {
           ...roomState,
           matchingResult: {
@@ -266,6 +319,8 @@ function RoomContent({
   const chat = useChatMessages({
     room,
     myMemberId: party.myMemberId,
+    members: party.members,
+    previewNow: now,
     isPreview,
     onUnavailable: onChatUnavailable,
   });
@@ -295,8 +350,11 @@ function RoomContent({
     transfers,
     isPreview,
     etag: context.partyEtag,
-    onLeft: (updatedParty) =>
-      navigate("/", { replace: true, state: { leftParty: updatedParty } }),
+    onLeft: (updatedParty) => {
+      if (isPreview && useDemoStore.getState().session)
+        useDemoStore.getState().cancel();
+      navigate("/", { replace: true, state: { leftParty: updatedParty } });
+    },
   });
 
   function handleTaxiCalled() {
@@ -414,10 +472,7 @@ function RoomContent({
                 {boardingConfirmation.recorded &&
                   boardingConfirmation.status === "BOARDED" &&
                   isRepresentative && (
-                    <Button
-                      className="mt-3 w-full"
-                      onClick={onOpenSettlement}
-                    >
+                    <Button className="mt-3 w-full" onClick={onOpenSettlement}>
                       정산 입력하기
                     </Button>
                   )}
@@ -430,7 +485,7 @@ function RoomContent({
                       className="mt-3 w-full"
                       onClick={onOpenMemberSettlement}
                     >
-                      {isPreview ? "정산 결과 미리보기" : "정산 결과 보기"}
+                      정산 결과 보기
                     </Button>
                   )}
                 {!boardingConfirmation.recorded &&
@@ -458,9 +513,7 @@ function RoomContent({
               </div>
             )}
             <p className="text-caption1 text-label-alternative pb-2 text-center">
-              {isPreview
-                ? "미리보기 채팅이에요. 메시지와 탑승 상태는 이 화면에만 반영돼요."
-                : "전화번호·링크·계좌번호는 서버에서 가려져요."}
+              전화번호·링크·계좌번호는 채팅에서 가려져요.
             </p>
           </RoomConversation>
         </>

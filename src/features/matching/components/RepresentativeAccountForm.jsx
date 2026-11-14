@@ -34,9 +34,7 @@ export default function RepresentativeAccountForm({
           </p>
           <p className="mt-1">{saved.maskedHolderName}</p>
           <p className="text-label2 text-label-alternative mt-2">
-            {isPreview
-              ? "미리보기에서 등록했어요. 실제 계좌는 저장되지 않았어요."
-              : "계좌를 등록했어요."}
+            계좌를 등록했어요.
           </p>
         </div>
       ) : (
