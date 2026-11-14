@@ -1,5 +1,6 @@
 import { representativeSettlementMock } from "../mocks/memberSettlementMock.js";
 import { getSettlementIdentity, isFinalSettlement } from "./settlementUtils.js";
+import { getRefundTransferId } from "./refundRecipientAccount.js";
 
 export function resolveRepresentativeSettlement({
   partyId,
@@ -50,8 +51,10 @@ export function toRepresentativeRefundView(
           : null;
       return {
         memberId: item.memberId,
+        transferId: getRefundTransferId(item, identity.representative.memberId),
         name: item.maskedName ?? "이름 미정",
         account: accountLabel,
+        accountNumber: accountLabel ? account.accountNumber : null,
         amountWon: item.refundDueWon,
         amount: `${item.refundDueWon.toLocaleString("ko-KR")}원`,
         received: item.status === "COMPLETED",

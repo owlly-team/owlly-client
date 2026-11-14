@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import useSessionStore from "../../../shared/stores/sessionStore";
 import { createMatchingApi } from "../../matching/api/matchingApi";
 import { loadMatchingResult } from "../../matching/utils/partyFlow";
@@ -9,6 +9,15 @@ export default function useSettlementData(partyId, enabled = true) {
   const { user, csrfToken, status } = useSessionStore();
   const scope = `${user?.id}:${partyId}`;
   const [snapshot, setSnapshot] = useState(null);
+  const [revision, setRevision] = useState(0);
+  const refresh = useCallback(() => setRevision((value) => value + 1), []);
+  const applyRoute = useCallback(
+    (data) => {
+      setSnapshot({ scope, data });
+      setRevision((value) => value + 1);
+    },
+    [scope],
+  );
   const current = snapshot?.scope === scope ? snapshot : null;
   const cached = useCachedParty(partyId, enabled);
   const refreshKey = getSettlementRefreshKey(cached?.response?.data);
@@ -27,11 +36,20 @@ export default function useSettlementData(partyId, enabled = true) {
           throw new Error("로그인 후 정산을 확인해 주세요.");
         const data = await loadMatchingResult(api, partyId, {
           includeBanks: false,
+          forceParty: true,
         });
+        if (data.settlementError)
+          throw new Error("정산 정보를 새로 불러오지 못했어요.");
         if (!controller.signal.aborted) setSnapshot({ scope, data });
       } catch (error) {
         if (controller.signal.aborted) return;
-        setSnapshot({ scope, error });
+        setSnapshot((previous) =>
+          ![401, 403, 404, 410].includes(error.status) &&
+          previous?.scope === scope &&
+          previous.data
+            ? { ...previous, error }
+            : { scope, error },
+        );
         if ([401, 403, 404, 410].includes(error.status)) return;
       } finally {
         refreshing = false;
@@ -50,16 +68,22 @@ export default function useSettlementData(partyId, enabled = true) {
       window.removeEventListener("focus", wake);
       document.removeEventListener("visibilitychange", wake);
     };
-  }, [enabled, status, partyId, scope, csrfToken, refreshKey]);
+  }, [enabled, status, partyId, scope, csrfToken, refreshKey, revision]);
   return {
     data:
       enabled && status === "authenticated" && !cached?.error && current?.data
         ? {
             ...current.data,
-            party: cached?.response?.data ?? current.data.party,
+            party:
+              cached?.response?.data?.routeVersion ===
+              current.data.settlement?.routeVersion
+                ? cached.response.data
+                : current.data.party,
           }
         : null,
     loading: enabled && !current,
     error: cached?.error ?? current?.error,
+    refresh,
+    applyRoute,
   };
 }

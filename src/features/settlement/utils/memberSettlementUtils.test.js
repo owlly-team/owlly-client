@@ -135,15 +135,18 @@ test("계좌 앞자리 0을 유지하고 하이픈·공백만 제거하며 이�
     normalizeRefundAccount("090", "0012-3456 7890", refundBanks),
     { bankCode: "090", accountNumber: "001234567890" },
   );
-  for (const number of [
-    "",
-    "1234567",
-    "12345678901234567",
-    "1234abcd5678",
-    "1234.5678",
-  ]) {
+  for (const number of ["", "1".repeat(41), "1234abcd5678", "1234.5678"]) {
     assert.equal(normalizeRefundAccount("090", number, refundBanks), null);
   }
+  assert.equal(
+    normalizeRefundAccount("090", "0", refundBanks).accountNumber,
+    "0",
+  );
+  assert.equal(
+    normalizeRefundAccount("090", "0".repeat(40), refundBanks).accountNumber
+      .length,
+    40,
+  );
   assert.equal(
     normalizeRefundAccount("unknown", "12345678", refundBanks),
     null,

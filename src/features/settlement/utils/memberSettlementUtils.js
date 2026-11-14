@@ -78,7 +78,7 @@ export function normalizeRefundAccount(bankCode, accountNumber, banks) {
   const number = accountNumber.replace(/[\s-]/g, "");
   if (
     !banks.some((bank) => bank.code === bankCode) ||
-    !/^\d{8,16}$/.test(number)
+    !/^\d{1,40}$/.test(number)
   )
     return null;
   return { bankCode, accountNumber: number };

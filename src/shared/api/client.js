@@ -24,11 +24,12 @@ export async function apiResponse(
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
   const payload = await response.json().catch(() => null);
-  if (!response.ok) {
+  if (!response.ok || payload?.error) {
     const error = new Error(payload?.error?.message ?? "요청에 실패했어요.");
     error.code = payload?.error?.code;
     error.status = response.status;
     error.retryAfter = response.headers.get("Retry-After");
+    error.traceId = payload?.error?.traceId;
     throw error;
   }
   return {

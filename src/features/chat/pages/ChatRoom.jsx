@@ -416,7 +416,6 @@ function RoomContent({
                   isRepresentative && (
                     <Button
                       className="mt-3 w-full"
-                      disabled={!isPreview}
                       onClick={onOpenSettlement}
                     >
                       정산 입력하기
