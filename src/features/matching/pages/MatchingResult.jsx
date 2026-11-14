@@ -1,4 +1,5 @@
-import { canPreview, useDemoStore } from "../../demo/demoStore";
+import { canPreview, isMockMode } from "../../../shared/api/mockMode";
+import { useMockJourneyStore } from "../stores/mockJourneyStore";
 import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
@@ -27,11 +28,11 @@ export default function MatchingResult({ banks, onOpenChat }) {
   const navigate = useNavigate();
   const { partyId } = useParams();
   const { state, search } = useLocation();
-  const demoSession = useDemoStore((store) => store.session);
-  const demoResult =
+  const mockJourney = useMockJourneyStore((store) => store.journey);
+  const mockResult =
     state?.isPreview !== false &&
-    demoSession?.matchingResult?.party.id === partyId
-      ? demoSession.matchingResult
+    mockJourney?.matchingResult?.party.id === partyId
+      ? mockJourney.matchingResult
       : null;
   const memberPreview =
     new URLSearchParams(search).get("preview") === "member"
@@ -40,7 +41,8 @@ export default function MatchingResult({ banks, onOpenChat }) {
   const previewRequested =
     canPreview() &&
     state?.isPreview !== false &&
-    (Boolean(demoResult) ||
+    (isMockMode() ||
+      Boolean(mockResult) ||
       state?.isPreview === true ||
       ["member", "representative"].includes(
         new URLSearchParams(search).get("preview"),
@@ -48,7 +50,7 @@ export default function MatchingResult({ banks, onOpenChat }) {
   const result = useMatchingResult(
     partyId,
     previewRequested
-      ? (demoResult ?? state?.matchingResult ?? memberPreview)
+      ? (mockResult ?? state?.matchingResult ?? memberPreview)
       : undefined,
     previewRequested,
   );
@@ -76,7 +78,7 @@ export default function MatchingResult({ banks, onOpenChat }) {
   const clock = getDisplayNow(
     {
       isPreview,
-      previewNow: demoResult?.previewNow ?? chatRoomMockData.previewNow,
+      previewNow: data?.previewNow ?? chatRoomMockData.previewNow,
     },
     now,
   );
@@ -94,7 +96,7 @@ export default function MatchingResult({ banks, onOpenChat }) {
     now: clock,
     transfers,
     onLeft: (party) => {
-      if (demoResult) useDemoStore.getState().cancel();
+      if (mockResult) useMockJourneyStore.getState().cancel();
       navigate("/", { replace: true, state: { leftParty: party } });
     },
   });
@@ -133,9 +135,9 @@ export default function MatchingResult({ banks, onOpenChat }) {
             )?.name,
         }
       : undefined;
-    if (demoResult) {
-      useDemoStore.getState().updateParty(matchingResult.party);
-      if (roomAccount) useDemoStore.getState().setAccount(roomAccount);
+    if (mockResult) {
+      useMockJourneyStore.getState().updateParty(matchingResult.party);
+      if (roomAccount) useMockJourneyStore.getState().setAccount(roomAccount);
     }
     navigate(`/rooms/${roomId}`, {
       state: { account: roomAccount, isPreview, matchingResult },
@@ -186,7 +188,7 @@ export default function MatchingResult({ banks, onOpenChat }) {
       };
       if (!party.roomId) throw new Error("채팅방 정보를 확인할 수 없어요.");
       updateParty({ party });
-      if (demoResult) useDemoStore.getState().updateParty(party);
+      if (mockResult) useMockJourneyStore.getState().updateParty(party);
       if (party.myMemberId !== party.representativeMemberId)
         await openChat(party.roomId, undefined, { ...data, party });
     } catch (failure) {

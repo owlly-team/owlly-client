@@ -1,4 +1,4 @@
-import { canPreview } from "../../demo/demoStore";
+import { canPreview } from "../../../shared/api/mockMode";
 import { useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import Button from "../../../shared/components/Button";

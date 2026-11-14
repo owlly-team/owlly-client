@@ -1,13 +1,36 @@
-import { defaultHomeData, homeScenarios } from "../home/mocks/homeMockData.js";
+import {
+  defaultHomeData,
+  homeScenarios,
+} from "../../home/mocks/homeMockData.js";
 import {
   mockMatchingResult,
   mockRepresentativeMatchingResult,
-} from "../matching/mocks/matchingMockData.js";
-import { isPoint } from "../matching/utils/mapUtils.js";
+} from "./matchingMockData.js";
+import { isPoint } from "../utils/mapUtils.js";
 
-export const DEMO_WAIT_MS = 10000;
+export const MOCK_MATCH_DELAY_MS = 10000;
 
-export function resolveDemoPickup(session, pickupPoint) {
+export function scheduleMockMatching({
+  id,
+  status,
+  enabled,
+  store,
+  schedule = setTimeout,
+  cancel = clearTimeout,
+}) {
+  if (!enabled || !id || status !== "WAITING") return () => {};
+  const timer = schedule(() => {
+    const current = store.getState();
+    if (
+      current.journey?.home.rideRequest?.id === id &&
+      current.journey.home.rideRequest.status === "WAITING"
+    )
+      current.match();
+  }, MOCK_MATCH_DELAY_MS);
+  return () => cancel(timer);
+}
+
+export function resolveMockPickup(session, pickupPoint) {
   if (
     !isPoint(pickupPoint?.point) ||
     session.home.pickupPoint?.id !== pickupPoint.id
@@ -37,7 +60,7 @@ export function resolveDemoPickup(session, pickupPoint) {
   };
 }
 
-export function createDemoSession(
+export function createMockJourney(
   role = "representative",
   scenario = "beforeLastTransit",
 ) {
@@ -54,16 +77,10 @@ export function createDemoSession(
     registration: null,
     matchingResult: null,
     account: null,
-    matchAt: null,
   };
 }
 
-export function registerDemo(
-  session,
-  registration,
-  selection,
-  now = Date.now(),
-) {
+export function registerMockJourney(session, registration, selection) {
   const rideRequest = {
     ...registration.rideRequest,
     createdAt: session.home.previewNow,
@@ -92,11 +109,10 @@ export function registerDemo(
     },
     matchingResult: null,
     account: null,
-    matchAt: now + DEMO_WAIT_MS,
   };
 }
 
-export function matchDemo(session) {
+export function matchMockJourney(session) {
   if (session.home.rideRequest?.status !== "WAITING") return session;
   const source = structuredClone(
     session.role === "member"
@@ -138,7 +154,6 @@ export function matchDemo(session) {
   };
   return {
     ...session,
-    matchAt: null,
     matchingResult,
     registration: { ...session.registration, rideRequest: request },
     home: {
@@ -155,10 +170,9 @@ export function matchDemo(session) {
   };
 }
 
-export function cancelDemo(session) {
+export function cancelMockJourney(session) {
   return {
     ...session,
-    matchAt: null,
     matchingResult: null,
     account: null,
     registration: null,
@@ -166,7 +180,7 @@ export function cancelDemo(session) {
   };
 }
 
-export function updateDemoParty(session, party) {
+export function updateMockParty(session, party) {
   if (party.id !== session.matchingResult?.party.id) return session;
   return {
     ...session,
@@ -175,7 +189,7 @@ export function updateDemoParty(session, party) {
   };
 }
 
-export function prepayDemo(session) {
+export function prepayMockJourney(session) {
   if (!session.matchingResult) return session;
   const previewNow = session.matchingResult.party.departureAt;
   return {
@@ -186,7 +200,7 @@ export function prepayDemo(session) {
 }
 
 // 시연에서만 다른 멤버들의 입금 확인을 완료해 정산 화면까지 이어 준다.
-export function receiveDemoPrepayments(context) {
+export function receiveMockPrepayments(context) {
   const representativeId = context.party.representativeMemberId;
   return {
     ...context,
@@ -215,9 +229,9 @@ export function receiveDemoPrepayments(context) {
 }
 
 // 시연 전용 비례 배분. 실제 정산 계산은 서버 API를 따른다.
-export function finalizeDemoSettlement(context, amountWon, memberIds) {
+export function finalizeMockSettlement(context, amountWon, memberIds) {
   if (!Number.isSafeInteger(amountWon) || amountWon <= 0) return null;
-  const received = receiveDemoPrepayments(context);
+  const received = receiveMockPrepayments(context);
   const original = received.settlement.items;
   const ordered = memberIds ?? original.map((item) => item.memberId);
   const total = original.reduce((sum, item) => sum + item.estimatedShareWon, 0);

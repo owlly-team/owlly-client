@@ -10,7 +10,6 @@ import iconSchoolCheck from "../../../assets/icons/school-check.svg";
 import iconLocation from "../../../assets/icons/location.svg";
 import iconNotificationClock from "../../../assets/icons/notification-clock.svg";
 import { fetchMyProfile, updateMyProfile } from "../api/mypageApi";
-import { hasApiBaseUrl } from "../../../shared/api/client";
 import useSessionStore from "../../../shared/stores/sessionStore";
 
 const defaultProfile = {
@@ -42,7 +41,6 @@ export default function MyInfo() {
     : defaultProfile;
 
   useEffect(() => {
-    if (!hasApiBaseUrl) return;
     fetchMyProfile()
       .then(({ data: fetched, etag: fetchedEtag }) => {
         setProfile(fetched);
@@ -55,7 +53,7 @@ export default function MyInfo() {
   const handleSameGenderToggle = async (next) => {
     const previous = sameGenderOnly;
     setSameGenderOnly(next);
-    if (!hasApiBaseUrl || !profile) return;
+    if (!profile) return;
     try {
       const { csrfToken } = useSessionStore.getState();
       await updateMyProfile({ sameGenderDefault: next }, { etag, csrfToken });
@@ -78,16 +76,16 @@ export default function MyInfo() {
   return (
     <div className="flex flex-1 flex-col justify-between">
       <div className="flex flex-col gap-5 pt-3">
-        <h1 className="text-title3 font-bold tracking-tight text-label-normal">
+        <h1 className="text-title3 text-label-normal font-bold tracking-tight">
           내 정보
         </h1>
 
         <div className="flex items-center gap-3">
-          <span className="flex size-13 shrink-0 items-center justify-center rounded-full bg-fill-normal text-heading2 font-bold text-label-alternative">
+          <span className="bg-fill-normal text-heading2 text-label-alternative flex size-13 shrink-0 items-center justify-center rounded-full font-bold">
             {data.name[0]}
           </span>
           <div className="flex flex-col gap-1">
-            <p className="text-headline2 font-semibold text-label-normal">
+            <p className="text-headline2 text-label-normal font-semibold">
               {data.name}
             </p>
             <Badge variant="neutral" icon={iconSchoolCheck}>
@@ -98,22 +96,25 @@ export default function MyInfo() {
 
         <div className="flex flex-col">
           <InfoRow title="성별" value={`${data.gender} · 바꿀 수 없어요`} />
-          <div className="flex items-center justify-between gap-3 border-b border-fill-alternative py-3.5">
+          <div className="border-fill-alternative flex items-center justify-between gap-3 border-b py-3.5">
             <div className="flex flex-col gap-0.5">
-              <p className="text-body1 font-semibold text-label-normal">
+              <p className="text-body1 text-label-normal font-semibold">
                 동성끼리만 매칭
               </p>
               <p className="text-caption1 text-label-alternative">
                 동승 등록할 때 기본값
               </p>
             </div>
-            <Switch checked={sameGenderOnly} onChange={handleSameGenderToggle} />
+            <Switch
+              checked={sameGenderOnly}
+              onChange={handleSameGenderToggle}
+            />
           </div>
           <InfoRow title="집 근처 하차 지점" value={data.dropoff} chevron />
         </div>
 
         <div className="flex flex-col gap-1">
-          <p className="text-label2 font-semibold text-label-alternative">
+          <p className="text-label2 text-label-alternative font-semibold">
             앱 권한
           </p>
           <InfoRow
@@ -132,21 +133,23 @@ export default function MyInfo() {
             chevron
             onClick={() => setNotificationAllowed((value) => !value)}
           />
-          <p className="pt-2 text-caption1 text-label-alternative">
+          <p className="text-caption1 text-label-alternative pt-2">
             누르면 휴대폰 설정으로 이동해요. 모두 선택 권한이에요.
           </p>
         </div>
 
-        <Button variant="secondary" size="md" className="w-full" onClick={handleLogout}>
+        <Button
+          variant="secondary"
+          size="md"
+          className="w-full"
+          onClick={handleLogout}
+        >
           {loggingOut ? "로그아웃하는 중..." : "로그아웃"}
         </Button>
       </div>
 
       <div className="-mx-4 pt-4">
-        <BottomTabBar
-          activeTab={activeTab}
-          onTabChange={handleTabChange}
-        />
+        <BottomTabBar activeTab={activeTab} onTabChange={handleTabChange} />
       </div>
     </div>
   );

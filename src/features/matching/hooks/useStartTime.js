@@ -1,4 +1,5 @@
-import { canPreview, useDemoStore } from "../../demo/demoStore";
+import { canPreview } from "../../../shared/api/mockMode";
+import { useMockJourneyStore } from "../stores/mockJourneyStore";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useSessionStore from "../../../shared/stores/sessionStore";
@@ -67,9 +68,11 @@ export default function useStartTime(selection) {
     const api = createMatchingApi(csrfToken, controller.signal);
     async function refresh() {
       try {
-        const demoSession = isPreview ? useDemoStore.getState().session : null;
-        const clock = demoSession
-          ? Date.parse(demoSession.home.previewNow)
+        const mockJourney = isPreview
+          ? useMockJourneyStore.getState().journey
+          : null;
+        const clock = mockJourney
+          ? Date.parse(mockJourney.home.previewNow)
           : Date.now();
         const dates = getSlotDates(new Date(clock));
         const pages = isPreview
@@ -120,7 +123,7 @@ export default function useStartTime(selection) {
     if (!selectedSlot || operation.current || !valid) return;
     if (isPreview) {
       const registration = createMockRegistration(selectedSlot, selection);
-      useDemoStore.getState().register(registration, selection);
+      useMockJourneyStore.getState().register(registration, selection);
       navigate("/carpool-registration", {
         state: {
           ...registration,
