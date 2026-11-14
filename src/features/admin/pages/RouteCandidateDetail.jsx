@@ -8,10 +8,11 @@ import SelectionCard from "../components/SelectionCard";
 import { routeCandidates as mockRouteCandidates, ACTION_OPTIONS } from "../mockData";
 import { fetchDemandCandidateDetail, formatWeekdaySlot } from "../../../shared/api/demandApi";
 import { hasApiBaseUrl } from "../../../shared/api/client";
+import useReportDraftStore from "../stores/reportDraftStore";
 
 function toDetailView(candidate) {
   const metrics = [
-    { title: "동승 등록", subtitle: "서비스 귀가 기록", value: `${candidate.journeyCount}건` },
+    { title: "동승 등록", subtitle: "서비스 귀가 기록", value: `${candidate.pooledRegisteredCount}건` },
     { title: "탑승 확인", subtitle: "서비스 귀가 기록", value: `${candidate.pooledJourneyCount}건` },
     { title: "매칭 실패", subtitle: "서비스 귀가 기록", value: `${candidate.failedJourneyCount}건` },
     { title: "막차 선택", subtitle: "서비스 귀가 기록", value: `${candidate.busSelectedCount}건` },
@@ -23,6 +24,7 @@ function toDetailView(candidate) {
     })),
   ];
   return {
+    id: candidate.id,
     rank: candidate.candidateRank ?? "–",
     title: `${candidate.pickupPointName} → ${candidate.destinationDongName}`,
     meta: formatWeekdaySlot(candidate.weekday, candidate.slotStart),
@@ -34,8 +36,8 @@ function toDetailView(candidate) {
             : "집계 중",
         label: "AI 추정 수요",
       },
+      { value: candidate.existingSupply || "기존 노선 없음", label: "기존 공급" },
       { value: `${candidate.failedJourneyCount}건`, label: "매칭 실패" },
-      { value: `${candidate.soloSelectedCount}건`, label: "혼자 택시" },
     ],
     metrics,
   };
@@ -104,7 +106,12 @@ export default function RouteCandidateDetail() {
           variant="primary"
           className="w-full"
           style={{ backgroundColor: "#3a3a3c" }}
-          onClick={() => navigate("/admin/report")}
+          onClick={() => {
+            if (hasApiBaseUrl && route.id) {
+              useReportDraftStore.getState().setAction(route.id, action, route.title);
+            }
+            navigate("/admin/report");
+          }}
         >
           리포트에 담기
         </Button>

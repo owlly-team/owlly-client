@@ -1,4 +1,4 @@
-import { apiGet, hasApiBaseUrl } from "./client";
+import { apiGet, apiResponse, hasApiBaseUrl } from "./client";
 
 const useMock = import.meta.env.DEV && !hasApiBaseUrl;
 
@@ -21,7 +21,7 @@ export function toRouteSummary(candidate) {
     id: candidate.id,
     rank: candidate.candidateRank ?? "–",
     title: `${candidate.pickupPointName} → ${candidate.destinationDongName}`,
-    subtitle: formatWeekdaySlot(candidate.weekday, candidate.slotStart),
+    subtitle: candidate.existingSupply || "기존 노선 없음",
     demand,
     progress,
   };
@@ -36,9 +36,11 @@ function buildQuery(params) {
   return qs ? `?${qs}` : "";
 }
 
+// data와 meta.runId를 함께 써야 하는 화면(리포트 생성용 runId 확보 등)이 있어
+// 여기만 전체 응답을 반환한다. 호출부에서 { data, meta }로 구조분해한다.
 export async function fetchDemandCandidates(params = {}) {
-  if (useMock) return [];
-  return apiGet(`/demand/candidates${buildQuery(params)}`);
+  if (useMock) return { data: [], meta: {} };
+  return apiResponse(`/demand/candidates${buildQuery(params)}`);
 }
 
 export async function fetchDemandCandidateDetail(estimateId) {

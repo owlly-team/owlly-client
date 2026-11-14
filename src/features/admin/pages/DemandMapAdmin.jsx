@@ -10,6 +10,7 @@ import iconStatBars from "../../../assets/icons/stat-bars.svg";
 import { routeCandidates as mockRouteCandidates } from "../mockData";
 import { fetchDemandCandidates, toRouteSummary } from "../../../shared/api/demandApi";
 import { hasApiBaseUrl } from "../../../shared/api/client";
+import useReportDraftStore from "../stores/reportDraftStore";
 
 const PERIOD_OPTIONS = ["11.2~11.8", "10.26~11.1", "11.9~11.15"];
 const DAY_OPTIONS = ["금요일", "토요일", "일요일", "월요일"];
@@ -41,6 +42,7 @@ export default function DemandMapAdmin() {
     })),
   );
   const [notReady, setNotReady] = useState(false);
+  const draftCount = useReportDraftStore((state) => Object.keys(state.items).length);
 
   const cycle = (list, current, setter) => () => {
     setter(list[(list.indexOf(current) + 1) % list.length]);
@@ -53,9 +55,10 @@ export default function DemandMapAdmin() {
       slotStart: SLOT_START_BY_LABEL[time],
       limit: 20,
     })
-      .then((candidates) => {
+      .then(({ data: candidates, meta }) => {
         setRoutes(candidates.map(toRouteSummary));
         setNotReady(false);
+        useReportDraftStore.getState().setRunId(meta?.runId ?? null);
       })
       .catch((error) => {
         if (error.code === "DEMAND_NOT_READY") setNotReady(true);
@@ -93,6 +96,20 @@ export default function DemandMapAdmin() {
               AI 추정
             </Badge>
           </div>
+          {draftCount > 0 && (
+            <button
+              type="button"
+              onClick={() => navigate("/admin/report")}
+              className="flex items-center justify-between rounded-12 bg-fill-normal px-4 py-3 text-left"
+            >
+              <span className="text-body2 font-semibold text-label-normal">
+                선택한 노선 {draftCount}개
+              </span>
+              <span className="text-body2 font-semibold text-primary-normal">
+                리포트 만들기
+              </span>
+            </button>
+          )}
           {notReady ? (
             <p className="py-4 text-center text-caption1 text-label-alternative">
               아직 이 조건으로 집계된 수요 데이터가 없어요.
