@@ -22,6 +22,47 @@ const party = {
 };
 const now = Date.parse("2026-11-14T23:00:00+09:00");
 
+test("matching party and settlement display before a slow bank list", async () => {
+  let resolveBank, resolveSettlement, firstPaint, farePaint;
+  const bank = new Promise((yes) => {
+    resolveBank = yes;
+  });
+  const settlement = new Promise((yes) => {
+    resolveSettlement = yes;
+  });
+  const first = new Promise((yes) => {
+    firstPaint = yes;
+  });
+  const fare = new Promise((yes) => {
+    farePaint = yes;
+  });
+  const updates = [];
+  const done = loadMatchingResult(
+    {
+      party: async () => ({ data: party, etag: '"p1"' }),
+      settlement: () => settlement,
+      banks: () => bank,
+    },
+    "401",
+    {
+      onUpdate: (data) => {
+        updates.push(data);
+        firstPaint();
+        if (data.settlement) farePaint();
+      },
+    },
+  );
+  await first;
+  assert.equal(updates[0].party.id, "401");
+  assert.equal(updates[0].settlement, null);
+  resolveSettlement({ data: { partyId: "401", items: [] }, etag: '"s1"' });
+  await fare;
+  assert.equal(updates.at(-1).settlementEtag, '"s1"');
+  assert.equal(updates.at(-1).banksLoading, true);
+  resolveBank({ data: [{ code: "001" }] });
+  assert.equal((await done).banks[0].code, "001");
+});
+
 test("party lookup tolerates settlement not ready without inventing fares", async () => {
   const result = await loadMatchingResult(
     {

@@ -13,13 +13,45 @@ export function validateParty(party, partyId, myMemberId) {
 export async function loadMatchingResult(
   api,
   partyId,
-  { includeBanks = true, forceParty = false } = {},
+  { includeBanks = true, forceParty = false, onUpdate } = {},
 ) {
   const { data, etag } = await api.party(partyId, { force: forceParty });
   const party = validateParty(data, partyId);
+  let partial = {
+    party,
+    partyEtag: etag,
+    settlement: null,
+    banks: [],
+    settlementLoading: true,
+    banksLoading: includeBanks,
+    settlementNotReady: false,
+    settlementError: false,
+  };
+  onUpdate?.(partial);
   const [settlementResult, banksResult] = await Promise.allSettled([
-    api.settlement(partyId),
-    includeBanks ? api.banks() : Promise.resolve({ data: [] }),
+    api.settlement(partyId).then((response) => {
+      if (response.data?.partyId === partyId) {
+        partial = {
+          ...partial,
+          settlement: response.data,
+          settlementEtag: response.etag,
+          settlementLoading: false,
+        };
+        onUpdate?.(partial);
+      }
+      return response;
+    }),
+    includeBanks
+      ? api.banks().then((response) => {
+          partial = {
+            ...partial,
+            banks: Array.isArray(response.data) ? response.data : [],
+            banksLoading: false,
+          };
+          onUpdate?.(partial);
+          return response;
+        })
+      : Promise.resolve({ data: [] }),
   ]);
   for (const result of [settlementResult, banksResult]) {
     if (
@@ -52,6 +84,8 @@ export async function loadMatchingResult(
       Array.isArray(banksResult.value.data)
         ? banksResult.value.data
         : [],
+    settlementLoading: false,
+    banksLoading: false,
   };
 }
 

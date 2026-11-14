@@ -1,7 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
 import TopBar from "../../../shared/components/TopBar";
 import Button from "../../../shared/components/Button";
 import ReportSummaryCard from "../components/ReportSummaryCard";
@@ -121,16 +119,21 @@ export default function ReportExport() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [useRealReport, draft.reportId]);
 
-  const captureExportCanvas = () =>
-    html2canvas(exportRef.current, {
+  const captureExportCanvas = async () => {
+    const { default: html2canvas } = await import("html2canvas");
+    if (!exportRef.current) throw new Error("리포트 화면이 닫혔어요.");
+    return html2canvas(exportRef.current, {
       backgroundColor: "#ffffff",
       scale: 2,
       useCORS: true,
       width: EXPORT_WIDTH,
       windowWidth: EXPORT_WIDTH,
     });
+  };
 
-  const fileName = view ? `아울리_심야수요_${view.school}_${view.period}` : "아울리_심야수요";
+  const fileName = view
+    ? `아울리_심야수요_${view.school}_${view.period}`
+    : "아울리_심야수요";
 
   const handleSaveImage = async () => {
     if (exporting || !exportRef.current) return;
@@ -151,13 +154,23 @@ export default function ReportExport() {
     setExporting("pdf");
     setExportError("");
     try {
-      const canvas = await captureExportCanvas();
+      const [canvas, { default: jsPDF }] = await Promise.all([
+        captureExportCanvas(),
+        import("jspdf"),
+      ]);
       const pdf = new jsPDF({
         orientation: canvas.width >= canvas.height ? "landscape" : "portrait",
         unit: "px",
         format: [canvas.width, canvas.height],
       });
-      pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, canvas.width, canvas.height);
+      pdf.addImage(
+        canvas.toDataURL("image/png"),
+        "PNG",
+        0,
+        0,
+        canvas.width,
+        canvas.height,
+      );
       pdf.save(`${fileName}.pdf`);
     } catch {
       setExportError("PDF 저장에 실패했어요. 다시 시도해 주세요.");
@@ -175,7 +188,9 @@ export default function ReportExport() {
         rows={view.rows}
         note={view.note}
       />
-      <p className="px-5 pb-4 text-caption2 text-label-alternative">{view.source}</p>
+      <p className="text-caption2 text-label-alternative px-5 pb-4">
+        {view.source}
+      </p>
     </>
   );
 
@@ -185,17 +200,19 @@ export default function ReportExport() {
         <div className="-mx-4">
           <TopBar title="리포트" onLeftClick={() => navigate(-1)} />
         </div>
-        <div className="-mx-4 flex flex-col items-center gap-3 bg-background-alternative px-4 py-4">
-          <p className="w-full text-caption1 text-label-alternative">
+        <div className="bg-background-alternative -mx-4 flex flex-col items-center gap-3 px-4 py-4">
+          <p className="text-caption1 text-label-alternative w-full">
             용인시 제출용 1장 · 고정 양식 · 미리보기
           </p>
-          <div className="w-full rounded-16 bg-background-normal p-1 shadow-medium">
+          <div className="rounded-16 bg-background-normal shadow-medium w-full p-1">
             {loadError ? (
-              <p className="p-6 text-center text-caption1 text-status-negative">{loadError}</p>
+              <p className="text-caption1 text-status-negative p-6 text-center">
+                {loadError}
+              </p>
             ) : view ? (
               reportBody
             ) : (
-              <p className="p-6 text-center text-caption1 text-label-alternative">
+              <p className="text-caption1 text-label-alternative p-6 text-center">
                 리포트를 만들고 있어요...
               </p>
             )}
@@ -207,7 +224,7 @@ export default function ReportExport() {
       {view && (
         <div
           aria-hidden="true"
-          className="fixed top-0 -left-[9999px] bg-background-normal"
+          className="bg-background-normal fixed top-0 -left-[9999px]"
           style={{ width: EXPORT_WIDTH }}
           ref={exportRef}
         >
@@ -215,9 +232,11 @@ export default function ReportExport() {
         </div>
       )}
 
-      <div className="flex flex-col gap-2 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4">
+      <div className="flex flex-col gap-2 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
         {exportError && (
-          <p className="text-center text-caption1 text-status-negative">{exportError}</p>
+          <p className="text-caption1 text-status-negative text-center">
+            {exportError}
+          </p>
         )}
         <div className="flex gap-2">
           <Button

@@ -2,14 +2,15 @@ import { useEffect, useState } from "react";
 import useSessionStore from "../../../shared/stores/sessionStore";
 import { createHomeApi } from "../api/homeApi";
 import {
-  getSlotDates,
   getUserScopedData,
   loadCurrentRide,
   loadHomePickupPoints,
   selectSchoolPickupPoint,
-  upcomingSlots,
 } from "../utils/loadHomeData";
-import { isPoint } from "../../matching/utils/mapUtils";
+import {
+  loadHomeComparison,
+  mergeHomeComparison,
+} from "../utils/loadHomeComparison";
 import useHomeLocation from "./useHomeLocation";
 import { nearestPickupPoint } from "../utils/homeLocation";
 import useCachedParty from "../../matching/hooks/useCachedParty";
@@ -127,75 +128,35 @@ export default function useHomeData() {
     let timer;
     async function refresh() {
       try {
-        const profile = base.profile;
-        if (!isPoint(profile.defaultDropoff))
-          throw new Error("기본 하차 위치를 확인해 주세요.");
-        // 폴링은 완료 후 예약해 느린 요청이 겹치지 않도록 한다.
-        const now = new Date();
-        const travel = await api.travelOptions({
-          pickupPointId: pickupPoint.id,
-          dropoff: profile.defaultDropoff,
-          departureAt: now.toISOString(),
-        });
-        const destinationDongId = travel.data?.destinationDongId;
-        if (!destinationDongId)
-          throw new Error("하차 지점의 교통 정보를 확인할 수 없어요.");
-        const slotResults = await Promise.allSettled(
-          getSlotDates(now).map((date) =>
-            api.slots({
-              pickupPointId: pickupPoint.id,
-              destinationDongId,
-              date,
-              sameGenderOnly: String(profile.sameGenderDefault),
-            }),
-          ),
-        );
-        const slotFailure = slotResults.find(
-          (item) => item.status === "rejected",
-        );
-        if ([401, 403].includes(slotFailure?.reason?.status))
-          throw slotFailure.reason;
-        const slotPages = slotResults
-          .filter((item) => item.status === "fulfilled")
-          .map((item) => item.value);
-        if (slotPages.some((page) => !Array.isArray(page.data)))
-          throw new Error("출발 시간대를 확인할 수 없어요.");
-        if (controller.signal.aborted) return;
-        setResult({
-          key,
-          data: {
-            profile,
+        await loadHomeComparison(
+          api,
+          {
+            profile: base.profile,
             pickupPoint,
-            isPreview: false,
-            travelOptions: {
-              ...travel.data,
-              destinationDongName:
-                travel.data.destinationDongName ??
-                (travel.data.destinationDongId === profile.defaultDongId
-                  ? profile.defaultDongName
-                  : undefined),
-              universityId: profile.user.universityId,
-              universityName: profile.user.universityName,
-            },
-            matchingSlots: upcomingSlots(
-              slotPages.flatMap((page) => page.data),
-              now.getTime(),
-            ),
-            presentation: {
-              directionLabel: travel.data.districtName,
-            },
-            slotsError: slotFailure
-              ? "동승 출발 시간대를 불러오지 못했어요. 잠시 후 다시 확인할게요."
-              : null,
+            signal: controller.signal,
           },
-        });
+          (data) => {
+            if (!controller.signal.aborted)
+              setResult((previous) => ({
+                key,
+                data: mergeHomeComparison(
+                  previous?.key === key ? previous.data : null,
+                  data,
+                ),
+              }));
+          },
+        );
+        if (controller.signal.aborted) return;
         timer = setTimeout(refresh, 60000);
       } catch (error) {
         if (controller.signal.aborted) return;
         if (error.status === 401) useSessionStore.getState().clearSession();
         setResult((previous) => ({
           key,
-          data: previous?.key === key ? previous.data : null,
+          data:
+            ![401, 403].includes(error.status) && previous?.key === key
+              ? { ...previous.data, slotsLoading: false }
+              : null,
           error,
         }));
         if (![401, 403].includes(error.status)) {

@@ -6,6 +6,7 @@ import useRepresentativeAccount from "../hooks/useRepresentativeAccount";
 export default function RepresentativeAccountForm({
   roomId,
   banks = BANK_OPTIONS,
+  banksLoading = false,
   onOpenChat,
   isPreview,
 }) {
@@ -38,7 +39,10 @@ export default function RepresentativeAccountForm({
           </p>
         </div>
       ) : (
-        <fieldset disabled={saving} className="mt-2 flex flex-col gap-2">
+        <fieldset
+          disabled={saving || banksLoading}
+          className="mt-2 flex flex-col gap-2"
+        >
           <div className="flex gap-2">
             <div className="relative w-28 shrink-0">
               <BankSelectSheet
@@ -79,10 +83,16 @@ export default function RepresentativeAccountForm({
         이 방 멤버의 송금 카드에만 보이고, 채팅방이 닫히면 함께 지워져요.
         채팅에서는 계좌번호가 계속 가려져요.
       </p>
-      {!banks.length && (
+      {banksLoading ? (
         <p role="status" className="text-label2 text-label-neutral mt-2">
-          은행 목록을 불러오지 못했어요. 다시 불러와 주세요.
+          은행 목록을 불러오고 있어요.
         </p>
+      ) : (
+        !banks.length && (
+          <p role="status" className="text-label2 text-label-neutral mt-2">
+            은행 목록을 불러오지 못했어요. 다시 불러와 주세요.
+          </p>
+        )
       )}
       {!saved && !isPreview && roomId && (
         <Button
