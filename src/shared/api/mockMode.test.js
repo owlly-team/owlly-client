@@ -21,7 +21,9 @@ test("mock mode only follows the API environment; old demo URLs and saved state 
     for (const [development, baseUrl, expected] of [
       [true, "", true],
       [true, "https://api.example.test", false],
-      [false, "", false],
+      [false, "", true],
+      [false, "   ", true],
+      [false, "https://api.example.test", false],
     ]) {
       const server = await createServer({
         server: { middlewareMode: true, hmr: false },
@@ -32,13 +34,14 @@ test("mock mode only follows the API environment; old demo URLs and saved state 
         },
       });
       try {
-        const { isMockMode } = await server.ssrLoadModule(
+        const { isMockMode, canPreview } = await server.ssrLoadModule(
           "/src/shared/api/mockMode.js",
         );
         const { useMockJourneyStore } = await server.ssrLoadModule(
           "/src/features/matching/stores/mockJourneyStore.js",
         );
         assert.equal(isMockMode(), expected);
+        assert.equal(canPreview(), development || expected);
         assert.equal(useMockJourneyStore.getState().journey, null);
         if (expected) {
           const { default: SchoolVerification } = await server.ssrLoadModule(

@@ -5,12 +5,12 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
 
-test("mock screens render both roles through registration, confirmation, prepay and settlement without fetch", async () => {
+test("production mock screens render both roles through registration, confirmation, prepay and settlement without fetch", async () => {
   const server = await createServer({
     server: { middlewareMode: true, hmr: false },
     appType: "custom",
     define: {
-      "import.meta.env.DEV": "true",
+      "import.meta.env.DEV": "false",
       "import.meta.env.VITE_API_BASE_URL": '""',
     },
     plugins: [
