@@ -5,6 +5,7 @@ import useSessionStore from "../../../shared/stores/sessionStore";
 import { getDisplayNow } from "../../../shared/utils/time";
 import { useMockJourneyStore } from "../../matching/stores/mockJourneyStore";
 import useMockMatchingTransition from "../../matching/hooks/useMockMatchingTransition";
+import { isHomeRideFinalized } from "../utils/rideProgressView";
 import iconBus from "../../../assets/icons/transport-bus.svg";
 import iconCarpool from "../../../assets/icons/transport-carpool.svg";
 import iconTaxi from "../../../assets/icons/transport-taxi.svg";
@@ -50,17 +51,25 @@ export default function useHome(data, { onPendingFeature } = {}) {
 
   const { travelOptions, rideRequest, party } = data;
   const displayNow = getDisplayNow(data, now);
-  const viewData = toHomeViewData(data, displayNow);
+  const rideFinalized = isHomeRideFinalized(data);
+  const viewData = toHomeViewData(
+    rideFinalized
+      ? { ...data, rideRequest: null, party: null, mySettlementItem: null }
+      : data,
+    displayNow,
+  );
   const { transportDisplay } = viewData;
 
   // 막차 전후와 매칭 전후를 독립적으로 판단하고 화면 표시 여부만 조합
   const transitAvailable = travelOptions?.transit?.available ?? null;
-  const matchingUiState = getMatchingUiState(
-    rideRequest?.status ?? null,
-    rideRequest?.status === "MATCHED" && party?.id === rideRequest.partyId
-      ? (party?.status ?? null)
-      : null,
-  );
+  const matchingUiState = rideFinalized
+    ? null
+    : getMatchingUiState(
+        rideRequest?.status ?? null,
+        rideRequest?.status === "MATCHED" && party?.id === rideRequest.partyId
+          ? (party?.status ?? null)
+          : null,
+      );
   const isMatchingWaiting = matchingUiState === "MATCHING_WAITING";
   const isMatchingResult = matchingUiState === "MATCHING_RESULT";
   const isRideInProgress = matchingUiState === "RIDE_IN_PROGRESS";
@@ -80,8 +89,8 @@ export default function useHome(data, { onPendingFeature } = {}) {
 
   //귀가 방법 카드 눌렀을 때 처리
   function handleTransportSelect(id) {
-    if (id === "bus") {
-      navigate("/train", {
+    if (id === "bus" || id === "taxi") {
+      navigate(TRANSPORT_ROUTES[id], {
         state: {
           isPreview: data.isPreview !== false,
           userId: useSessionStore.getState().user?.id,
@@ -96,7 +105,6 @@ export default function useHome(data, { onPendingFeature } = {}) {
       });
       return;
     }
-    if (data.isPreview === false) return onPendingFeature?.();
     if (id === "carpool") {
       handleStartRegistration();
       return;
@@ -135,7 +143,9 @@ export default function useHome(data, { onPendingFeature } = {}) {
   }
 
   const { activeTab: selectedTab, handleTabChange } = useBottomTabNavigation({
-    onReturn: handleStartRegistration,
+    onReturn: isRideInProgress
+      ? () => handleOpenRoom()
+      : handleStartRegistration,
   });
 
   //동승 등록 내용 보기

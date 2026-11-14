@@ -2,6 +2,7 @@ import { canPreview } from "../../../shared/api/mockMode";
 import { useMockApi } from "../../../shared/api/client";
 import { useLocation, useNavigate } from "react-router-dom";
 import LiveTravelDetails from "../components/LiveTravelDetails";
+import SoloTaxiDetails from "../components/SoloTaxiDetails";
 import Badge from "../../../shared/components/Badge";
 import TopBar from "../../../shared/components/TopBar";
 import RouteSteps from "../components/RouteSteps";
@@ -50,13 +51,16 @@ const SoloTaxiData = {
 //혼자 택시
 export default function SoloTaxi() {
   const { search, state } = useLocation();
+  if (new URLSearchParams(search).has("requestId"))
+    return <LiveTravelDetails mode="SOLO" />;
   return state?.isPreview !== false &&
     (useMockApi ||
       (canPreview() &&
-        new URLSearchParams(search).get("preview") === "taxi")) ? (
+        (state?.isPreview === true ||
+          new URLSearchParams(search).get("preview") === "taxi"))) ? (
     <PreviewSoloTaxi />
   ) : (
-    <LiveTravelDetails mode="SOLO" />
+    <SoloTaxiDetails />
   );
 }
 

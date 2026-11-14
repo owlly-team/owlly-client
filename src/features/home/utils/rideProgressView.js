@@ -1,8 +1,24 @@
 import { formatTime, formatWon } from "./homeUtils.js";
+import { getPrepaidWon } from "../../settlement/utils/settlementUtils.js";
+
+export function isHomeRideFinalized(data) {
+  const party = data?.party;
+  const settlement = data?.settlement;
+  return Boolean(
+    party?.id &&
+    data.rideRequest?.status === "MATCHED" &&
+    data.rideRequest.partyId === party.id &&
+    settlement?.partyId === party.id &&
+    (party.routeVersion == null ||
+      settlement.routeVersion === party.routeVersion) &&
+    ["REFUNDING", "COMPLETED", "REVIEW_REQUIRED"].includes(settlement.status) &&
+    Number.isFinite(Date.parse(settlement.finalizedAt)),
+  );
+}
 
 export function getHomeRideParty(data) {
   const party = data?.party;
-  if (!party?.id) return null;
+  if (!party?.id || isHomeRideFinalized(data)) return null;
   return data?.rideRequest?.status === "MATCHED" &&
     data.rideRequest.partyId === party?.id &&
     ["PREPAYING", "READY", "RIDING", "SETTLING"].includes(party.status)
@@ -65,6 +81,45 @@ export function toRideProgressView(
     Number.isSafeInteger(item?.prepayDueWon) && item.prepayDueWon >= 0
       ? item.prepayDueWon
       : null;
+  const currentSettlement =
+    data.settlement?.partyId === party.id &&
+    (party.routeVersion == null ||
+      data.settlement.routeVersion === party.routeVersion)
+      ? data.settlement
+      : null;
+  const paid = (member, receivedOnly) => {
+    const payment = currentSettlement?.items?.find(
+      (entry) => entry.memberId === member.memberId,
+    );
+    return (
+      Number.isSafeInteger(payment?.prepayDueWon) &&
+      payment.prepayDueWon >= 0 &&
+      (payment.prepayDueWon === 0 ||
+        getPrepaidWon(payment, party.representativeMemberId, receivedOnly) >=
+          payment.prepayDueWon)
+    );
+  };
+  const payers = members.filter(
+    (member) => member.memberId !== party.representativeMemberId,
+  );
+  const prepayRecorded = isRepresentative
+    ? payers.length > 0 && payers.every((member) => paid(member, true))
+    : paid(me, false);
+  const boarded = me.boardingStatus === "BOARDED";
+  const taxiCalled =
+    Number.isFinite(Date.parse(party.taxiCalledAt)) ||
+    ["READY", "RIDING", "SETTLING"].includes(party.status);
+  // 하차 기록이 없으므로 다른 멤버의 하차 완료를 시각이나 순서로 추정하지 않는다.
+  const currentStepId =
+    party.status === "SETTLING"
+      ? "settlement"
+      : boarded
+        ? me.memberId
+        : taxiCalled || prepayRecorded
+          ? "taxi"
+          : Number.isFinite(departure) && now >= departure
+            ? "prepay"
+            : "meet";
   const shortTime = (at, fallback = "미정") =>
     Number.isFinite(Date.parse(at)) ? formatTime(at) : fallback;
   const steps = [
@@ -99,9 +154,11 @@ export function toRideProgressView(
       time: shortTime(example?.taxiAt, "입금 후"),
       type: "walk",
       kind: "taxi",
-      title: representative?.maskedName
-        ? `대표 ${representative.maskedName}님이 택시 부르기`
-        : "대표가 택시 부르기",
+      title: taxiCalled
+        ? "택시 탑승 확인하기"
+        : representative?.maskedName
+          ? `대표 ${representative.maskedName}님이 택시 부르기`
+          : "대표가 택시 부르기",
       description: "타면 채팅방에서 탔어요를 눌러 주세요",
     },
     ...members.map((member, index) => {
@@ -127,6 +184,16 @@ export function toRideProgressView(
       };
     }),
   ];
+  if (party.status === "SETTLING")
+    steps.push({
+      id: "settlement",
+      time: "하차 후",
+      type: "home",
+      kind: "settlement",
+      title: isRepresentative ? "정산 입력·확정하기" : "정산 내역 확인하기",
+      description: "채팅방에서 정산을 확인해 주세요",
+    });
+  const currentIndex = steps.findIndex((step) => step.id === currentStepId);
   return {
     partyId: party.id,
     roomId: validRoom?.id ?? party.roomId,
@@ -148,6 +215,14 @@ export function toRideProgressView(
       .join(" · "),
     verificationCode,
     unreadCount,
-    steps,
+    steps: steps.map((step, index) => ({
+      ...step,
+      state:
+        step.id === currentStepId
+          ? "current"
+          : index < 3 && index < currentIndex
+            ? "past"
+            : "upcoming",
+    })),
   };
 }
