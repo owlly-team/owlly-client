@@ -218,17 +218,16 @@ export default function MatchingResult({ banks, onOpenChat }) {
     members,
     companionCount,
     allSameSchool,
-    mySettlementItem,
+    estimatedShareWon,
+    prepayDueWon,
+    amountsReady,
+    destinationLabel,
     isRepresentative,
   } = toMatchingResultView(party, settlement);
   const context = isPreview
     ? (state?.matchingContext ?? data)
     : comparison.data;
   const transitNotice = getMatchingTransitNotice(context?.travelOptions, clock);
-  const destinationLabel =
-    party.districtName ??
-    context?.rideRequest?.districtName ??
-    context?.rideRequest?.destinationDongName;
 
   const decision = getMyDecision(party);
   if (isRepresentative && decision === "ACCEPTED")
@@ -273,7 +272,7 @@ export default function MatchingResult({ banks, onOpenChat }) {
       <FareCompare
         className="mt-4"
         shareLabel="예상 1인 부담액"
-        sharePrice={formatWon(mySettlementItem?.estimatedShareWon)}
+        sharePrice={formatWon(estimatedShareWon)}
         aloneLabel="혼자 택시 · 지금 출발"
         alonePrice={formatWon(context?.travelOptions?.soloTaxiEstimatedWon)}
       />
@@ -311,18 +310,16 @@ export default function MatchingResult({ banks, onOpenChat }) {
               탈 때 대표에게 보낼 금액
             </h2>
             <p className="text-caption1 text-label-alternative mt-1">
-              {mySettlementItem?.prepayDueWon === 0
+              {isRepresentative
                 ? "대표는 선입금하지 않아요"
                 : "예상 분담액의 1.2배 · 최대 금액"}
             </p>
           </div>
           <p className="text-title3 text-primary-normal font-bold">
-            {mySettlementItem
-              ? formatWon(mySettlementItem.prepayDueWon)
-              : "금액 준비 중"}
+            {prepayDueWon != null ? formatWon(prepayDueWon) : "금액 준비 중"}
           </p>
         </div>
-        {(settlementNotReady || settlementError || !mySettlementItem) && (
+        {(settlementNotReady || settlementError || !amountsReady) && (
           <p role="status" className="text-label2 text-label-neutral mt-2">
             {settlementError
               ? "정산 정보를 불러오지 못했어요."
@@ -363,7 +360,7 @@ export default function MatchingResult({ banks, onOpenChat }) {
             gender={member.genderLabel}
             isMe={member.memberId === party.myMemberId}
             isRepresentative={member.isRepresentative}
-            note={`${member.destinationDongName}에서 내려요${member.distanceLabel ? ` · ${member.distanceLabel}` : ""}${member.isRepresentative ? " · 택시 호출 · 결제" : ""}`}
+            note={`${member.dropoffNote}${member.distanceLabel ? ` · ${member.distanceLabel}` : ""}${member.isRepresentative ? " · 택시 호출 · 결제" : ""}`}
           />
         ))}
       </section>

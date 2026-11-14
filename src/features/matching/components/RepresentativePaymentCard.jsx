@@ -16,7 +16,7 @@ export default function RepresentativePaymentCard({
         택시 부르기 전에 받을 금액
       </h2>
       <div className="flex flex-col gap-4">
-        {payments.map(({ member, item }) => (
+        {payments.map(({ member, estimatedShareWon, prepayDueWon }) => (
           <div
             key={member.memberId}
             className="flex items-center justify-between gap-3"
@@ -29,11 +29,11 @@ export default function RepresentativePaymentCard({
                 </p>
               )}
               <p className="text-caption1 text-label-alternative mt-1">
-                예상 {formatWon(item?.estimatedShareWon)}의 1.2배
+                예상 {formatWon(estimatedShareWon)}의 1.2배
               </p>
             </div>
             <p className="text-body1 font-bold">
-              {item ? formatWon(item.prepayDueWon) : "금액 준비 중"}
+              {prepayDueWon != null ? formatWon(prepayDueWon) : "금액 준비 중"}
             </p>
           </div>
         ))}

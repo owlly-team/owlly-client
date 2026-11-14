@@ -37,6 +37,7 @@ export async function loadMatchingResult(
     party,
     partyEtag: etag,
     settlement,
+    settlementEtag: settlement ? settlementResult.value.etag : undefined,
     settlementNotReady:
       settlementResult.status === "rejected" &&
       settlementResult.reason.code === "SETTLEMENT_NOT_READY",

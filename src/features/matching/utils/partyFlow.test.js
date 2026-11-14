@@ -39,6 +39,28 @@ test("party lookup tolerates settlement not ready without inventing fares", asyn
   assert.equal(result.settlementError, false);
 });
 
+test("API-22와 API-33의 응답 및 ETag를 각각 보존한다", async () => {
+  const settlement = {
+    partyId: "401",
+    items: [{ memberId: "502", estimatedShareWon: 7900, prepayDueWon: 9500 }],
+  };
+  const result = await loadMatchingResult(
+    {
+      party: async () => ({ data: party, etag: '"party-v1"' }),
+      settlement: async (id) => {
+        assert.equal(id, "401");
+        return { data: settlement, etag: '"settlement-v2"' };
+      },
+      banks: async () => ({ data: [] }),
+    },
+    "401",
+  );
+  assert.equal(result.party, party);
+  assert.equal(result.settlement, settlement);
+  assert.equal(result.partyEtag, '"party-v1"');
+  assert.equal(result.settlementEtag, '"settlement-v2"');
+});
+
 test("party/member ID mismatches and expired authentication never become a successful result", async () => {
   assert.throws(() => validateParty(party, "999"), /정보/);
   assert.throws(() => validateParty(party, "401", "503"), /정보/);
