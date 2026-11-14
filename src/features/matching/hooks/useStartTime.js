@@ -1,3 +1,4 @@
+import { canPreview, useDemoStore } from "../../demo/demoStore";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useSessionStore from "../../../shared/stores/sessionStore";
@@ -18,7 +19,7 @@ import {
 export default function useStartTime(selection) {
   const navigate = useNavigate();
   const { csrfToken, user } = useSessionStore();
-  const isPreview = import.meta.env.DEV && selection?.isPreview === true;
+  const isPreview = canPreview() && selection?.isPreview === true;
   const valid =
     isMatchingSelection(selection) &&
     (isPreview || isPoint(selection?.destination?.point));
@@ -66,7 +67,11 @@ export default function useStartTime(selection) {
     const api = createMatchingApi(csrfToken, controller.signal);
     async function refresh() {
       try {
-        const dates = getSlotDates();
+        const demoSession = isPreview ? useDemoStore.getState().session : null;
+        const clock = demoSession
+          ? Date.parse(demoSession.home.previewNow)
+          : Date.now();
+        const dates = getSlotDates(new Date(clock));
         const pages = isPreview
           ? dates.map((date) => ({ data: createMockMatchingSlots(date) }))
           : await Promise.all(
@@ -84,7 +89,10 @@ export default function useStartTime(selection) {
           throw new Error("출발 시간대를 확인할 수 없어요.");
         setResult({
           key,
-          slots: upcomingSlots(pages.flatMap((page) => page.data)),
+          slots: upcomingSlots(
+            pages.flatMap((page) => page.data),
+            clock,
+          ),
         });
         timer = setTimeout(refresh, 30000);
       } catch (failure) {
@@ -111,9 +119,11 @@ export default function useStartTime(selection) {
   async function register() {
     if (!selectedSlot || operation.current || !valid) return;
     if (isPreview) {
+      const registration = createMockRegistration(selectedSlot, selection);
+      useDemoStore.getState().register(registration, selection);
       navigate("/carpool-registration", {
         state: {
-          ...createMockRegistration(selectedSlot, selection),
+          ...registration,
           isPreview: true,
         },
       });

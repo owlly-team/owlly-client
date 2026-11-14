@@ -1,3 +1,5 @@
+import { canPreview } from "../../demo/demoStore";
+import { useMockApi } from "../../../shared/api/client";
 import { useLocation, useNavigate } from "react-router-dom";
 import LiveTravelDetails from "../components/LiveTravelDetails";
 import Badge from "../../../shared/components/Badge";
@@ -7,125 +9,174 @@ import iconStepWalk from "../../../assets/icons/step-walk.svg";
 import iconStepBus from "../../../assets/icons/step-bus.svg";
 import iconStepFlag from "../../../assets/icons/step-flag.svg";
 import Button from "../../../shared/components/Button";
+import useLastTrain from "../hooks/useLastTrain";
+import { toLastTrainView } from "../utils/lastTrainView";
+import { defaultHomeData } from "../mocks/homeMockData";
 
-const LastTrainData = {
-  origin: "단국대 정문 근처",
-  destination: "영통2동",
-  timeTaken: "43",
-  fare: "1,550",
-  lastDeparture: {
-    time: "22:58",
-    place: "정문 정류장 · 도보 4분",
-    note: "22:49까지 출발해야 해요",
-    transfer: "환승 없음",
-  },
-  steps: [
-    {
-      time: "22:49",
-      type: "walk",
-      icon: iconStepWalk,
-      title: "정문 정류장까지 걷기",
-      description: "도보 4분 · 300m · 5분 여유 두고 출발",
-    },
-    {
-      time: "22:58",
-      type: "transit",
-      icon: iconStepBus,
-      title: "정문 정류장에서 버스 타기",
-      description: "오늘 이 방향 마지막 버스 · 14개 정류장 · 31분",
-    },
-    {
-      time: "23:29",
-      type: "transit",
-      icon: iconStepBus,
-      title: "영통역 정류장에서 내리기",
-    },
-    {
-      time: "23:29",
-      type: "walk",
-      icon: iconStepWalk,
-      title: "집 근처 하차 지점까지 걷기",
-      description: "도보 12분 · 850m",
-    },
-    {
-      time: "23:41",
-      type: "home",
-      icon: iconStepFlag,
-      title: "영통2동 도착",
-    },
-  ],
-};
+const ICONS = { walk: iconStepWalk, transit: iconStepBus, home: iconStepFlag };
 
-//막차경로
 export default function LastTrain() {
-  const { search } = useLocation();
-  return import.meta.env.DEV &&
-    new URLSearchParams(search).get("preview") === "train" ? (
-    <PreviewLastTrain />
-  ) : (
-    <LiveTravelDetails mode="BUS" />
-  );
-}
-
-function PreviewLastTrain() {
   const navigate = useNavigate();
+  const { state, search } = useLocation();
+  const isPreview =
+    import.meta.env.DEV &&
+    state?.isPreview !== false &&
+    (state?.isPreview === true ||
+      new URLSearchParams(search).get("preview") === "train");
+  const live = useLastTrain(state, isPreview);
+  const data = isPreview
+    ? (state?.travelContext ?? defaultHomeData)
+    : live.data;
+  const view = toLastTrainView(data);
   const goHome = () => navigate("/");
-
+  const canShow = Boolean(data) && !live.error;
+  function openPickup() {
+    navigate("/pickup", {
+      state: {
+        isPreview,
+        pickupPoint: data?.pickupPoint,
+        universityId: data?.pickupPoint?.universityId,
+        universityName: data?.pickupPoint?.universityName,
+        defaultDestination: data?.travelOptions?.destinationDongId
+          ? {
+              id: data.travelOptions.destinationDongId,
+              name: data.travelOptions.destinationDongName,
+              districtId: data.travelOptions.districtId,
+              districtName: data.travelOptions.districtName,
+              point: data.dropoff ?? data.profile?.defaultDropoff,
+            }
+          : null,
+        sameGenderDefault:
+          data?.sameGenderDefault ?? data?.profile?.sameGenderDefault,
+      },
+    });
+  }
   return (
-    <div className="flex flex-1 flex-col justify-between">
+    <div className="flex flex-1 flex-col">
       <div className="-mx-4">
         <TopBar title="막차 경로" onLeftClick={goHome} />
       </div>
-      <div className="flex flex-1 flex-col gap-2 pt-2">
-        <p role="status" className="text-caption1 text-primary-normal">
-          미리보기 · 예시 경로와 시간이에요.
+      {isPreview && (
+        <p className="text-caption1 text-primary-normal">
+          미리보기 · 예시 데이터
         </p>
-        <p className="text-caption1 text-label-alternative font-semibold">
-          {LastTrainData.origin} → {LastTrainData.destination}
+      )}
+      {live.loading && (
+        <p role="status" className="py-4">
+          막차 경로를 불러오고 있어요.
         </p>
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-title3 text-label-strong font-bold">
-              {LastTrainData.timeTaken}분
-            </p>
-          </div>
-          <div className="shrink-0 text-right">
-            <p className="text-headline2 text-label-strong font-bold">
-              {LastTrainData.fare}원
-            </p>
-            <p className="text-caption2 text-label-alternative font-medium">
-              1인 · 교통카드
-            </p>
-          </div>
+      )}
+      {!isPreview && !live.loading && !live.allowed && (
+        <div className="flex flex-col gap-3 py-4">
+          <p role="status">로그인한 학생 계정으로 막차 경로를 확인해 주세요.</p>
+          <Button onClick={() => navigate("/onboarding")}>로그인하기</Button>
         </div>
-        <div className="flex flex-row gap-2">
-          <Badge variant="cautionary" className="shrink-0">
-            {LastTrainData.lastDeparture.note}
-          </Badge>
-          <Badge variant="neutral" className="shrink-0">
-            {LastTrainData.lastDeparture.transfer}
-          </Badge>
+      )}
+      {!isPreview && live.error && (
+        <div role="alert" className="flex flex-col gap-3 py-4">
+          <p>{live.error.message}</p>
+          <Button variant="secondary" onClick={live.retry}>
+            다시 불러오기
+          </Button>
         </div>
-        <div className="mt-4 flex">
-          <RouteSteps steps={LastTrainData.steps} />
+      )}
+      {canShow && (
+        <div className="flex flex-1 flex-col gap-2 pt-2">
+          <p className="text-caption1 text-label-alternative font-semibold">
+            {view.origin} → {view.destination}
+          </p>
+          {view.available ? (
+            <>
+              <div className="flex items-center justify-between gap-4">
+                <p className="text-title3 text-label-strong font-bold">
+                  {view.durationLabel}
+                </p>
+                <div className="shrink-0 text-right">
+                  <p className="text-headline2 text-label-strong font-bold">
+                    {view.fareLabel}
+                  </p>
+                  <p className="text-caption2 text-label-alternative font-medium">
+                    1인 · 교통카드
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {view.deadlineLabel && (
+                  <Badge variant="cautionary">{view.deadlineLabel}</Badge>
+                )}
+                {view.transferLabel && (
+                  <Badge variant="neutral">{view.transferLabel}</Badge>
+                )}
+              </div>
+              <div className="mt-4">
+                <RouteSteps
+                  steps={view.steps.map((step) => ({
+                    ...step,
+                    icon: ICONS[step.type],
+                  }))}
+                />
+              </div>
+            </>
+          ) : (
+            <p role="status" className="text-heading2 py-4 font-bold">
+              현재 안내할 수 있는 막차 경로가 없어요.
+            </p>
+          )}
+          {view.sourceLabel && (
+            <p className="text-caption2 text-label-alternative mt-4">
+              {view.sourceLabel}
+            </p>
+          )}
+          {view.warnings.map((warning, index) => (
+            <p
+              key={`${index}-${warning}`}
+              className="text-caption2 text-label-alternative"
+            >
+              {warning}
+            </p>
+          ))}
         </div>
-        <p className="text-caption2 text-label-alternative font-regular mt-4">
-          버스 시간표 기준이에요. 실시간 도착 정보는 아니에요.
-        </p>
-      </div>
-      <div className="bg-background-normal sticky bottom-0 mt-auto flex w-full shrink-0 flex-col gap-2 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-        <Button size="md" variant="primary" className="w-full" onClick={goHome}>
-          막차로 갈게요
-        </Button>
-        <Button
-          size="md"
-          variant="secondary"
-          className="w-full"
-          onClick={() => navigate("/pickup", { state: { isPreview: true } })}
-        >
-          동승도 알아볼래요
-        </Button>
-      </div>
+      )}
+      {canShow && (
+        <div className="bg-background-normal sticky bottom-0 mt-auto flex w-full shrink-0 flex-col gap-2 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          {live.actionError && (
+            <p role="alert" className="text-label2 text-status-negative">
+              {live.actionError}
+            </p>
+          )}
+          {!isPreview && live.expired && (
+            <p role="status" className="text-label2 text-label-neutral">
+              막차 출발 마감 시간이 지났어요. 다른 귀가 방법을 확인해 주세요.
+            </p>
+          )}
+          <Button
+            className="w-full"
+            disabled={
+              isPreview ? !view.available : !live.canChoose || !view.available
+            }
+            aria-busy={live.saving}
+            onClick={
+              isPreview
+                ? () =>
+                    navigate("/", {
+                      replace: true,
+                      state: { selectedTransport: "transit", isPreview: true },
+                    })
+                : live.choose
+            }
+          >
+            {live.saving ? "막차 선택 기록 중" : "막차로 갈게요"}
+          </Button>
+          <Button
+            variant="secondary"
+            className="w-full"
+            disabled={live.saving}
+            onClick={openPickup}
+          >
+            동승도 알아볼래요
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

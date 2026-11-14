@@ -1,3 +1,4 @@
+import { canPreview } from "../../demo/demoStore";
 import { useLocation, useNavigate } from "react-router-dom";
 import Button from "../../../shared/components/Button";
 import InfoBox from "../../../shared/components/InfoBox";
@@ -16,7 +17,7 @@ import { applySlotDeadlines } from "../../../shared/utils/time";
 export default function MatchingFailure({ data }) {
   const { search } = useLocation();
   const preview =
-    import.meta.env.DEV &&
+    canPreview() &&
     (data?.isPreview === true ||
       new URLSearchParams(search).get("preview") === "failed");
   return preview ? (
@@ -84,7 +85,11 @@ function LiveMatchingFailure() {
             {warning}
           </p>
         ))}
-      {data.usingDefaultDropoff && <p className="text-caption1 text-label-alternative">교통 정보는 기본 하차 위치 기준 추정값이에요.</p>}
+        {data.usingDefaultDropoff && (
+          <p className="text-caption1 text-label-alternative">
+            교통 정보는 기본 하차 위치 기준 추정값이에요.
+          </p>
+        )}
         {travelOptions?.warnings?.map((warning) => (
           <p key={warning} className="text-caption1 text-label-alternative">
             {warning}
@@ -165,11 +170,6 @@ function PreviewMatchingFailure({ data }) {
         <TopBar title="매칭 결과" leftAction="close" onLeftClick={goHome} />
       </div>
       <div className="flex flex-col gap-4 pt-1">
-        {isPreview && (
-          <p role="status" className="text-caption1 text-primary-normal">
-            미리보기 · 예시 매칭 결과
-          </p>
-        )}
         <InfoBox
           variant="negative"
           title="이번엔 매칭되지 않았어요"

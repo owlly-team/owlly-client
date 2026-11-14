@@ -1,3 +1,5 @@
+import { canPreview, isDemoActive } from "../../demo/demoStore";
+import { finalizeDemoSettlement } from "../../demo/demoFlow";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import TopBar from "../../../shared/components/TopBar";
@@ -20,7 +22,7 @@ export default function SettlementInput(props) {
   const navigate = useNavigate();
   const { partyId } = useParams();
   const { state } = useLocation();
-  const previewRequested = import.meta.env.DEV && state?.isPreview === true;
+  const previewRequested = canPreview() && state?.isPreview === true;
   const live = useSettlementData(partyId, !previewRequested);
   const {
     data: settlement,
@@ -34,7 +36,7 @@ export default function SettlementInput(props) {
           isPreview: false,
           matchingResult: live.data,
         },
-    allowPreview: import.meta.env.DEV,
+    allowPreview: canPreview(),
   });
   const context = useMemo(
     () => ({
@@ -145,8 +147,23 @@ function SettlementForm({
   });
   const submitting = isSubmitting || fare.saving || route.saving;
   const finalized = !isPreview && settlement.finalizedAt != null;
+  const demoSettlement =
+    isPreview && isDemoActive()
+      ? finalizeDemoSettlement(
+          context,
+          Number(amount),
+          rows.map((row) => row.memberId),
+        )
+      : null;
   const tableRows = isPreview
-    ? rows
+    ? demoSettlement
+      ? toSettlementRows(demoSettlement, {
+          partyId,
+          party,
+          final: true,
+          receivedOnly: true,
+        })
+      : rows
     : finalized
       ? toSettlementRows(settlement, {
           partyId,
@@ -259,7 +276,20 @@ function SettlementForm({
                 state: {
                   ...state,
                   settlementDraft: { amount, rows },
-                  settlement,
+                  settlement: demoSettlement ?? settlement,
+                  refundAccounts: demoSettlement
+                    ? party.members
+                        .filter(
+                          (member) =>
+                            member.memberId !== party.representativeMemberId,
+                        )
+                        .map((member) => ({
+                          partyId,
+                          memberId: member.memberId,
+                          bankName: "KB국민은행",
+                          accountNumber: "943202-01-482917",
+                        }))
+                    : state?.refundAccounts,
                   isPreview,
                 },
               });

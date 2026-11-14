@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useBottomTabNavigation from "../../../shared/hooks/useBottomTabNavigation";
-import { getDisplayNow } from "../../../shared/utils/time";
+import useSessionStore from "../../../shared/stores/sessionStore";
 import iconBus from "../../../assets/icons/transport-bus.svg";
 import iconCarpool from "../../../assets/icons/transport-carpool.svg";
 import iconTaxi from "../../../assets/icons/transport-taxi.svg";
@@ -28,7 +28,9 @@ export default function useHome(data, { onPendingFeature } = {}) {
 
   useEffect(() => {
     if (
-      (!data.matchedAt && !data.party?.confirmDeadlineAt) ||
+      (!data.matchedAt &&
+        !data.party?.confirmDeadlineAt &&
+        !data.party?.departureAt) ||
       (data.isPreview === true && Number.isFinite(Date.parse(data.previewNow)))
     )
       return;
@@ -37,12 +39,14 @@ export default function useHome(data, { onPendingFeature } = {}) {
   }, [
     data.matchedAt,
     data.party?.confirmDeadlineAt,
+    data.party?.departureAt,
     data.previewNow,
     data.isPreview,
   ]);
 
   const { travelOptions, rideRequest, party } = data;
-  const viewData = toHomeViewData(data, getDisplayNow(data, now));
+  const displayNow = getDisplayNow(data, now);
+  const viewData = toHomeViewData(data, displayNow);
   const { transportDisplay } = viewData;
 
   // 막차 전후와 매칭 전후를 독립적으로 판단하고 화면 표시 여부만 조합
@@ -55,6 +59,7 @@ export default function useHome(data, { onPendingFeature } = {}) {
   );
   const isMatchingWaiting = matchingUiState === "MATCHING_WAITING";
   const isMatchingResult = matchingUiState === "MATCHING_RESULT";
+  const isRideInProgress = matchingUiState === "RIDE_IN_PROGRESS";
   //막차 끊기면 버스 카드 제외
   const visibleOptions = toTransportOptionCards(
     travelOptions ?? (data.isPreview === false ? {} : null),
@@ -71,6 +76,23 @@ export default function useHome(data, { onPendingFeature } = {}) {
 
   //귀가 방법 카드 눌렀을 때 처리
   function handleTransportSelect(id) {
+    if (id === "bus") {
+      navigate("/train", {
+        state: {
+          isPreview: data.isPreview !== false,
+          userId: useSessionStore.getState().user?.id,
+          travelContext: {
+            pickupPoint: data.pickupPoint,
+            dropoff: data.profile?.defaultDropoff,
+            travelOptions,
+            journey: data.journey,
+            sameGenderDefault: data.profile?.sameGenderDefault,
+          },
+        },
+      });
+      return;
+    }
+    if (data.isPreview === false) return onPendingFeature?.();
     if (id === "carpool") {
       handleStartRegistration();
       return;
@@ -127,6 +149,25 @@ export default function useHome(data, { onPendingFeature } = {}) {
 
   //MATCHED 신청의 partyId로 매칭 결과 화면 이동
   function handleViewMatchingResult(partyId) {
+    const demoResult =
+      data.isPreview === true
+        ? useDemoStore.getState().session?.matchingResult
+        : null;
+    const myDecision = demoResult?.party.members.find(
+      (member) => member.memberId === demoResult.party.myMemberId,
+    )?.decision;
+    if (
+      demoResult?.party.id === partyId &&
+      myDecision === "ACCEPTED" &&
+      (demoResult.party.myMemberId !==
+        demoResult.party.representativeMemberId ||
+        useDemoStore.getState().session.account)
+    ) {
+      navigate(`/rooms/${demoResult.party.roomId}`, {
+        state: { isPreview: true },
+      });
+      return;
+    }
     navigate(`/matching/result/${partyId}`, {
       state: {
         isPreview: data.isPreview !== false,
@@ -142,12 +183,30 @@ export default function useHome(data, { onPendingFeature } = {}) {
     );
   }
 
+  function handleOpenRoom(room) {
+    if (!party?.id || rideRequest?.partyId !== party.id) return;
+    const roomId =
+      room?.partyId === party.id && (!party.roomId || room.id === party.roomId)
+        ? room.id
+        : party.roomId;
+    navigate(roomId ? `/rooms/${roomId}` : `/parties/${party.id}/room`, {
+      state: {
+        isPreview: data.isPreview === true,
+        matchingResult: { party, rideRequest, settlement: data.settlement },
+        ...(room?.partyId === party.id && room.id === roomId ? { room } : {}),
+      },
+    });
+  }
+
   return {
     viewData,
     matchingUiState,
+    isRideInProgress,
+    displayNow,
     transitAvailable,
     showTransitAlternative: isMatchingResult && transitAvailable === true,
-    showTransportOptions: !isMatchingWaiting && !isMatchingResult,
+    showTransportOptions:
+      !isMatchingWaiting && !isMatchingResult && !isRideInProgress,
     transportOptions,
     selectedTab,
     handleTabChange,
@@ -155,5 +214,6 @@ export default function useHome(data, { onPendingFeature } = {}) {
     handleViewRegistration,
     handleViewMatchingResult,
     handleViewFailure,
+    handleOpenRoom,
   };
 }

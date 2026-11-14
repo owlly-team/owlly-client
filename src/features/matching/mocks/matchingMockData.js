@@ -34,7 +34,7 @@ export async function loadMockPickupPoints() {
         universityName: "단국대학교",
         name: "단국대 정문",
         point: { latitude: Number(gate.y), longitude: Number(gate.x) },
-        meetingNote: "죽전캠퍼스 정문 · 미리보기용 거점",
+        meetingNote: "죽전캠퍼스 정문",
       }]);
     });
   });
@@ -93,7 +93,7 @@ export const mockMatchingResult = {
     status: "CONFIRMING",
     pickupPoint: {
       id: "11", universityId: "1", universityName: "단국대", name: "단국대 정문",
-      point: { latitude: 37.331, longitude: 127.271 }, meetingNote: "정문 앞",
+      point: null, meetingNote: "정문 앞",
     },
     departureAt: "2026-11-05T23:30:00+09:00",
     confirmDeadlineAt: "2026-11-05T23:15:00+09:00",

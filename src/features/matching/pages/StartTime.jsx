@@ -33,11 +33,6 @@ export default function StartTime() {
         />
       </div>
       <div className="mt-1 flex flex-col gap-2">
-        {timing.isPreview && (
-          <p role="status" className="text-caption1 text-primary-normal">
-            미리보기 · 예시 출발 시간
-          </p>
-        )}
         <p className="text-title3 text-label-normal font-bold">
           몇 시에 출발할까요?
         </p>

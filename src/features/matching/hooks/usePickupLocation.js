@@ -1,3 +1,4 @@
+import { canPreview, useDemoStore } from "../../demo/demoStore";
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { distanceMeters, isPoint } from "../utils/mapUtils";
@@ -16,9 +17,12 @@ import {
 //PickupLocation 페이지의 지도·하단 시트에서 사용하는 상태와 동작
 export default function usePickupLocation() {
   const { state, search } = useLocation();
+  const demoSession = useDemoStore((store) => store.session);
   const isPreview =
-    import.meta.env.DEV &&
-    (state?.isPreview === true ||
+    canPreview() &&
+    state?.isPreview !== false &&
+    (Boolean(demoSession) ||
+      state?.isPreview === true ||
       new URLSearchParams(search).get("preview") === "pickup");
   const session = useSessionStore();
   const [profile, setProfile] = useState(null);
@@ -27,7 +31,16 @@ export default function usePickupLocation() {
   const [pickup, setPickup] = useState(state?.pickupPoint ?? null);
   //처음에는 프로필 기본 하차 지점 사용, 시간 선택 화면에서 돌아오면 오늘 선택값 유지
   const [defaultDestination, setDefaultDestination] = useState(
-    state?.defaultDestination ?? null,
+    state?.defaultDestination ??
+      (demoSession
+        ? {
+            id: "31",
+            name: "영통2동",
+            districtId: "21",
+            districtName: "수원시 영통구",
+            point: demoSession.home.profile.defaultDropoff,
+          }
+        : null),
   );
   const [destination, setDestination] = useState(
     state?.destination ?? defaultDestination,
@@ -63,7 +76,10 @@ export default function usePickupLocation() {
     const controller = new AbortController();
     if (!isPreview && session.status === "loading") return;
     const source = (async () => {
-      if (isPreview) return { points: await loadMockPickupPoints() };
+      if (isPreview)
+        return {
+          points: await loadMockPickupPoints(),
+        };
       if (session.status !== "authenticated")
         throw new Error("로그인한 뒤 출발 거점을 선택해 주세요.");
       const api = createMatchingApi(session.csrfToken, controller.signal);
@@ -80,6 +96,7 @@ export default function usePickupLocation() {
       .then(({ points: data, profile: loadedProfile }) => {
         if (controller.signal.aborted) return;
         const valid = data.filter((item) => isPoint(item.point));
+        if (isPreview && valid[0]) useDemoStore.getState().resolvePickup(valid[0]);
         setPoints(valid);
         setPickup(
           (previous) =>

@@ -1,4 +1,5 @@
-﻿import LastDepartureCard from "../components/LastDepartureCard";
+import { canPreview, useDemoStore } from "../../demo/demoStore";
+import LastDepartureCard from "../components/LastDepartureCard";
 import TransportOptionCard from "../components/TransportOptionCard";
 import { useId, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -10,18 +11,29 @@ import { homeScenarios } from "../mocks/homeMockData";
 import useHome from "../hooks/useHome";
 import useHomeData from "../hooks/useHomeData";
 import Button from "../../../shared/components/Button";
+import HomeRideProgress from "../components/HomeRideProgress";
+import useHomeRideRoom from "../hooks/useHomeRideRoom";
+import {
+  getHomeRideParty,
+  toRideProgressView,
+} from "../utils/rideProgressView";
 
 export default function Home({ data, onViewMatchingResult }) {
   const { search } = useLocation();
-  if (
-    data ||
-    (import.meta.env.DEV &&
-      new URLSearchParams(search).get("preview") === "home")
-  ) {
+  const session = useDemoStore((store) => store.session);
+  const params = new URLSearchParams(search);
+  const previewHome = canPreview() && params.get("preview") === "home";
+  const scenario = params.get("scenario");
+  const scenarioData = Object.hasOwn(homeScenarios, scenario)
+    ? homeScenarios[scenario]
+    : homeScenarios.matched;
+  if (session && !data && !previewHome)
+    return <HomeContent data={session.home} />;
+  if (data || previewHome) {
     return (
       <HomeContent
         data={{
-          ...(data ?? homeScenarios.matched),
+          ...(data ?? scenarioData),
           isPreview: data?.isPreview ?? true,
         }}
         onViewMatchingResult={onViewMatchingResult}
@@ -181,6 +193,8 @@ function HomeContent({
   const {
     viewData,
     matchingUiState,
+    isRideInProgress,
+    displayNow,
     transitAvailable,
     showTransitAlternative,
     showTransportOptions,
@@ -191,41 +205,57 @@ function HomeContent({
     handleViewRegistration,
     handleViewMatchingResult,
     handleViewFailure,
+    handleOpenRoom,
   } = useHome(currentData, {
     onPendingFeature: () => setNotice("상세 안내는 준비 중이에요."),
   });
   const { pickupPoint, destinationLabel, lastTransit, matchingDisplay } =
     viewData;
+  const progressParty = getHomeRideParty(currentData);
+  const progressRoom = useHomeRideRoom(
+    progressParty,
+    currentData.isPreview === true,
+    currentData.room,
+  );
+  const progressView = toRideProgressView(
+    currentData,
+    progressRoom.room,
+    displayNow,
+    progressRoom.preview,
+  );
 
   return (
     <div className="flex w-full flex-1 flex-col pt-1.5">
       <header className="text-label2 text-label-neutral flex min-h-5.5 items-center justify-between gap-3">
         <button
           type="button"
-          onClick={onChoosePickup}
-          disabled={!onChoosePickup}
-          aria-haspopup={onChoosePickup ? "dialog" : undefined}
+          onClick={isRideInProgress ? undefined : onChoosePickup}
+          disabled={isRideInProgress || !onChoosePickup}
+          aria-haspopup={
+            !isRideInProgress && onChoosePickup ? "dialog" : undefined
+          }
           className="flex min-h-11 min-w-0 items-center gap-1.5 text-left"
         >
           <img src={iconLocation} alt="" className="size-4 shrink-0" />
-          {departureLabel ?? pickupPoint?.name ?? "출발지 고르기"}
+          {(isRideInProgress
+            ? progressParty?.pickupPoint?.name
+            : departureLabel) ??
+            pickupPoint?.name ??
+            "출발지 고르기"}
         </button>
         <p className="flex min-w-0 items-center gap-1.5">
           <HomeIcon
             aria-hidden="true"
             className="text-label-alternative size-4 shrink-0"
           />
-          {destinationLabel ??
+          {(isRideInProgress
+            ? currentData.rideRequest?.destinationDongName
+            : destinationLabel) ??
             data.profile?.defaultDongName ??
             "하차 위치 확인 중"}
         </p>
       </header>
       {statusSlot}
-      {data.isPreview === true && (
-        <p role="status" className="text-caption1 text-primary-normal mt-2">
-          미리보기 · 예시 데이터
-        </p>
-      )}
       {notice && (
         <p role="status" className="text-label2 text-label-neutral mt-3">
           {notice}
@@ -241,36 +271,46 @@ function HomeContent({
           {currentData.slotsError}
         </p>
       )}
-      {currentData.travelOptions?.warnings?.length > 0 && (
+      {!isRideInProgress && currentData.travelOptions?.warnings?.length > 0 && (
         <p role="status" className="text-label2 text-label-neutral mt-3">
           일부 교통 정보가 부족해요. 요금과 시간은 추정값이에요.
         </p>
       )}
-      <HomeMatchingCard
-        uiState={matchingUiState}
-        display={matchingDisplay}
-        onViewRegistration={handleViewRegistration}
-        onViewFailure={handleViewFailure}
-        onViewMatchingResult={
-          currentData.rideRequest?.status === "MATCHED" &&
-          currentData.rideRequest?.partyId
-            ? () =>
-                (onViewMatchingResult ?? handleViewMatchingResult)(
-                  currentData.rideRequest.partyId,
-                )
-            : undefined
-        }
-      />
-      <div className="mt-5">
-        {lastTransit && (
-          <LastDepartureCard {...lastTransit} available={transitAvailable} />
-        )}
-        {!currentData.travelOptions && currentData.isPreview === false && (
-          <p className="text-label2 text-label-neutral mt-1">
-            출발 위치를 확인하면 막차를 안내해 드려요.
-          </p>
-        )}
-      </div>
+      {isRideInProgress ? (
+        <HomeRideProgress
+          view={progressView}
+          onOpenRoom={() => handleOpenRoom(progressRoom.room)}
+          roomError={progressRoom.error}
+        />
+      ) : (
+        <HomeMatchingCard
+          uiState={matchingUiState}
+          display={matchingDisplay}
+          onViewRegistration={handleViewRegistration}
+          onViewFailure={handleViewFailure}
+          onViewMatchingResult={
+            currentData.rideRequest?.status === "MATCHED" &&
+            currentData.rideRequest?.partyId
+              ? () =>
+                  (onViewMatchingResult ?? handleViewMatchingResult)(
+                    currentData.rideRequest.partyId,
+                  )
+              : undefined
+          }
+        />
+      )}
+      {!isRideInProgress && (
+        <div className="mt-5">
+          {lastTransit && (
+            <LastDepartureCard {...lastTransit} available={transitAvailable} />
+          )}
+          {!currentData.travelOptions && currentData.isPreview === false && (
+            <p className="text-label2 text-label-neutral mt-1">
+              출발 위치를 확인하면 막차를 안내해 드려요.
+            </p>
+          )}
+        </div>
+      )}
       {showTransitAlternative && (
         <p className="text-caption1 text-label-alternative mt-5">
           확정하지 않으면 막차를 타도 돼요.
